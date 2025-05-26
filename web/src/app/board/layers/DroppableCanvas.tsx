@@ -5,7 +5,7 @@ import {
   SortableContext,
 } from "@dnd-kit/sortable";
 import SortableBlock from "./SortableBlock";
-import { AnyUILayer } from "../../types";
+import { AnyUILayer } from "../../../types";
 import { useBoardStore } from "~/state/boardStore";
 
 interface DroppableCanvasProps {}

@@ -9,11 +9,11 @@ import {
 import React, { useState } from "react";
 import { useBoardStore } from "~/state/boardStore";
 import { startTraining, downloadFile, getConfig } from "~/util/board.util";
-import { BLOCKS } from "../../util/BLOCKS";
+import { BLOCKS } from "../../../util/BLOCKS";
 import DraggableBlock from "./DraggableBlock";
 import DroppableCanvas from "./DroppableCanvas";
 import OverlayBlock from "./OverlayBlock";
-import Toggle from "../_components/Toggle";
+import Toggle from "../../_components/Toggle";
 import { createTfModel } from "~/dynamic-model-js/model.util";
 
 interface LayersProps {
@@ -159,8 +159,7 @@ const Layers = ({
             <div className="flex justify-center">
               <Toggle
                 color="zinc"
-                option1="TRAIN"
-                option2="HISTORY"
+                options={["TRAIN", "HISTORY"]}
                 selected={runningToggle}
                 setSelected={
                   setRunningToggle as React.Dispatch<

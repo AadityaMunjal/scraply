@@ -83,6 +83,7 @@ export enum DataMode {
 }
 
 export enum AppMode {
-  DATA = "DATA",
   LAYERS = "LAYERS",
+  CONFIG = "CONFIG",
+  OUPUT = "OUTPUT",
 }

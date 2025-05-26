@@ -1,15 +1,36 @@
 "use client";
 import React, { useState } from "react";
 import Toggle from "../_components/Toggle";
-import Layers from "./Layers";
-import Data from "./Data";
-import { AppMode, DataMode } from "~/types";
+import Layers from "./layers/Layers";
+import { AppMode } from "~/types";
+import TrainingConfig from "./config/TrainingConfig";
+import Output from "./output/Output";
 
 const Board = () => {
-  const [mode, setMode] = useState<AppMode>(AppMode.DATA);
+  const [mode, setMode] = useState<AppMode>(AppMode.LAYERS);
 
-  // global data state
-  const dataModeState = useState<DataMode>(DataMode.UPLOAD);
+  const CurrentBoardMode = {
+    [AppMode.LAYERS]: () => {
+      return (
+        <Layers
+          lossState={lossState}
+          optimizerState={optimizerState}
+          learningRateState={learningRateState}
+          epochState={epochState}
+          batchSizeState={batchSizeState}
+          isTrainingState={isTrainingState}
+          trainingResState={trainingResState}
+          progressState={progressState}
+        />
+      );
+    },
+    [AppMode.CONFIG]: () => {
+      return <TrainingConfig />;
+    },
+    [AppMode.OUPUT]: () => {
+      return <Output />;
+    },
+  };
 
   // global layer state
   const lossState = useState("BCE");
@@ -27,26 +48,12 @@ const Board = () => {
       <div className="flex justify-center p-4">
         <Toggle
           color="blue"
-          option1="DATA"
-          option2="LAYERS"
+          options={Object.values(AppMode)}
           selected={mode}
           setSelected={setMode as React.Dispatch<React.SetStateAction<string>>}
         />
       </div>
-      {mode === "DATA" ? (
-        <Data dataModeState={dataModeState} />
-      ) : (
-        <Layers
-          lossState={lossState}
-          optimizerState={optimizerState}
-          learningRateState={learningRateState}
-          epochState={epochState}
-          batchSizeState={batchSizeState}
-          isTrainingState={isTrainingState}
-          trainingResState={trainingResState}
-          progressState={progressState}
-        />
-      )}
+      {CurrentBoardMode[mode]()}
     </div>
   );
 };
