@@ -66,7 +66,9 @@ export interface TransformerConfig {
   batch_size: number;
 }
 
-export enum AppMode {
+export enum AppTabs {
   LAYERS = "LAYERS",
-  TRANSFORMERS = "TRANSFORMERS",
+  TRAINING = "TRAINING",
+  OUTPUTS = "OUTPUTS",
+  // TRANSFORMERS = "TRANSFORMERS",
 }

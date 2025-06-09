@@ -14,14 +14,14 @@ import {
   getConfig,
   getArchitectureSuggestion,
 } from "~/util/board.util";
-import DraggableBlock from "./DraggableBlock";
-import DroppableCanvas from "./DroppableCanvas";
-import OverlayBlock from "./OverlayBlock";
 import { useDemo } from "~/state/DemoContext";
 import { CgSpinnerTwoAlt as SpinnerIcon } from "react-icons/cg";
 import { LAYER_BLOCKS } from "~/util/LAYER_BLOCKS";
-import DemoCard from "../DemoCard";
-import ToggleBlock from "../ToggleBlock";
+import DemoCard from "../../DemoCard";
+import ToggleBlock from "../../ToggleBlock";
+import DraggableBlock from "./DraggableBlock";
+import DroppableCanvas from "./DroppableCanvas";
+import OverlayBlock from "./OverlayBlock";
 
 const DEMO_CARDS = [
   {
@@ -47,7 +47,7 @@ const DEMO_CARDS = [
   },
 ];
 
-interface LayersProps {
+interface LayersTabProps {
   selectedDataset: string;
   trainingBlockToggleState: [
     boolean,
@@ -72,7 +72,7 @@ interface LayersProps {
   showNotification: (title: string, body: string) => void;
 }
 
-const LayersBoard = ({
+const LayersTab = ({
   selectedDataset,
   trainingBlockToggleState,
   lossState,
@@ -86,7 +86,7 @@ const LayersBoard = ({
   isLoadingSuggestionsState,
   resultsBlockToggleState,
   showNotification,
-}: LayersProps) => {
+}: LayersTabProps) => {
   const boardRef = useRef<HTMLDivElement>(null);
   const canvasSectionRef = useRef<HTMLDivElement>(null);
   const scrapsSectionRef = useRef<HTMLDivElement>(null);
@@ -532,4 +532,4 @@ const LayersBoard = ({
   );
 };
 
-export default LayersBoard;
+export default LayersTab;

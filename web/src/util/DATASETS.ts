@@ -18,9 +18,6 @@ const TRANSFORMERS: Dataset[] = [
   },
 ];
 
-const DATASETS = {
-  LAYERS,
-  TRANSFORMERS,
-};
+const DATASETS = LAYERS;
 
 export default DATASETS;

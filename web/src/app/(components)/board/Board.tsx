@@ -1,24 +1,17 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import LayersBoard from "./LayersBoard";
-import { AppMode, Dataset } from "~/types";
-import TransformersBoard from "./TransformersBoard";
+import LayersTab from "./layers/LayersTab";
+import { AppTabs } from "~/types";
 import DATASETS from "~/util/DATASETS";
 import Toggle from "../Toggle";
+import TrainingTab from "./training/TrainingTab";
+import OutputsTab from "./outputs/OutputsTab";
 
 const Board = () => {
-  const [mode, setMode] = useState<AppMode>(AppMode.LAYERS);
-  const [datasetOptions, setDatasetOptions] = useState<Dataset[]>(
-    DATASETS[mode],
-  );
+  const [tab, setTab] = useState<AppTabs>(AppTabs.LAYERS);
   const [selectedDataset, setSelectedDataset] = useState<string>(
-    datasetOptions[0]!.inputName,
+    DATASETS[0]!.inputName,
   );
-
-  useEffect(() => {
-    setDatasetOptions(DATASETS[mode]);
-    setSelectedDataset(DATASETS[mode][0]!.inputName);
-  }, [mode]);
 
   // global layer state
   const trainingBlockToggleState = useState(true);
@@ -55,10 +48,30 @@ const Board = () => {
     }
   };
 
+  const Tabs: Record<AppTabs, React.ReactNode> = {
+    [AppTabs.LAYERS]: (
+      <LayersTab
+        selectedDataset={selectedDataset}
+        trainingBlockToggleState={trainingBlockToggleState}
+        lossState={lossState}
+        optimizerState={optimizerState}
+        learningRateState={learningRateState}
+        epochState={epochState}
+        batchSizeState={batchSizeState}
+        isTrainingState={isTrainingState}
+        trainingResHistoryState={trainingResHistoryState}
+        progressState={progressState}
+        isLoadingSuggestionsState={isLoadingSuggestionsState}
+        resultsBlockToggleState={resultsBlockToggleState}
+        showNotification={showNotification}
+      />
+    ),
+    [AppTabs.TRAINING]: <TrainingTab />,
+    [AppTabs.OUTPUTS]: <OutputsTab />,
+  };
+
   return (
-    <div
-      className={`${mode === AppMode.TRANSFORMERS ? "" : "overflow-hidden"} bg-zinc-900 text-white`}
-    >
+    <div className={`overflow-hidden bg-zinc-900 text-white`}>
       <div>
         <div className="flex justify-between p-4">
           <div className="mx-4 flex items-center">
@@ -68,7 +81,7 @@ const Board = () => {
               onChange={(e) => setSelectedDataset(e.target.value)}
               value={selectedDataset}
             >
-              {datasetOptions.map((dataset, idx) => {
+              {DATASETS.map((dataset, idx) => {
                 return (
                   <option
                     key={idx}
@@ -83,12 +96,12 @@ const Board = () => {
           </div>
           <Toggle
             color="blue"
-            options={Object.values(AppMode)}
-            selected={mode}
-            setSelected={
-              setMode as React.Dispatch<React.SetStateAction<string>>
-            }
+            options={Object.values(AppTabs)}
+            selected={tab}
+            setSelected={setTab as React.Dispatch<React.SetStateAction<string>>}
           />
+
+          {/* duplicate invisible component for centering, find a better way */}
           <div className="invisible mx-4 flex items-center">
             <div className="mx-2 text-xl">Dataset</div>
             <select
@@ -96,7 +109,7 @@ const Board = () => {
               onChange={(e) => console.log(e.target.value)}
               value={selectedDataset}
             >
-              {datasetOptions.map((dataset, idx) => {
+              {DATASETS.map((dataset, idx) => {
                 return (
                   <option key={idx} value={dataset.inputName}>
                     {dataset.label}
@@ -106,25 +119,8 @@ const Board = () => {
             </select>
           </div>
         </div>
-        {mode === AppMode.TRANSFORMERS ? (
-          <TransformersBoard selectedDataset={selectedDataset} />
-        ) : (
-          <LayersBoard
-            selectedDataset={selectedDataset}
-            trainingBlockToggleState={trainingBlockToggleState}
-            lossState={lossState}
-            optimizerState={optimizerState}
-            learningRateState={learningRateState}
-            epochState={epochState}
-            batchSizeState={batchSizeState}
-            isTrainingState={isTrainingState}
-            trainingResHistoryState={trainingResHistoryState}
-            progressState={progressState}
-            isLoadingSuggestionsState={isLoadingSuggestionsState}
-            resultsBlockToggleState={resultsBlockToggleState}
-            showNotification={showNotification}
-          />
-        )}
+
+        {Tabs[tab]}
       </div>
     </div>
   );
