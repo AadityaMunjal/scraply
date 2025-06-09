@@ -49,10 +49,10 @@ const Board = () => {
   };
 
   const Tabs: Record<AppTabs, React.ReactNode> = {
-    [AppTabs.LAYERS]: (
-      <LayersTab
+    [AppTabs.LAYERS]: <LayersTab selectedDataset={selectedDataset} />,
+    [AppTabs.TRAINING]: (
+      <TrainingTab
         selectedDataset={selectedDataset}
-        trainingBlockToggleState={trainingBlockToggleState}
         lossState={lossState}
         optimizerState={optimizerState}
         learningRateState={learningRateState}
@@ -60,14 +60,11 @@ const Board = () => {
         batchSizeState={batchSizeState}
         isTrainingState={isTrainingState}
         trainingResHistoryState={trainingResHistoryState}
-        progressState={progressState}
-        isLoadingSuggestionsState={isLoadingSuggestionsState}
-        resultsBlockToggleState={resultsBlockToggleState}
-        showNotification={showNotification}
       />
     ),
-    [AppTabs.TRAINING]: <TrainingTab />,
-    [AppTabs.OUTPUTS]: <OutputsTab />,
+    [AppTabs.OUTPUTS]: (
+      <OutputsTab trainingResHistoryState={trainingResHistoryState} />
+    ),
   };
 
   return (
