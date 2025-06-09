@@ -4,7 +4,7 @@ import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { DemoProvider } from "~/state/DemoContext";
-import Navbar from "./Navbar";
+import Navbar from "./(components)/Navbar";
 
 export const metadata: Metadata = {
   title: "scraply",

@@ -14,14 +14,14 @@ import {
   getConfig,
   getArchitectureSuggestion,
 } from "~/util/board.util";
-import { LAYER_BLOCKS } from "../../util/LAYER_BLOCKS";
 import DraggableBlock from "./DraggableBlock";
 import DroppableCanvas from "./DroppableCanvas";
 import OverlayBlock from "./OverlayBlock";
-import DemoCard from "../_components/DemoCard";
 import { useDemo } from "~/state/DemoContext";
-import ToggleBlock from "../_components/ToggleBlock";
 import { CgSpinnerTwoAlt as SpinnerIcon } from "react-icons/cg";
+import { LAYER_BLOCKS } from "~/util/LAYER_BLOCKS";
+import DemoCard from "../DemoCard";
+import ToggleBlock from "../ToggleBlock";
 
 const DEMO_CARDS = [
   {

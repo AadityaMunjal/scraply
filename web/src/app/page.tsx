@@ -1,10 +1,7 @@
 "use client";
-import { useUser } from "@clerk/nextjs";
-import Board from "./board/Board";
+import Board from "./(components)/board/Board";
 
 const Landing = () => {
-  const user = useUser();
-  console.log(user);
   return <Board />;
 };
 

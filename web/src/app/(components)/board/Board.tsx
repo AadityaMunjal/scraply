@@ -2,9 +2,9 @@
 import React, { useEffect, useState } from "react";
 import LayersBoard from "./LayersBoard";
 import { AppMode, Dataset } from "~/types";
-import Toggle from "../_components/Toggle";
 import TransformersBoard from "./TransformersBoard";
 import DATASETS from "~/util/DATASETS";
+import Toggle from "../Toggle";
 
 const Board = () => {
   const [mode, setMode] = useState<AppMode>(AppMode.LAYERS);
@@ -83,8 +83,7 @@ const Board = () => {
           </div>
           <Toggle
             color="blue"
-            option2="TRANSFORMERS"
-            option1="LAYERS"
+            options={Object.values(AppMode)}
             selected={mode}
             setSelected={
               setMode as React.Dispatch<React.SetStateAction<string>>
