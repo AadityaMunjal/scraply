@@ -3,6 +3,7 @@ import { CgSpinnerTwoAlt as SpinnerIcon } from "react-icons/cg";
 import { getConfig } from "~/util/board.util";
 import { startTraining, downloadFile } from "~/util/board.util";
 import { useBoardStore } from "~/state/boardStore";
+import TrainingConfigItem from "./TrainingConfigItem";
 
 interface TrainingTabProps {
   selectedDataset: string;
@@ -35,26 +36,20 @@ const TrainingTab: React.FC<TrainingTabProps> = ({
   const [trainingResHistory, setTrainingResHistory] = trainingResHistoryState;
 
   return (
-    <div>
-      <div>
-        <div className="flex w-full justify-between"></div>
-      </div>
-      {/* className={`rounded-xl ring ${isTraining ? "ring-2 ring-orange-500" : "ring-zinc-700"}`} */}
-      <div className="rounded-lg bg-zinc-800 p-1 px-2 py-1 text-sm">
+    <div className="mx-auto flex h-full items-center justify-center p-4">
+      <div className="mx-10 w-1/3 rounded-lg p-1 px-2 py-1 text-sm">
         <div>
-          <div className="my-1 flex">
-            Loss:{" "}
-            <select
-              className="mx-1 cursor-pointer rounded bg-zinc-700 p-1 text-sm text-white outline-none"
-              value={loss}
-              onChange={(e) => setLoss(e.target.value)}
-            >
-              <option value="BCE">BCE</option>
-              <option value="CrossEntropy">CrossEntropy</option>
-            </select>
-          </div>
-          <div className="my-1 flex">
-            Optimizer:{" "}
+            <TrainingConfigItem title="Loss">
+              <select
+                className="mx-1 cursor-pointer rounded bg-zinc-700 p-1 text-sm text-white outline-none"
+                value={loss}
+                onChange={(e) => setLoss(e.target.value)}
+              >
+                <option value="BCE">BCE</option>
+                <option value="CrossEntropy">CrossEntropy</option>
+              </select>
+            </TrainingConfigItem>
+          <TrainingConfigItem title="Optimizer">
             <select
               className="mx-1 cursor-pointer rounded bg-zinc-700 p-1 text-sm text-white outline-none"
               value={optimizer}
@@ -65,9 +60,8 @@ const TrainingTab: React.FC<TrainingTabProps> = ({
               <option value="SGD">SGD</option>
               <option value="RMSprop">RMSprop</option>
             </select>
-          </div>
-          <div className="my-1 flex">
-            Learning Rate:{" "}
+          </TrainingConfigItem>
+          <TrainingConfigItem title="Learning Rate">
             <input
               type="range"
               name="Learning Rate"
@@ -83,12 +77,11 @@ const TrainingTab: React.FC<TrainingTabProps> = ({
               value={learningRate}
               onChange={(e) => setLearningRate(parseFloat(e.target.value))}
             />
-          </div>
-          <div className="my-1 flex">
-            Epochs:{" "}
+          </TrainingConfigItem>
+          <TrainingConfigItem title="Epochs">
             <input
               type="range"
-              name="Batch Size"
+              name="Epochs"
               value={epochs}
               onChange={(e) => setEpochs(parseInt(e.target.value))}
               min={1}
@@ -100,9 +93,8 @@ const TrainingTab: React.FC<TrainingTabProps> = ({
               value={epochs}
               onChange={(e) => setEpochs(parseInt(e.target.value))}
             />
-          </div>
-          <div className="my-1 flex">
-            Batch Size:{" "}
+          </TrainingConfigItem>
+          <TrainingConfigItem title="Batch Size">
             <input
               type="range"
               name="Batch Size"
@@ -117,8 +109,9 @@ const TrainingTab: React.FC<TrainingTabProps> = ({
               value={batchSize}
               onChange={(e) => setBatchSize(parseInt(e.target.value))}
             />
-          </div>
-          <div
+          </TrainingConfigItem>
+          {/* Train Button */}
+          {/* <div
             className={`m-2 ${isTraining && "mt-8"} flex justify-center transition-transform duration-300`}
           >
             <button
@@ -164,8 +157,9 @@ const TrainingTab: React.FC<TrainingTabProps> = ({
                 "Train"
               )}
             </button>
-          </div>
-          <button
+          </div> */}
+          {/* Download Python Notebook */}
+          {/* <button
             className="my-2 w-full rounded-md bg-blue-500 px-4 py-2"
             onClick={() => {
               downloadFile(
@@ -182,7 +176,57 @@ const TrainingTab: React.FC<TrainingTabProps> = ({
             }}
           >
             Download Python Notebook
-          </button>
+          </button> */}
+        </div>
+      </div>
+      <div className="mx-10 mt-4 h-1/2 w-1/3 rounded-xl ring ring-zinc-700">
+        <div className="text-sm">
+          {trainingResHistory.length !== 0 ? (
+            trainingResHistory.map((trainingRes, idx) => {
+              return (
+                <div
+                  key={idx}
+                  className={`my-2 rounded-lg bg-zinc-800 p-1 px-2 py-1`}
+                >
+                  <div>#{trainingResHistory.length - idx}</div>
+                  {Object.keys(trainingRes).map((key) => {
+                    return (
+                      <div key={key} className="flex justify-between">
+                        <div>{key}</div>
+                        <div className="flex">
+                          {idx !== trainingResHistory.length - 1 &&
+                            (() => {
+                              const diff = Math.round(
+                                trainingRes[key] -
+                                  trainingResHistory[idx + 1][key],
+                              );
+                              return diff < 0 ? (
+                                <div className="text-zinc-500">
+                                  (<span className="text-red-600">{diff}</span>)
+                                </div>
+                              ) : (
+                                <div className="text-zinc-500">
+                                  (
+                                  <span className="text-green-600">
+                                    +{diff}
+                                  </span>
+                                  )
+                                </div>
+                              );
+                            })()}
+                          <div className="ml-1">
+                            {Math.round(trainingRes[key])}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })
+          ) : (
+            <div className="text-center">No training results yet.</div>
+          )}
         </div>
       </div>
     </div>
