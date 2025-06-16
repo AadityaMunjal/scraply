@@ -13,7 +13,7 @@ const TrainingConfigItem: React.FC<TrainingConfigItemProps> = ({
 }) => {
   return (
     <div className="flex items-center justify-between">
-      <div className="my-1 flex w-full justify-between rounded-lg bg-zinc-800 p-4 text-base">
+      <div className="my-1 flex w-full justify-between rounded-xl bg-zinc-800 p-4 text-base">
         <div className="flex items-center">{title}</div>
         <div>{children}</div>
       </div>

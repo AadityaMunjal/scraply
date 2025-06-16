@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import LayersTab from "./layers/LayersTab";
-import { AppTabs } from "~/types";
+import { AppTabs, TrainingResult } from "~/types";
 import DATASETS from "~/util/DATASETS";
 import Toggle from "../Toggle";
 import TrainingTab from "./training/TrainingTab";
@@ -14,7 +14,6 @@ const Board = () => {
   );
 
   // global layer state
-  const trainingBlockToggleState = useState(true);
   const lossState = useState("BCE");
   const optimizerState = useState("Adam");
   const learningRateState = useState(0.001);
@@ -22,12 +21,8 @@ const Board = () => {
   const batchSizeState = useState(10);
 
   const isTrainingState = useState(false);
-  const trainingResHistoryState = useState<any[]>([]);
-  const progressState = useState(0);
-
-  const isLoadingSuggestionsState = useState(false);
-
-  const resultsBlockToggleState = useState(true);
+  const trainingResHistoryState = useState<TrainingResult[]>([]);
+  const openHistoryItemIdxState = useState<number | null>(null);
 
   const [permission, setPermission] = useState("denied");
 
@@ -60,11 +55,10 @@ const Board = () => {
         batchSizeState={batchSizeState}
         isTrainingState={isTrainingState}
         trainingResHistoryState={trainingResHistoryState}
+        openHistoryItemIdxState={openHistoryItemIdxState}
       />
     ),
-    [AppTabs.OUTPUTS]: (
-      <OutputsTab trainingResHistoryState={trainingResHistoryState} />
-    ),
+    [AppTabs.OUTPUTS]: <OutputsTab />,
   };
 
   return (

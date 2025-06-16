@@ -45,6 +45,23 @@ export interface Config {
   batch_size: number;
 }
 
+export interface TrainingResult {
+  avg_train_loss: number;
+  avg_train_acc: number;
+  avg_test_loss: number;
+  avg_test_acc: number;
+  train_losses: number[];
+  test_losses: number[];
+  trainingConfig: Config;
+}
+
+export const TrainingResultFormat = {
+  avg_train_loss: { key: "Average Train Loss", positiveTemperament: false },
+  avg_train_acc: { key: "Average Train Accuracy", positiveTemperament: true },
+  avg_test_loss: { key: "Average Test Loss", positiveTemperament: false },
+  avg_test_acc: { key: "Average Test Accuracy", positiveTemperament: true },
+};
+
 export interface TransformerConfig {
   input: string;
   layers: (

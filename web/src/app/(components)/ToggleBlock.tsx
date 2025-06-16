@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   IoIosArrowForward as RightArrowIcon,
   IoIosArrowDown as DownArrowIcon,
@@ -6,6 +6,7 @@ import {
 
 interface ToggleBlockProps {
   title: React.ReactNode;
+  preBody: React.ReactNode;
   children: React.ReactNode;
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -14,13 +15,14 @@ interface ToggleBlockProps {
 
 const ToggleBlock: React.FC<ToggleBlockProps> = ({
   title,
+  preBody,
   children,
   isOpen,
   setIsOpen,
   className,
 }) => {
   return (
-    <div className={`p-4 ${className}`}>
+    <div className={`${className}`}>
       <div className={`w-full ${isOpen && "mb-4"}`}>
         <div
           className="flex w-full cursor-pointer justify-between"
@@ -32,6 +34,7 @@ const ToggleBlock: React.FC<ToggleBlockProps> = ({
           </div>
         </div>
       </div>
+      <div>{preBody}</div>
       <div className={`${!isOpen && "invisible h-0"}`}>{children}</div>
     </div>
   );
