@@ -4,7 +4,7 @@ export const LAYER_BLOCKS: UILayer[] = [
   {
     id: "linear",
     label: "Linear",
-    color: "#20FF8F",
+    color: "#00B359",
     activationFunction: "ReLU",
     inputNeurons: 8,
     outputNeurons: 8,
@@ -12,7 +12,7 @@ export const LAYER_BLOCKS: UILayer[] = [
   {
     id: "conv",
     label: "Conv",
-    color: "#FFD620",
+    color: "#E6A000",
     activationFunction: "ReLU",
     inputNeurons: 8,
     outputNeurons: 8,
@@ -21,7 +21,7 @@ export const LAYER_BLOCKS: UILayer[] = [
   {
     id: "rnn",
     label: "RNN",
-    color: "#FF8C20",
+    color: "#E67300",
     activationFunction: "ReLU",
     inputNeurons: 8,
     outputNeurons: 8,
@@ -30,7 +30,7 @@ export const LAYER_BLOCKS: UILayer[] = [
   {
     id: "gru",
     label: "GRU",
-    color: "#FF4920",
+    color: "#E63900",
     activationFunction: "ReLU",
     inputNeurons: 8,
     outputNeurons: 8,
@@ -39,7 +39,7 @@ export const LAYER_BLOCKS: UILayer[] = [
   {
     id: "flatten",
     label: "Flatten",
-    color: "#FF208F",
+    color: "#E6007A",
     activationFunction: "",
     inputNeurons: 8,
     outputNeurons: 8,

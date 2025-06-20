@@ -37,7 +37,7 @@ const OtherParamsInputs = ({
   };
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="space-y-2">
       {Object.entries(otherParams).map(([paramKey, paramValue]) => {
         const config = PARAM_CONFIG[paramKey] || {
           label: paramKey.charAt(0).toUpperCase() + paramKey.slice(1),
@@ -48,13 +48,16 @@ const OtherParamsInputs = ({
         };
 
         return (
-          <div key={paramKey} className="flex items-center gap-2">
-            <span className="min-w-fit text-sm font-medium">
-              {config.label}:
-            </span>
+          <div
+            key={paramKey}
+            className="flex items-center justify-between gap-2"
+          >
+            <label className="min-w-fit text-xs font-medium text-white/80">
+              {config.label}
+            </label>
             <input
               type="number"
-              className="h-7 w-12 rounded-md text-center text-sm text-zinc-900 shadow-md outline-none"
+              className="h-6 w-12 rounded-md border-0 bg-white/90 text-center text-xs text-slate-900 shadow-sm outline-none backdrop-blur-sm transition-all duration-200 focus:ring-2 focus:ring-white/50"
               value={paramValue}
               min={config.min}
               step={config.step || 1}
@@ -85,47 +88,64 @@ const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
 
   return (
     <div
-      className={`cursor-grab rounded-xl pb-3 pt-4 text-center ring-1 ring-zinc-200`}
-      style={{ backgroundColor: color }}
+      className="group relative cursor-grab rounded-xl p-4 text-white shadow-lg ring-1 ring-white/10 backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:ring-white/20"
+      style={{
+        background: `linear-gradient(135deg, ${color} 0%, ${color}DD 100%)`,
+      }}
     >
-      <div className="mx-4 flex justify-between">
-        <div className="text-xl font-light">{label}</div>
-        <div className="flex gap-1">
-          <input
-            className="h-8 w-10 rounded-md text-center text-zinc-900 shadow-md outline-none"
-            type="number"
-            placeholder="In"
-            value={block?.inputNeurons}
-            onChange={(e) => {
-              const newInputNeurons = parseInt(e.target.value);
-              if (newInputNeurons < 1) return;
-              changeInputNeurons(id, newInputNeurons);
-            }}
-          />
-          <input
-            className="h-8 w-10 rounded-md text-center text-zinc-900 shadow-md outline-none"
-            type="number"
-            placeholder="Out"
-            value={block?.outputNeurons}
-            onChange={(e) => {
-              const newOutputNeurons = parseInt(e.target.value);
-              if (newOutputNeurons < 1) return;
-              changeOutputNeurons(id, newOutputNeurons);
-            }}
-          />
+      {/* Header with layer name and neuron inputs */}
+      <div className="mb-3 flex items-start justify-between">
+        <div className="flex flex-col">
+          <h3 className="text-base font-semibold tracking-wide">{label}</h3>
+        </div>
+
+        <div className="flex gap-1.5">
+          <div className="flex flex-col items-center gap-0.5">
+            <label className="text-xs font-medium text-white/70">In</label>
+            <input
+              className="h-7 w-10 rounded-md border-0 bg-white/90 text-center text-xs text-slate-900 shadow-sm outline-none backdrop-blur-sm transition-all duration-200 focus:ring-2 focus:ring-white/50"
+              type="number"
+              value={block?.inputNeurons}
+              onChange={(e) => {
+                const newInputNeurons = parseInt(e.target.value);
+                if (newInputNeurons < 1) return;
+                changeInputNeurons(id, newInputNeurons);
+              }}
+            />
+          </div>
+          <div className="flex flex-col items-center gap-0.5">
+            <label className="text-xs font-medium text-white/70">Out</label>
+            <input
+              className="h-7 w-10 rounded-md border-0 bg-white/90 text-center text-xs text-slate-900 shadow-sm outline-none backdrop-blur-sm transition-all duration-200 focus:ring-2 focus:ring-white/50"
+              type="number"
+              value={block?.outputNeurons}
+              onChange={(e) => {
+                const newOutputNeurons = parseInt(e.target.value);
+                if (newOutputNeurons < 1) return;
+                changeOutputNeurons(id, newOutputNeurons);
+              }}
+            />
+          </div>
         </div>
       </div>
-      <div className="my-2 flex justify-center text-white">
+
+      {/* Params section */}
+      <div className="mb-3">
         <OtherParamsInputs
           id={id}
           otherParams={block?.otherParams}
           changeOtherParams={changeOtherParams}
         />
       </div>
+
+      {/* Activation function dropdown */}
       {block?.activationFunction && (
-        <div className="relative flex overflow-y-visible">
+        <div className="relative">
+          <label className="mb-1 block text-xs font-medium text-white/70">
+            Activation
+          </label>
           <select
-            className="absolute -bottom-8 left-1/2 -translate-x-1/2 transform cursor-pointer rounded-lg bg-zinc-100 py-2 text-center text-sm text-zinc-900 shadow-md outline-none"
+            className="w-full cursor-pointer rounded-md border-0 bg-white/90 px-3 py-2 text-xs text-slate-900 shadow-sm outline-none backdrop-blur-sm transition-all duration-200 focus:ring-2 focus:ring-white/50"
             value={block?.activationFunction as string}
             onChange={(e) => {
               const newActivationFunction = e.target.value;

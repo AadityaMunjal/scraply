@@ -40,10 +40,10 @@ const DraggableBlock = ({
         active?.id == id && "opacity-0"
       }`}
     >
-      <div className="mb-1 text-lg font-medium">{label}</div>
+      <div className="text-lg font-medium text-white">{label}</div>
 
       {otherParams && Object.keys(otherParams).length > 0 && (
-        <div className="mb-1 flex justify-center gap-1.5 text-xs">
+        <div className="mb-1 mt-1 flex justify-center gap-1.5 text-xs">
           {Object.entries(otherParams).map(([key, value]) => {
             const config = PARAM_CONFIG[key] || { shortLabel: key };
             // Format dimension values as "1D" or "2D"
