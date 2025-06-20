@@ -169,6 +169,13 @@ const boardStore = createStoreWithProducer(produce, {
     setCanvasBlocks: (context, event: { canvasBlocks: UILayer[] }) => {
       context.canvasBlocks = syncLayerConnections(event.canvasBlocks);
     },
+
+    removeLayer: (context, event: { id: string }) => {
+      context.canvasBlocks = context.canvasBlocks.filter(
+        (block) => block.id !== event.id,
+      );
+      context.canvasBlocks = syncLayerConnections(context.canvasBlocks);
+    },
   },
 });
 
@@ -203,6 +210,9 @@ export const useBoardStore = () => {
     },
     setCanvasBlocks: (canvasBlocks: UILayer[]) => {
       boardStore.send({ type: "setCanvasBlocks", canvasBlocks });
+    },
+    removeLayer: (id: string) => {
+      boardStore.send({ type: "removeLayer", id });
     },
 
     drag: {

@@ -84,86 +84,101 @@ const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
     changeInputNeurons,
     changeOutputNeurons,
     changeOtherParams,
+    removeLayer,
   } = useBoardStore();
 
   return (
-    <div
-      className="group relative cursor-grab rounded-xl p-4 text-white shadow-lg ring-1 ring-white/10 backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:ring-white/20"
-      style={{
-        background: `linear-gradient(135deg, ${color} 0%, ${color}DD 100%)`,
-      }}
-    >
-      {/* Header with layer name and neuron inputs */}
-      <div className="mb-3 flex items-start justify-between">
-        <div className="flex flex-col">
-          <h3 className="text-base font-semibold tracking-wide">{label}</h3>
+    <div className="group relative flex items-center gap-2">
+      <div
+        className="flex-1 cursor-grab rounded-xl p-4 text-white shadow-lg ring-1 ring-white/10 backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:ring-white/20"
+        style={{
+          background: `linear-gradient(135deg, ${color} 0%, ${color}DD 100%)`,
+        }}
+      >
+        {/* Header with layer name and neuron inputs */}
+        <div className="mb-3 flex items-start justify-between">
+          <div className="flex flex-col">
+            <h3 className="text-base font-semibold tracking-wide">{label}</h3>
+          </div>
+
+          <div className="flex gap-1.5">
+            <div className="flex flex-col items-center gap-0.5">
+              <label className="text-xs font-medium text-white/70">In</label>
+              <input
+                className="h-7 w-10 rounded-md border-0 bg-white/90 text-center text-xs text-slate-900 shadow-sm outline-none backdrop-blur-sm transition-all duration-200 focus:ring-2 focus:ring-white/50"
+                type="number"
+                value={block?.inputNeurons}
+                onChange={(e) => {
+                  const newInputNeurons = parseInt(e.target.value);
+                  if (newInputNeurons < 1) return;
+                  changeInputNeurons(id, newInputNeurons);
+                }}
+              />
+            </div>
+            <div className="flex flex-col items-center gap-0.5">
+              <label className="text-xs font-medium text-white/70">Out</label>
+              <input
+                className="h-7 w-10 rounded-md border-0 bg-white/90 text-center text-xs text-slate-900 shadow-sm outline-none backdrop-blur-sm transition-all duration-200 focus:ring-2 focus:ring-white/50"
+                type="number"
+                value={block?.outputNeurons}
+                onChange={(e) => {
+                  const newOutputNeurons = parseInt(e.target.value);
+                  if (newOutputNeurons < 1) return;
+                  changeOutputNeurons(id, newOutputNeurons);
+                }}
+              />
+            </div>
+          </div>
         </div>
 
-        <div className="flex gap-1.5">
-          <div className="flex flex-col items-center gap-0.5">
-            <label className="text-xs font-medium text-white/70">In</label>
-            <input
-              className="h-7 w-10 rounded-md border-0 bg-white/90 text-center text-xs text-slate-900 shadow-sm outline-none backdrop-blur-sm transition-all duration-200 focus:ring-2 focus:ring-white/50"
-              type="number"
-              value={block?.inputNeurons}
-              onChange={(e) => {
-                const newInputNeurons = parseInt(e.target.value);
-                if (newInputNeurons < 1) return;
-                changeInputNeurons(id, newInputNeurons);
-              }}
-            />
-          </div>
-          <div className="flex flex-col items-center gap-0.5">
-            <label className="text-xs font-medium text-white/70">Out</label>
-            <input
-              className="h-7 w-10 rounded-md border-0 bg-white/90 text-center text-xs text-slate-900 shadow-sm outline-none backdrop-blur-sm transition-all duration-200 focus:ring-2 focus:ring-white/50"
-              type="number"
-              value={block?.outputNeurons}
-              onChange={(e) => {
-                const newOutputNeurons = parseInt(e.target.value);
-                if (newOutputNeurons < 1) return;
-                changeOutputNeurons(id, newOutputNeurons);
-              }}
-            />
-          </div>
+        {/* Params section */}
+        <div className="mb-3">
+          <OtherParamsInputs
+            id={id}
+            otherParams={block?.otherParams}
+            changeOtherParams={changeOtherParams}
+          />
         </div>
+
+        {/* Activation function dropdown */}
+        {block?.activationFunction && (
+          <div className="relative">
+            <label className="mb-1 block text-xs font-medium text-white/70">
+              Activation
+            </label>
+            <select
+              className="w-full cursor-pointer rounded-md border-0 bg-white/90 px-3 py-2 text-xs text-slate-900 shadow-sm outline-none backdrop-blur-sm transition-all duration-200 focus:ring-2 focus:ring-white/50"
+              value={block?.activationFunction as string}
+              onChange={(e) => {
+                const newActivationFunction = e.target.value;
+                changeActivationFunction(
+                  id,
+                  newActivationFunction as ActivationFunction,
+                );
+              }}
+            >
+              <option value="ReLU">ReLU</option>
+              <option value="Sigmoid">Sigmoid</option>
+              <option value="Tanh">Tanh</option>
+              <option value="Softmax">Softmax</option>
+              <option value="LeakyReLU">LeakyReLU</option>
+              <option value="PReLU">PReLU</option>
+            </select>
+          </div>
+        )}
       </div>
 
-      {/* Params section */}
-      <div className="mb-3">
-        <OtherParamsInputs
-          id={id}
-          otherParams={block?.otherParams}
-          changeOtherParams={changeOtherParams}
-        />
-      </div>
-
-      {/* Activation function dropdown */}
-      {block?.activationFunction && (
-        <div className="relative">
-          <label className="mb-1 block text-xs font-medium text-white/70">
-            Activation
-          </label>
-          <select
-            className="w-full cursor-pointer rounded-md border-0 bg-white/90 px-3 py-2 text-xs text-slate-900 shadow-sm outline-none backdrop-blur-sm transition-all duration-200 focus:ring-2 focus:ring-white/50"
-            value={block?.activationFunction as string}
-            onChange={(e) => {
-              const newActivationFunction = e.target.value;
-              changeActivationFunction(
-                id,
-                newActivationFunction as ActivationFunction,
-              );
-            }}
-          >
-            <option value="ReLU">ReLU</option>
-            <option value="Sigmoid">Sigmoid</option>
-            <option value="Tanh">Tanh</option>
-            <option value="Softmax">Softmax</option>
-            <option value="LeakyReLU">LeakyReLU</option>
-            <option value="PReLU">PReLU</option>
-          </select>
-        </div>
-      )}
+      {/* Remove button */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          removeLayer(id);
+        }}
+        className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-400/60 text-xs text-white opacity-0 transition-all duration-200 hover:bg-gray-500/80 group-hover:opacity-100"
+        title="Remove layer"
+      >
+        ×
+      </button>
     </div>
   );
 };
