@@ -2,6 +2,7 @@
 import React from "react";
 import { useBoardStore } from "~/state/boardStore";
 import { ActivationFunction, UILayer } from "~/types";
+import { PARAM_CONFIG } from "~/util/layerConfig";
 
 interface OverlayBlockProps {
   id: string;
@@ -9,18 +10,6 @@ interface OverlayBlockProps {
   color: string;
   block: UILayer;
 }
-
-const PARAM_CONFIG: Record<
-  string,
-  { label: string; min: number; defaultValue: number }
-> = {
-  kernelSize: { label: "Kernel Size", min: 1, defaultValue: 3 },
-  hiddenSize: { label: "Hidden Size", min: 1, defaultValue: 3 },
-  stride: { label: "Stride", min: 1, defaultValue: 1 },
-  padding: { label: "Padding", min: 0, defaultValue: 0 },
-  dilation: { label: "Dilation", min: 1, defaultValue: 1 },
-  dropout: { label: "Dropout", min: 0, defaultValue: 0.1 },
-};
 
 const OtherParamsInputs = ({
   id,
@@ -50,8 +39,10 @@ const OtherParamsInputs = ({
       {Object.entries(otherParams).map(([paramKey, paramValue]) => {
         const config = PARAM_CONFIG[paramKey] || {
           label: paramKey.charAt(0).toUpperCase() + paramKey.slice(1),
+          shortLabel: paramKey,
           min: 0,
           defaultValue: 1,
+          step: 1,
         };
 
         return (
@@ -64,10 +55,10 @@ const OtherParamsInputs = ({
               className="h-7 w-12 rounded-md text-center text-sm text-zinc-900 shadow-md outline-none"
               value={paramValue}
               min={config.min}
-              step={paramKey === "dropout" ? 0.1 : 1}
+              step={config.step || 1}
               onChange={(e) => {
                 const newValue =
-                  paramKey === "dropout"
+                  config.step === 0.1
                     ? parseFloat(e.target.value)
                     : parseInt(e.target.value);
                 if (!isNaN(newValue)) {
@@ -92,7 +83,7 @@ const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
 
   return (
     <div
-      className={`cursor-grab rounded-2xl pb-3 pt-4 text-center ring-1 ring-zinc-200`}
+      className={`cursor-grab rounded-xl pb-3 pt-4 text-center ring-1 ring-zinc-200`}
       style={{ backgroundColor: color }}
     >
       <div className="mx-4 flex justify-between">

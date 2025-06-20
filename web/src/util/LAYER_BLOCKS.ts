@@ -28,15 +28,6 @@ export const LAYER_BLOCKS: UILayer[] = [
     otherParams: { kernelSize: 3, stride: 1, padding: 1 },
   },
   {
-    id: "conv3D",
-    label: "Conv3D",
-    color: "#FFD620",
-    activationFunction: "ReLU",
-    inputNeurons: 8,
-    outputNeurons: 8,
-    otherParams: { kernelSize: 3, stride: 1, padding: 0, dilation: 1 },
-  },
-  {
     id: "rnn",
     label: "RNN",
     color: "#FF8C20",
