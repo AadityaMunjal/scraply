@@ -9,6 +9,12 @@ export const PARAM_CONFIG: Record<
     step?: number;
   }
 > = {
+  dimension: {
+    label: "Dimension",
+    shortLabel: "Dim",
+    min: 1,
+    defaultValue: 2,
+  },
   kernelSize: {
     label: "Kernel Size",
     shortLabel: "Kernel",

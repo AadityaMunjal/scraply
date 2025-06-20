@@ -28,6 +28,8 @@ const OtherParamsInputs = ({
     const config = PARAM_CONFIG[paramKey];
     if (config && newValue < config.min) return;
 
+    if (paramKey === "dimension" && (newValue < 1 || newValue > 2)) return;
+
     changeOtherParams(id, {
       ...otherParams,
       [paramKey]: newValue,

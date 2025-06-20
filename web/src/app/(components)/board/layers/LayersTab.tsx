@@ -44,8 +44,6 @@ const LayersTab: React.FC<LayersTabProps> = () => {
                 id={block.id}
                 label={block.label}
                 color={block.color}
-                inputNeurons={block.inputNeurons}
-                outputNeurons={block.outputNeurons}
                 otherParams={block.otherParams}
               />
             ))}
