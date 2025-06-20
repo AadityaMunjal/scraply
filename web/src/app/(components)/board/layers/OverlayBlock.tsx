@@ -10,69 +10,86 @@ interface OverlayBlockProps {
   block: UILayer;
 }
 
-const getSpecificBlockParams = (
-  id: string,
-  label: string,
-  changeOtherParam: (id: string, otherParam: number) => void,
-  otherParam?: number,
-) => {
-  const KernelSize = () => {
-    return (
-      <div className="flex">
-        <div className="m-auto">Kernel Size: </div>
-        <input
-          type="number"
-          className="h-8 w-10 rounded-md text-center text-zinc-900 shadow-md outline-none"
-          value={otherParam}
-          onChange={(e) => {
-            const newKernelSize = parseInt(e.target.value);
-            if (newKernelSize < 1) return;
-            changeOtherParam(id, newKernelSize);
-          }}
-        />
-      </div>
-    );
-  };
+const PARAM_CONFIG: Record<
+  string,
+  { label: string; min: number; defaultValue: number }
+> = {
+  kernelSize: { label: "Kernel Size", min: 1, defaultValue: 3 },
+  hiddenSize: { label: "Hidden Size", min: 1, defaultValue: 3 },
+  stride: { label: "Stride", min: 1, defaultValue: 1 },
+  padding: { label: "Padding", min: 0, defaultValue: 0 },
+  dilation: { label: "Dilation", min: 1, defaultValue: 1 },
+  dropout: { label: "Dropout", min: 0, defaultValue: 0.1 },
+};
 
-  const HiddenSize = () => {
-    return (
-      <div className="flex">
-        <div className="m-auto">Hidden Size: </div>
-        <input
-          type="number"
-          className="h-8 w-10 rounded-md text-center text-zinc-900 shadow-md outline-none"
-          value={otherParam}
-          onChange={(e) => {
-            const newHiddenSize = parseInt(e.target.value);
-            if (newHiddenSize < 1) return;
-            changeOtherParam(id, newHiddenSize);
-          }}
-        />
-      </div>
-    );
-  };
-  switch (label) {
-    case "Conv1D":
-      return KernelSize();
-    case "Conv2D":
-      return KernelSize();
-    case "Conv3D":
-      return KernelSize();
-
-    case "LSTM":
-      return HiddenSize();
-    case "GRU":
-      return HiddenSize();
-    case "RNN":
-      return HiddenSize();
-    default:
-      return null;
+const OtherParamsInputs = ({
+  id,
+  otherParams,
+  changeOtherParams,
+}: {
+  id: string;
+  otherParams?: Record<string, number>;
+  changeOtherParams: (id: string, otherParams: Record<string, number>) => void;
+}) => {
+  if (!otherParams || Object.keys(otherParams).length === 0) {
+    return null;
   }
+
+  const handleParamChange = (paramKey: string, newValue: number) => {
+    const config = PARAM_CONFIG[paramKey];
+    if (config && newValue < config.min) return;
+
+    changeOtherParams(id, {
+      ...otherParams,
+      [paramKey]: newValue,
+    });
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      {Object.entries(otherParams).map(([paramKey, paramValue]) => {
+        const config = PARAM_CONFIG[paramKey] || {
+          label: paramKey.charAt(0).toUpperCase() + paramKey.slice(1),
+          min: 0,
+          defaultValue: 1,
+        };
+
+        return (
+          <div key={paramKey} className="flex items-center gap-2">
+            <span className="min-w-fit text-sm font-medium">
+              {config.label}:
+            </span>
+            <input
+              type="number"
+              className="h-7 w-12 rounded-md text-center text-sm text-zinc-900 shadow-md outline-none"
+              value={paramValue}
+              min={config.min}
+              step={paramKey === "dropout" ? 0.1 : 1}
+              onChange={(e) => {
+                const newValue =
+                  paramKey === "dropout"
+                    ? parseFloat(e.target.value)
+                    : parseInt(e.target.value);
+                if (!isNaN(newValue)) {
+                  handleParamChange(paramKey, newValue);
+                }
+              }}
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
 };
 
 const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
-  const { changeActivationFunction, changeNeurons, changeOtherParam } =
-    useBoardStore();
+  const {
+    changeActivationFunction,
+    changeInputNeurons,
+    changeOutputNeurons,
+    changeOtherParams,
+  } = useBoardStore();
+
   return (
     <div
       className={`cursor-grab rounded-2xl pb-3 pt-4 text-center ring-1 ring-zinc-200`}
@@ -80,19 +97,37 @@ const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
     >
       <div className="mx-4 flex justify-between">
         <div className="text-xl font-light">{label}</div>
-        <input
-          className="h-8 w-10 rounded-md text-center text-zinc-900 shadow-md outline-none"
-          type="number"
-          value={block?.neurons}
-          onChange={(e) => {
-            const newNeurons = parseInt(e.target.value);
-            if (newNeurons < 1) return;
-            changeNeurons(id, newNeurons);
-          }}
-        />
+        <div className="flex gap-1">
+          <input
+            className="h-8 w-10 rounded-md text-center text-zinc-900 shadow-md outline-none"
+            type="number"
+            placeholder="In"
+            value={block?.inputNeurons}
+            onChange={(e) => {
+              const newInputNeurons = parseInt(e.target.value);
+              if (newInputNeurons < 1) return;
+              changeInputNeurons(id, newInputNeurons);
+            }}
+          />
+          <input
+            className="h-8 w-10 rounded-md text-center text-zinc-900 shadow-md outline-none"
+            type="number"
+            placeholder="Out"
+            value={block?.outputNeurons}
+            onChange={(e) => {
+              const newOutputNeurons = parseInt(e.target.value);
+              if (newOutputNeurons < 1) return;
+              changeOutputNeurons(id, newOutputNeurons);
+            }}
+          />
+        </div>
       </div>
       <div className="my-2 flex justify-center text-white">
-        {getSpecificBlockParams(id, label, changeOtherParam, block?.otherParam)}
+        <OtherParamsInputs
+          id={id}
+          otherParams={block?.otherParams}
+          changeOtherParams={changeOtherParams}
+        />
       </div>
       {block?.activationFunction && (
         <div className="relative flex overflow-y-visible">

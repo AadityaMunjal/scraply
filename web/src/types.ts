@@ -7,8 +7,9 @@ export interface UILayer {
   id: string;
   label: string;
   color: string;
-  neurons: number;
-  otherParam?: number;
+  inputNeurons: number;
+  outputNeurons: number;
+  otherParams?: Record<string, number>;
   activationFunction: ActivationFunction;
 }
 

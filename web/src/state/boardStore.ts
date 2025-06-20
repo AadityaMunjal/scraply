@@ -11,6 +11,23 @@ import { produce } from "immer";
 import { LAYER_BLOCKS } from "~/util/LAYER_BLOCKS";
 import { ActivationFunction, UILayer } from "~/types";
 
+const syncLayerConnections = (blocks: UILayer[]): UILayer[] => {
+  return blocks.map((block, index) => {
+    if (index === 0) {
+      return block;
+    }
+
+    const previousLayer = blocks[index - 1];
+    if (previousLayer) {
+      return {
+        ...block,
+        inputNeurons: previousLayer.outputNeurons,
+      };
+    }
+    return block;
+  });
+};
+
 const boardStore = createStoreWithProducer(produce, {
   context: { canvasBlocks: [], activeBlock: null } as {
     canvasBlocks: UILayer[];
@@ -41,11 +58,28 @@ const boardStore = createStoreWithProducer(produce, {
         const newIndex = context.canvasBlocks.findIndex(
           (block) => block.id === over.id,
         );
-        context.canvasBlocks = arrayMove(
+
+        const reorderedBlocks = arrayMove(
           context.canvasBlocks,
           oldIndex,
           newIndex,
         );
+
+        // Update neuron connectivity after reordering
+        context.canvasBlocks = reorderedBlocks.map((block, index) => {
+          if (index === 0) {
+            return block;
+          }
+
+          const previousLayer = reorderedBlocks[index - 1];
+          if (previousLayer) {
+            return {
+              ...block,
+              inputNeurons: previousLayer.outputNeurons,
+            };
+          }
+          return block;
+        });
       }
     },
 
@@ -60,6 +94,15 @@ const boardStore = createStoreWithProducer(produce, {
           ...context.activeBlock,
           id: `${context.activeBlock.id}-${Date.now()}`,
         }; // Ensure unique ID for each new block
+
+        if (context.canvasBlocks.length > 0) {
+          const lastBlock =
+            context.canvasBlocks[context.canvasBlocks.length - 1];
+          if (lastBlock) {
+            newBlock.inputNeurons = lastBlock.outputNeurons;
+          }
+        }
+
         context.canvasBlocks.push(newBlock);
       }
 
@@ -76,22 +119,55 @@ const boardStore = createStoreWithProducer(produce, {
       );
     },
 
-    changeNeurons: (context, event: { id: string; neurons: number }) => {
-      const { id, neurons } = event;
+    changeInputNeurons: (
+      context,
+      event: { id: string; inputNeurons: number },
+    ) => {
+      const { id, inputNeurons } = event;
       context.canvasBlocks = context.canvasBlocks.map((block) =>
-        block.id === id ? { ...block, neurons } : block,
+        block.id === id ? { ...block, inputNeurons } : block,
       );
     },
 
-    changeOtherParam: (context, event: { id: string; otherParam: number }) => {
-      const { id, otherParam } = event;
-      context.canvasBlocks = context.canvasBlocks.map((block) =>
-        block.id === id ? { ...block, otherParam } : block,
+    changeOutputNeurons: (
+      context,
+      event: { id: string; outputNeurons: number },
+    ) => {
+      const { id, outputNeurons } = event;
+
+      const currentLayerIndex = context.canvasBlocks.findIndex(
+        (block) => block.id === id,
       );
+
+      context.canvasBlocks = context.canvasBlocks.map((block, index) => {
+        if (block.id === id) {
+          return { ...block, outputNeurons };
+        }
+
+        if (index === currentLayerIndex + 1) {
+          return { ...block, inputNeurons: outputNeurons };
+        }
+
+        return block;
+      });
+    },
+
+    changeOtherParams: (
+      context,
+      event: { id: string; otherParams: Record<string, number> },
+    ) => {
+      const { id, otherParams } = event;
+      context.canvasBlocks = context.canvasBlocks.map((block) =>
+        block.id === id ? { ...block, otherParams } : block,
+      );
+    },
+
+    synchronizeConnections: (context) => {
+      context.canvasBlocks = syncLayerConnections(context.canvasBlocks);
     },
 
     setCanvasBlocks: (context, event: { canvasBlocks: UILayer[] }) => {
-      context.canvasBlocks = event.canvasBlocks;
+      context.canvasBlocks = syncLayerConnections(event.canvasBlocks);
     },
   },
 });
@@ -113,13 +189,18 @@ export const useBoardStore = () => {
         activationFunction,
       });
     },
-    changeNeurons: (id: string, neurons: number) => {
-      boardStore.send({ type: "changeNeurons", id, neurons });
+    changeInputNeurons: (id: string, inputNeurons: number) => {
+      boardStore.send({ type: "changeInputNeurons", id, inputNeurons });
     },
-    changeOtherParam: (id: string, otherParam: number) => {
-      boardStore.send({ type: "changeOtherParam", id, otherParam });
+    changeOutputNeurons: (id: string, outputNeurons: number) => {
+      boardStore.send({ type: "changeOutputNeurons", id, outputNeurons });
     },
-
+    changeOtherParams: (id: string, otherParams: Record<string, number>) => {
+      boardStore.send({ type: "changeOtherParams", id, otherParams });
+    },
+    synchronizeConnections: () => {
+      boardStore.send({ type: "synchronizeConnections" });
+    },
     setCanvasBlocks: (canvasBlocks: UILayer[]) => {
       boardStore.send({ type: "setCanvasBlocks", canvasBlocks });
     },

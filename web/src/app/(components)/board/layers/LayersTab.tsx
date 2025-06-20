@@ -13,35 +13,9 @@ import DraggableBlock from "./DraggableBlock";
 import DroppableCanvas from "./DroppableCanvas";
 import OverlayBlock from "./OverlayBlock";
 
-const DEMO_CARDS = [
-  {
-    title: "Canvas Area",
-    description: `Drag and drop layers ("scraps") here to build your model. Drag and drop layers ("scraps") here to build your model. Drag and drop layers ("scraps") here to build your model.`,
-    x: 0,
-    y: 0,
-    section: "canvas",
-  },
-  {
-    title: "Scraps Area",
-    description: `Drag and drop layers ("scraps") here to build your model. Drag and drop layers ("scraps") here to build your model. Drag and drop layers ("scraps") here to build your model.`,
-    x: 0,
-    y: 0,
-    section: "scraps",
-  },
-  {
-    title: "Training Area",
-    description: `Drag and drop layers ("scraps") here to build your model. Drag and drop layers ("scraps") here to build your model. Drag and drop layers ("scraps") here to build your model.`,
-    x: 0,
-    y: 0,
-    section: "training",
-  },
-];
+interface LayersTabProps {}
 
-interface LayersTabProps {
-  selectedDataset: string;
-}
-
-const LayersTab = ({ selectedDataset }: LayersTabProps) => {
+const LayersTab: React.FC<LayersTabProps> = () => {
   const { canvasBlocks, activeBlock, drag } = useBoardStore();
 
   const sensors = useSensors(

@@ -13,13 +13,20 @@ export const getConfig = (
   for (let i = 0; i < blocks.length; i++) {
     const block = blocks[i]!;
 
-    const currentNeuron = block.neurons;
-    const nextNeuron = blocks[i + 1]?.neurons || 1; // Default to 1 if no next block, could change based on the dataset
+    const inputNeurons = block.inputNeurons;
+    const outputNeurons = block.outputNeurons;
+
+    // Extract other parameters if they exist
+    const otherParamValues = block.otherParams
+      ? Object.values(block.otherParams)
+      : [];
+
     layers.push({
       kind: block.label,
-      args: block.otherParam
-        ? [currentNeuron, nextNeuron, block.otherParam]
-        : [currentNeuron, nextNeuron],
+      args:
+        otherParamValues.length > 0
+          ? [inputNeurons, outputNeurons, ...otherParamValues]
+          : [inputNeurons, outputNeurons],
     });
 
     if (block.activationFunction) {

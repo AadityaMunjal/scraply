@@ -40,7 +40,6 @@ const TrainingTab: React.FC<TrainingTabProps> = ({
   const [batchSize, setBatchSize] = batchSizeState;
   const [isTraining, setIsTraining] = isTrainingState;
   const [trainingResHistory, setTrainingResHistory] = trainingResHistoryState;
-  const [openHistoryItemIdx, setOpenHistoryItemIdx] = openHistoryItemIdxState;
 
   return (
     <div className="mx-auto flex h-full items-center justify-center p-4">

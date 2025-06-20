@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import LayersTab from "./layers/LayersTab";
 import { AppTabs, TrainingResult } from "~/types";
 import DATASETS from "~/util/DATASETS";
@@ -24,27 +24,8 @@ const Board = () => {
   const trainingResHistoryState = useState<TrainingResult[]>([]);
   const openHistoryItemIdxState = useState<number | null>(null);
 
-  const [permission, setPermission] = useState("denied");
-
-  useEffect(() => {
-    if ("Notification" in window) {
-      Notification.requestPermission().then(setPermission);
-    }
-    console.log(permission);
-  }, []);
-
-  const showNotification = (title: string, body: string) => {
-    if (!("Notification" in window)) return;
-    if (permission === "granted") {
-      new Notification(title, {
-        body,
-        // icon: "favicon.png",
-      });
-    }
-  };
-
   const Tabs: Record<AppTabs, React.ReactNode> = {
-    [AppTabs.LAYERS]: <LayersTab selectedDataset={selectedDataset} />,
+    [AppTabs.LAYERS]: <LayersTab />,
     [AppTabs.TRAINING]: (
       <TrainingTab
         selectedDataset={selectedDataset}
