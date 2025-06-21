@@ -5,6 +5,18 @@ const LAYERS: Dataset[] = [
     label: "Pima Diabetes",
     inputName: "pima",
   },
+  {
+    label: "MNIST",
+    inputName: "MNIST",
+  },
+  {
+    label: "FashionMNIST",
+    inputName: "FashionMNIST",
+  },
+  {
+    label: "CIFAR-10",
+    inputName: "CIFAR10",
+  },
 ];
 
 const TRANSFORMERS: Dataset[] = [
