@@ -6,21 +6,18 @@ import { downloadFile, getConfig } from "~/util/board.util";
 interface HistoryItemProps {
   idx: number;
   trainingRes: TrainingResult;
-  openHistoryItemIdxState: [
-    number | null,
-    React.Dispatch<React.SetStateAction<number | null>>,
-  ];
+  openHistoryItemIdx: number | null;
+  setOpenHistoryItemIdx: (idx: number | null) => void;
   nextTrainingRes?: TrainingResult;
 }
 
 const HistoryItem: React.FC<HistoryItemProps> = ({
   idx,
   trainingRes,
-  openHistoryItemIdxState,
+  openHistoryItemIdx,
+  setOpenHistoryItemIdx,
   nextTrainingRes,
 }) => {
-  const [openHistoryItemIdx, setOpenHistoryItemIdx] = openHistoryItemIdxState;
-
   const getDiffUI = (diff: number) => {
     const roundedDiff = Math.round(diff);
     if (roundedDiff === 0) return null;

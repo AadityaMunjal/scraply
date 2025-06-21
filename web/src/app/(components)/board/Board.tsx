@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import LayersTab from "./layers/LayersTab";
-import { AppTabs, TrainingResult } from "~/types";
+import { AppTabs } from "~/types";
 import DATASETS from "~/util/DATASETS";
 import Toggle from "../Toggle";
 import TrainingTab from "./training/TrainingTab";
@@ -13,32 +13,9 @@ const Board = () => {
     DATASETS[0]!.inputName,
   );
 
-  // global layer state
-  const lossState = useState("BCE");
-  const optimizerState = useState("Adam");
-  const learningRateState = useState(0.001);
-  const epochState = useState(100);
-  const batchSizeState = useState(10);
-
-  const isTrainingState = useState(false);
-  const trainingResHistoryState = useState<TrainingResult[]>([]);
-  const openHistoryItemIdxState = useState<number | null>(null);
-
   const Tabs: Record<AppTabs, React.ReactNode> = {
     [AppTabs.LAYERS]: <LayersTab />,
-    [AppTabs.TRAINING]: (
-      <TrainingTab
-        selectedDataset={selectedDataset}
-        lossState={lossState}
-        optimizerState={optimizerState}
-        learningRateState={learningRateState}
-        epochState={epochState}
-        batchSizeState={batchSizeState}
-        isTrainingState={isTrainingState}
-        trainingResHistoryState={trainingResHistoryState}
-        openHistoryItemIdxState={openHistoryItemIdxState}
-      />
-    ),
+    [AppTabs.TRAINING]: <TrainingTab selectedDataset={selectedDataset} />,
     [AppTabs.OUTPUTS]: <OutputsTab />,
   };
 
