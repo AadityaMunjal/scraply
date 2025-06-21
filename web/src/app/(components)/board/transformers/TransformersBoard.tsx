@@ -213,7 +213,7 @@ const TrainConfig: React.FC<{
                 });
                 l.push({
                   kind: "Output",
-                  args: dropout,
+                  args: [dropout],
                 });
                 startTransformerTraining({
                   loss,
