@@ -9,6 +9,7 @@ import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { LAYER_BLOCKS } from "~/util/LAYER_BLOCKS";
 import { ActivationFunction, UILayer } from "~/types";
+import { validateUILayers, ValidationError } from "~/utils/validation";
 
 const syncLayerConnections = (blocks: UILayer[]): UILayer[] => {
   return blocks.map((block, index) => {
@@ -30,6 +31,8 @@ const syncLayerConnections = (blocks: UILayer[]): UILayer[] => {
 interface BoardState {
   canvasBlocks: UILayer[];
   activeBlock: UILayer | null;
+  layerValidationErrors: ValidationError[];
+  layersValid: boolean;
 
   // Actions
   dragStart: (event: DragStartEvent) => void;
@@ -47,10 +50,16 @@ interface BoardState {
   removeLayer: (id: string) => void;
 }
 
+const validateLayers = (blocks: UILayer[]): ValidationError[] => {
+  return validateUILayers(blocks);
+};
+
 export const useBoardStore = create<BoardState>()(
   immer((set, get) => ({
     canvasBlocks: [],
     activeBlock: null,
+    layerValidationErrors: [],
+    layersValid: true,
 
     dragStart: (event: DragStartEvent) => {
       set((state) => {
@@ -126,6 +135,8 @@ export const useBoardStore = create<BoardState>()(
           }
 
           state.canvasBlocks.push(newBlock);
+          state.layerValidationErrors = validateLayers(state.canvasBlocks);
+          state.layersValid = state.layerValidationErrors.length === 0;
         }
 
         state.activeBlock = null;
@@ -148,6 +159,8 @@ export const useBoardStore = create<BoardState>()(
         state.canvasBlocks = state.canvasBlocks.map((block) =>
           block.id === id ? { ...block, inputNeurons } : block,
         );
+        state.layerValidationErrors = validateLayers(state.canvasBlocks);
+        state.layersValid = state.layerValidationErrors.length === 0;
       });
     },
 
@@ -168,6 +181,9 @@ export const useBoardStore = create<BoardState>()(
 
           return block;
         });
+
+        state.layerValidationErrors = validateLayers(state.canvasBlocks);
+        state.layersValid = state.layerValidationErrors.length === 0;
       });
     },
 
@@ -176,6 +192,8 @@ export const useBoardStore = create<BoardState>()(
         state.canvasBlocks = state.canvasBlocks.map((block) =>
           block.id === id ? { ...block, otherParams } : block,
         );
+        state.layerValidationErrors = validateLayers(state.canvasBlocks);
+        state.layersValid = state.layerValidationErrors.length === 0;
       });
     },
 
@@ -197,6 +215,8 @@ export const useBoardStore = create<BoardState>()(
           (block) => block.id !== id,
         );
         state.canvasBlocks = syncLayerConnections(state.canvasBlocks);
+        state.layerValidationErrors = validateLayers(state.canvasBlocks);
+        state.layersValid = state.layerValidationErrors.length === 0;
       });
     },
   })),

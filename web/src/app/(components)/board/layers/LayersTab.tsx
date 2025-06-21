@@ -12,12 +12,20 @@ import { LAYER_BLOCKS } from "~/util/LAYER_BLOCKS";
 import DraggableBlock from "./DraggableBlock";
 import DroppableCanvas from "./DroppableCanvas";
 import OverlayBlock from "./OverlayBlock";
+import ValidationDisplay from "../../ValidationDisplay";
 
 interface LayersTabProps {}
 
 const LayersTab: React.FC<LayersTabProps> = () => {
-  const { canvasBlocks, activeBlock, dragStart, dragOver, dragEnd } =
-    useBoardStore();
+  const {
+    canvasBlocks,
+    activeBlock,
+    dragStart,
+    dragOver,
+    dragEnd,
+    layerValidationErrors,
+    layersValid,
+  } = useBoardStore();
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -55,6 +63,18 @@ const LayersTab: React.FC<LayersTabProps> = () => {
           <div className="relative">
             <DroppableCanvas />
           </div>
+
+          {/* Layer Validation */}
+          {canvasBlocks.length > 0 && (
+            <div className="mt-4">
+              <ValidationDisplay
+                errors={layerValidationErrors}
+                isValid={layersValid}
+                showSuccess={layersValid}
+                className="text-sm"
+              />
+            </div>
+          )}
         </div>
       </div>
 

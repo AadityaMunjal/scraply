@@ -3,6 +3,9 @@ export type Dataset = {
   inputName: string;
 };
 
+export type LossFunction = "BCE" | "CrossEntropy";
+export type OptimizerType = "Adam" | "AdamW" | "SGD" | "RMSprop";
+
 export interface UILayer {
   id: string;
   label: string;
@@ -36,9 +39,9 @@ type LayerBlock = Layer | LayerActivationFunction;
 export interface Config {
   input: string;
   layers: LayerBlock[];
-  loss: string;
+  loss: LossFunction;
   optimizer: {
-    kind: string;
+    kind: OptimizerType;
     lr: number;
   };
   learning_rate: number;
@@ -75,9 +78,9 @@ export interface TransformerConfig {
         args: number;
       }
   )[];
-  loss: string;
+  loss: LossFunction;
   optimizer: {
-    kind: string;
+    kind: OptimizerType;
     lr: number;
   };
   epoch: number;

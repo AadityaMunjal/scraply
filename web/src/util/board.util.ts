@@ -1,14 +1,20 @@
-import { Config, TransformerConfig, UILayer } from "~/types";
+import {
+  Config,
+  TransformerConfig,
+  UILayer,
+  LossFunction,
+  OptimizerType,
+} from "~/types";
 
 export const getConfig = (
   input: string,
   blocks: UILayer[],
-  loss: string,
-  optimizer: string,
+  loss: LossFunction,
+  optimizer: OptimizerType,
   learningRate: number,
   epoch: number,
   batch_size: number,
-) => {
+): Config => {
   const layers = [];
   for (let i = 0; i < blocks.length; i++) {
     const block = blocks[i]!;
@@ -83,20 +89,28 @@ export const downloadFile = async (config: any) => {
 };
 
 export const startTraining = async (config: Config) => {
-  return await fetch("http://127.0.0.1:5000/train", {
-    method: "POST",
-    body: JSON.stringify(config),
-    headers: {
-      "Content-Type": "application/json",
-    },
-  })
-    .then((res) => {
-      return res.json();
-    })
-    .then((data) => {
-      console.log(data);
-      return data;
+  try {
+    const response = await fetch("http://127.0.0.1:5000/train", {
+      method: "POST",
+      body: JSON.stringify(config),
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
+
+    if (!response.ok) {
+      throw new Error(
+        `Training failed: ${response.status} ${response.statusText}`,
+      );
+    }
+
+    const data = await response.json();
+    console.log(data);
+    return data;
+  } catch (error) {
+    console.error("Training error:", error);
+    throw error;
+  }
 };
 
 export const getArchitectureSuggestion = async (dataset: string) => {
@@ -116,21 +130,29 @@ export const getArchitectureSuggestion = async (dataset: string) => {
 };
 
 export const startTransformerTraining = async (config: TransformerConfig) => {
-  console.log(config);
-  return await fetch("http://127.0.0.1:5000/transformertrain", {
-    method: "POST",
-    body: JSON.stringify(config),
-    headers: {
-      "Content-Type": "application/json",
-    },
-  })
-    .then((res) => {
-      return res.json();
-    })
-    .then((data) => {
-      console.log(data);
-      return data;
+  try {
+    console.log(config);
+    const response = await fetch("http://127.0.0.1:5000/transformertrain", {
+      method: "POST",
+      body: JSON.stringify(config),
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
+
+    if (!response.ok) {
+      throw new Error(
+        `Transformer training failed: ${response.status} ${response.statusText}`,
+      );
+    }
+
+    const data = await response.json();
+    console.log(data);
+    return data;
+  } catch (error) {
+    console.error("Transformer training error:", error);
+    throw error;
+  }
 };
 
 export const transformerTest = async (temperature: number, prompt: string) => {

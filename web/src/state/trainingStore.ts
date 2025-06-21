@@ -1,14 +1,20 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
-import { TrainingResult } from "~/types";
+import { TrainingResult, LossFunction, OptimizerType } from "~/types";
+import { DEFAULT_TRAINING_CONFIG } from "~/configs/training";
+import { validateTrainingConfig, ValidationError } from "~/utils/validation";
 
 interface TrainingConfigState {
   // Configuration
-  loss: string;
-  optimizer: string;
+  loss: LossFunction;
+  optimizer: OptimizerType;
   learningRate: number;
   epochs: number;
   batchSize: number;
+
+  // Validation state
+  validationErrors: ValidationError[];
+  isValid: boolean;
 
   // Training state
   isTraining: boolean;
@@ -16,8 +22,8 @@ interface TrainingConfigState {
   openHistoryItemIdx: number | null;
 
   // Configuration actions
-  setLoss: (loss: string) => void;
-  setOptimizer: (optimizer: string) => void;
+  setLoss: (loss: LossFunction) => void;
+  setOptimizer: (optimizer: OptimizerType) => void;
   setLearningRate: (rate: number) => void;
   setEpochs: (epochs: number) => void;
   setBatchSize: (size: number) => void;
@@ -30,33 +36,47 @@ interface TrainingConfigState {
   resetConfig: () => void;
 }
 
-const defaultConfig = {
-  loss: "BCE",
-  optimizer: "Adam",
-  learningRate: 0.001,
-  epochs: 100,
-  batchSize: 10,
+const defaultConfig = DEFAULT_TRAINING_CONFIG;
+
+const validateCurrentConfig = (
+  state: TrainingConfigState,
+): ValidationError[] => {
+  return validateTrainingConfig({
+    loss: state.loss,
+    optimizer: { kind: state.optimizer, lr: state.learningRate },
+    epoch: state.epochs,
+    batch_size: state.batchSize,
+    layers: [], // Will be validated separately in components
+  });
 };
 
 export const useTrainingStore = create<TrainingConfigState>()(
   immer((set) => ({
     ...defaultConfig,
 
+    // Initial validation state
+    validationErrors: [],
+    isValid: true,
+
     // Initial training state
     isTraining: false,
     trainingHistory: [],
     openHistoryItemIdx: null,
 
-    // Config actions
-    setLoss: (loss: string) => {
+    // Config actions with validation
+    setLoss: (loss: LossFunction) => {
       set((state) => {
         state.loss = loss;
+        state.validationErrors = validateCurrentConfig(state);
+        state.isValid = state.validationErrors.length === 0;
       });
     },
 
-    setOptimizer: (optimizer: string) => {
+    setOptimizer: (optimizer: OptimizerType) => {
       set((state) => {
         state.optimizer = optimizer;
+        state.validationErrors = validateCurrentConfig(state);
+        state.isValid = state.validationErrors.length === 0;
       });
     },
 
@@ -64,6 +84,8 @@ export const useTrainingStore = create<TrainingConfigState>()(
       set((state) => {
         if (rate > 0) {
           state.learningRate = rate;
+          state.validationErrors = validateCurrentConfig(state);
+          state.isValid = state.validationErrors.length === 0;
         }
       });
     },
@@ -72,6 +94,8 @@ export const useTrainingStore = create<TrainingConfigState>()(
       set((state) => {
         if (epochs > 0) {
           state.epochs = epochs;
+          state.validationErrors = validateCurrentConfig(state);
+          state.isValid = state.validationErrors.length === 0;
         }
       });
     },
@@ -80,6 +104,8 @@ export const useTrainingStore = create<TrainingConfigState>()(
       set((state) => {
         if (size > 0) {
           state.batchSize = size;
+          state.validationErrors = validateCurrentConfig(state);
+          state.isValid = state.validationErrors.length === 0;
         }
       });
     },
@@ -113,6 +139,8 @@ export const useTrainingStore = create<TrainingConfigState>()(
     resetConfig: () => {
       set((state) => {
         Object.assign(state, defaultConfig);
+        state.validationErrors = [];
+        state.isValid = true;
       });
     },
   })),

@@ -2,6 +2,9 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { startTransformerTraining, transformerTest } from "~/util/board.util";
 import { ResponsiveLine } from "@nivo/line";
+import { LossFunction, OptimizerType } from "~/types";
+import { DEFAULT_TRAINING_CONFIG } from "~/configs/training";
+import SharedTrainingConfig from "../training/SharedTrainingConfig";
 
 interface Decoder {
   title: string;
@@ -84,11 +87,15 @@ const TrainConfig: React.FC<{
   dropout: number;
   selectedDataset: string;
 }> = ({ decoders, dropout, selectedDataset }) => {
-  const [loss, setLoss] = useState("BCE");
-  const [optimizer, setOptimizer] = useState("Adam");
-  const [learningRate, setLearningRate] = useState(0.001);
-  const [epochs, setEpochs] = useState(100);
-  const [batchSize, setBatchSize] = useState(10);
+  const [loss, setLoss] = useState<LossFunction>(DEFAULT_TRAINING_CONFIG.loss);
+  const [optimizer, setOptimizer] = useState<OptimizerType>(
+    DEFAULT_TRAINING_CONFIG.optimizer,
+  );
+  const [learningRate, setLearningRate] = useState(
+    DEFAULT_TRAINING_CONFIG.learningRate,
+  );
+  const [epochs, setEpochs] = useState(DEFAULT_TRAINING_CONFIG.epochs);
+  const [batchSize, setBatchSize] = useState(DEFAULT_TRAINING_CONFIG.batchSize);
 
   const [isTraining, setIsTraining] = useState(false);
   const [results, setResults] = useState<{ train_loss: number[] } | null>(null);
@@ -112,82 +119,20 @@ const TrainConfig: React.FC<{
       </div>
       <div className="rounded-lg bg-zinc-800 p-1 px-2 py-1 text-sm">
         <div>
-          <div className="my-1 flex">
-            Loss:{" "}
-            <select
-              className="mx-1 cursor-pointer rounded bg-zinc-700 p-1 text-sm text-white outline-none"
-              value={loss}
-              onChange={(e) => setLoss(e.target.value)}
-            >
-              <option value="BCE">BCE</option>
-              <option value="CrossEntropy">CrossEntropy</option>
-            </select>
-          </div>
-          <div className="my-1 flex">
-            Optimizer:{" "}
-            <select
-              className="mx-1 cursor-pointer rounded bg-zinc-700 p-1 text-sm text-white outline-none"
-              value={optimizer}
-              onChange={(e) => setOptimizer(e.target.value)}
-            >
-              <option value="Adam">Adam</option>
-              <option value="AdamW">AdamW</option>
-              <option value="SGD">SGD</option>
-              <option value="RMSprop">RMSprop</option>
-            </select>
-          </div>
-          <div className="my-1 flex">
-            Learning Rate:{" "}
-            <input
-              type="range"
-              name="Learning Rate"
-              value={learningRate}
-              onChange={(e) => setLearningRate(parseFloat(e.target.value))}
-              min={0.001}
-              max={0.1}
-              step={0.001}
-            />
-            <input
-              type="number"
-              className="mx-1 w-14 rounded bg-zinc-700 py-1 text-right outline-none"
-              value={learningRate}
-              onChange={(e) => setLearningRate(parseFloat(e.target.value))}
-            />
-          </div>
-          <div className="my-1 flex">
-            Epochs:{" "}
-            <input
-              type="range"
-              name="Batch Size"
-              value={epochs}
-              onChange={(e) => setEpochs(parseInt(e.target.value))}
-              min={1}
-              max={1000}
-            />
-            <input
-              type="number"
-              className="mx-1 w-14 rounded bg-zinc-700 py-1 text-right outline-none"
-              value={epochs}
-              onChange={(e) => setEpochs(parseInt(e.target.value))}
-            />
-          </div>
-          <div className="my-1 flex">
-            Batch Size:{" "}
-            <input
-              type="range"
-              name="Batch Size"
-              value={batchSize}
-              onChange={(e) => setBatchSize(parseInt(e.target.value))}
-              min={1}
-              max={100}
-            />
-            <input
-              type="number"
-              className="mx-1 w-14 rounded bg-zinc-700 py-1 text-right outline-none"
-              value={batchSize}
-              onChange={(e) => setBatchSize(parseInt(e.target.value))}
-            />
-          </div>
+          <SharedTrainingConfig
+            loss={loss}
+            optimizer={optimizer}
+            learningRate={learningRate}
+            epochs={epochs}
+            batchSize={batchSize}
+            setLoss={setLoss}
+            setOptimizer={setOptimizer}
+            setLearningRate={setLearningRate}
+            setEpochs={setEpochs}
+            setBatchSize={setBatchSize}
+            validationErrors={[]}
+            variant="compact"
+          />
           <div
             className={`m-2 ${isTraining && "mt-8"} flex justify-center transition-all duration-300`}
           >
