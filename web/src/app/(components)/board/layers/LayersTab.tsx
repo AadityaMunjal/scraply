@@ -16,7 +16,8 @@ import OverlayBlock from "./OverlayBlock";
 interface LayersTabProps {}
 
 const LayersTab: React.FC<LayersTabProps> = () => {
-  const { canvasBlocks, activeBlock, drag } = useBoardStore();
+  const { canvasBlocks, activeBlock, dragStart, dragOver, dragEnd } =
+    useBoardStore();
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -29,9 +30,9 @@ const LayersTab: React.FC<LayersTabProps> = () => {
   return (
     <DndContext
       collisionDetection={closestCenter}
-      onDragStart={drag.start}
-      onDragOver={drag.over}
-      onDragEnd={drag.end}
+      onDragStart={dragStart}
+      onDragOver={dragOver}
+      onDragEnd={dragEnd}
       sensors={sensors}
     >
       <div className={`mx-20 mt-10 flex`}>
