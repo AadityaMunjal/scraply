@@ -107,12 +107,7 @@ const HistoryItem: React.FC<HistoryItemProps> = ({
                 data={[
                   {
                     id: "train_loss",
-                    data: trainingRes.train_losses.map(
-                      (loss: number, i: number) => ({
-                        x: i,
-                        y: loss,
-                      }),
-                    ),
+                    data: trainingRes.train_losses,
                   },
                 ]}
                 margin={{ top: 20, right: 20, bottom: 50, left: 60 }}

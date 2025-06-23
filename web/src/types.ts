@@ -54,8 +54,8 @@ export interface TrainingResult {
   avg_train_acc: number;
   avg_test_loss: number;
   avg_test_acc: number;
-  train_losses: number[];
-  test_losses: number[];
+  train_losses: { x: number; y: number }[];
+  test_losses: { x: number; y: number }[];
   trainingConfig: Config;
 }
 

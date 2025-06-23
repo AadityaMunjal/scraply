@@ -45,15 +45,13 @@ class DynamicModel(nn.Module):
                 elif layer_type == "Flatten":
                     start_dim, end_dim = layer_args
                     component = LAYERS[layer_type](start_dim, end_dim)
-                    
+
                 elif layer_type in ["MaxPool1D", "MaxPool2D", "MaxPool3D"]:
                     k_size, stride = layer_args
                     component = LAYERS[layer_type](k_size, stride)
-                    
+
                 if component is None:
                     print(f"Layer {layer_type} not recognized or not implemented.")
-                    
-                    
 
             elif layer_type in ACTIVATIONS.keys():  # is activation function
                 component = ACTIVATIONS[layer_type]
@@ -61,8 +59,6 @@ class DynamicModel(nn.Module):
             else:
                 print("Invalid layer type")
                 break
-            
-            
 
             self.layer_list.append(component)
 
@@ -252,9 +248,7 @@ class TransformerTrain:  # input is DATALOADERS
         self.device = (  # for GPU access --> works with CPU as well
             "cuda"
             if torch.cuda.is_available()
-            else "mps"
-            if torch.backends.mps.is_available()
-            else "cpu"
+            else "mps" if torch.backends.mps.is_available() else "cpu"
         )
         print(f"Using {self.device} device")
 
@@ -315,9 +309,7 @@ class Train:
         self.device = (  # for GPU access --> works with CPU as well
             "cuda"
             if torch.cuda.is_available()
-            else "mps"
-            if torch.backends.mps.is_available()
-            else "cpu"
+            else "mps" if torch.backends.mps.is_available() else "cpu"
         )
         print(f"Using {self.device} device")
 
@@ -336,14 +328,18 @@ class Train:
             # could normalize the data here
             # create tensors
             X_train_tensor = torch.tensor(X_train, dtype=torch.float32)
-            y_train_tensor = torch.tensor(y_train, dtype=torch.float32).reshape(-1, 1)  # Reshape for binary classification # SWITCHED FROM 1 1 TO -1 1
+            y_train_tensor = torch.tensor(y_train, dtype=torch.float32).reshape(
+                -1, 1
+            )  # Reshape for binary classification # SWITCHED FROM 1 1 TO -1 1
             X_test_tensor = torch.tensor(X_test, dtype=torch.float32)
             y_test_tensor = torch.tensor(y_test, dtype=torch.float32).reshape(-1, 1)
             # create dataset objects
             train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
             test_dataset = TensorDataset(X_test_tensor, y_test_tensor)
             # create dataLoader objects
-            self.train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+            self.train_loader = DataLoader(
+                train_dataset, batch_size=batch_size, shuffle=True
+            )
             self.test_loader = DataLoader(
                 test_dataset, batch_size=batch_size, shuffle=False
             )
@@ -363,8 +359,7 @@ class Train:
         )
 
         self.final_loss = -1
-        
-        
+
     def train(self, n_epochs, batch_size):
         size = len(self.train_loader.dataset)
         # num_batches = len(self.train_loader)
@@ -404,7 +399,7 @@ class Train:
         # Calculate accuracy as a percentage
         avg_acc = 100 * correct / total
         return avg_train_loss, avg_acc
-        
+
     def test(self, n_epochs, batch_size):
         size = len(self.test_loader.dataset)
         num_batches = len(self.test_loader)
@@ -441,9 +436,13 @@ class Train:
         for t in range(n_epochs):
             print(f"Epoch {t + 1}/{n_epochs}...")
             avg_train_loss, train_avg_acc = self.train(n_epochs, batch_size)
-            print(f"Train Loss: {avg_train_loss:.4f}, Train Accuracy: {train_avg_acc:.2f}%\n")
+            print(
+                f"Train Loss: {avg_train_loss:.4f}, Train Accuracy: {train_avg_acc:.2f}%\n"
+            )
             avg_test_loss, test_avg_acc = self.test(n_epochs, batch_size)
-            print(f"Test Loss: {avg_test_loss:.4f}, Test Accuracy: {test_avg_acc:.2f}%\n")
+            print(
+                f"Test Loss: {avg_test_loss:.4f}, Test Accuracy: {test_avg_acc:.2f}%\n"
+            )
 
             # Store losses
             train_losses.append(avg_train_loss)
@@ -459,6 +458,10 @@ class Train:
 
         print("Done!")
         # torch.cuda.empty_cache()
+
+        # Change the losses arrays such that for each index it is {x: index, y: value}
+        train_losses = [{"x": i, "y": v} for i, v in enumerate(train_losses)]
+        test_losses = [{"x": i, "y": v} for i, v in enumerate(test_losses)]
 
         return {
             "train_losses": train_losses,
