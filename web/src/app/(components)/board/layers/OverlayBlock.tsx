@@ -1,4 +1,5 @@
 "use client";
+import { MdClose as CrossIcon } from "react-icons/md";
 import React from "react";
 import { useBoardStore } from "~/state/boardStore";
 import { ActivationFunction, UILayer } from "~/types";
@@ -14,11 +15,11 @@ interface OverlayBlockProps {
 const OtherParamsInputs = ({
   id,
   otherParams,
-  changeOtherParams,
+  onParamChange,
 }: {
   id: string;
   otherParams?: Record<string, number>;
-  changeOtherParams: (id: string, otherParams: Record<string, number>) => void;
+  onParamChange: (paramKey: string, newValue: number) => void;
 }) => {
   if (!otherParams || Object.keys(otherParams).length === 0) {
     return null;
@@ -30,10 +31,7 @@ const OtherParamsInputs = ({
 
     if (paramKey === "dimension" && (newValue < 1 || newValue > 2)) return;
 
-    changeOtherParams(id, {
-      ...otherParams,
-      [paramKey]: newValue,
-    });
+    onParamChange(paramKey, newValue);
   };
 
   return (
@@ -79,20 +77,36 @@ const OtherParamsInputs = ({
 };
 
 const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
-  const {
-    changeActivationFunction,
-    changeInputNeurons,
-    changeOutputNeurons,
-    changeOtherParams,
-    removeLayer,
-  } = useBoardStore();
+  const { updateBlock, removeBlock } = useBoardStore();
+
+  const handleActivationChange = (activationFunction: ActivationFunction) => {
+    updateBlock(id, { activationFunction });
+  };
+
+  const handleInputNeuronsChange = (inputNeurons: number) => {
+    if (inputNeurons < 1) return;
+    updateBlock(id, { inputNeurons });
+  };
+
+  const handleOutputNeuronsChange = (outputNeurons: number) => {
+    if (outputNeurons < 1) return;
+    updateBlock(id, { outputNeurons });
+  };
+
+  const handleParamChange = (paramKey: string, newValue: number) => {
+    const newOtherParams = {
+      ...block.otherParams,
+      [paramKey]: newValue,
+    };
+    updateBlock(id, { otherParams: newOtherParams });
+  };
 
   return (
     <div className="group relative flex items-center gap-2">
       <div
         className="flex-1 cursor-grab rounded-xl p-4 text-white shadow-lg ring-1 ring-white/10 backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:ring-white/20"
         style={{
-          background: `linear-gradient(135deg, ${color} 0%, ${color}DD 100%)`,
+          background: `linear-gradient(135deg, ${color}CC 0%, ${color}E6 100%)`,
         }}
       >
         {/* Header with layer name and neuron inputs */}
@@ -110,8 +124,7 @@ const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
                 value={block?.inputNeurons}
                 onChange={(e) => {
                   const newInputNeurons = parseInt(e.target.value);
-                  if (newInputNeurons < 1) return;
-                  changeInputNeurons(id, newInputNeurons);
+                  handleInputNeuronsChange(newInputNeurons);
                 }}
               />
             </div>
@@ -123,8 +136,7 @@ const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
                 value={block?.outputNeurons}
                 onChange={(e) => {
                   const newOutputNeurons = parseInt(e.target.value);
-                  if (newOutputNeurons < 1) return;
-                  changeOutputNeurons(id, newOutputNeurons);
+                  handleOutputNeuronsChange(newOutputNeurons);
                 }}
               />
             </div>
@@ -136,7 +148,7 @@ const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
           <OtherParamsInputs
             id={id}
             otherParams={block?.otherParams}
-            changeOtherParams={changeOtherParams}
+            onParamChange={handleParamChange}
           />
         </div>
 
@@ -151,8 +163,7 @@ const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
               value={block?.activationFunction as string}
               onChange={(e) => {
                 const newActivationFunction = e.target.value;
-                changeActivationFunction(
-                  id,
+                handleActivationChange(
                   newActivationFunction as ActivationFunction,
                 );
               }}
@@ -172,12 +183,12 @@ const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
       <button
         onClick={(e) => {
           e.stopPropagation();
-          removeLayer(id);
+          removeBlock(id);
         }}
         className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-400/60 text-xs text-white opacity-0 transition-all duration-200 hover:bg-gray-500/80 group-hover:opacity-100"
         title="Remove layer"
       >
-        ×
+        <CrossIcon className="h-4 w-4" />
       </button>
     </div>
   );

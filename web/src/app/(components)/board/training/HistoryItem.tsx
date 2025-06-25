@@ -237,7 +237,7 @@ const HistoryItem: React.FC<HistoryItemProps> = ({
               Model Configuration
             </h3>
             <div className="rounded-lg bg-zinc-900/50 p-4 ring-1 ring-zinc-700/30">
-              <pre className="overflow-x-auto font-mono text-sm text-zinc-400">
+              <pre className="overflow-x-auto font-mono text-xs text-zinc-400">
                 {JSON.stringify(trainingRes.trainingConfig, null, 2)}
               </pre>
             </div>

@@ -130,8 +130,6 @@ const TrainConfig: React.FC<{
             setLearningRate={setLearningRate}
             setEpochs={setEpochs}
             setBatchSize={setBatchSize}
-            validationErrors={[]}
-            variant="compact"
           />
           <div
             className={`m-2 ${isTraining && "mt-8"} flex justify-center transition-all duration-300`}

@@ -12,20 +12,11 @@ import { LAYER_BLOCKS } from "~/util/LAYER_BLOCKS";
 import DraggableBlock from "./DraggableBlock";
 import DroppableCanvas from "./DroppableCanvas";
 import OverlayBlock from "./OverlayBlock";
-import ValidationDisplay from "../../ValidationDisplay";
 
 interface LayersTabProps {}
 
 const LayersTab: React.FC<LayersTabProps> = () => {
-  const {
-    canvasBlocks,
-    activeBlock,
-    dragStart,
-    dragOver,
-    dragEnd,
-    layerValidationErrors,
-    layersValid,
-  } = useBoardStore();
+  const { activeBlock, dragStart, dragOver, dragEnd } = useBoardStore();
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -63,38 +54,18 @@ const LayersTab: React.FC<LayersTabProps> = () => {
           <div className="relative">
             <DroppableCanvas />
           </div>
-
-          {/* Layer Validation */}
-          {canvasBlocks.length > 0 && (
-            <div className="mt-4">
-              <ValidationDisplay
-                errors={layerValidationErrors}
-                isValid={layersValid}
-                showSuccess={layersValid}
-                className="text-sm"
-              />
-            </div>
-          )}
         </div>
       </div>
 
       <DragOverlay>
-        {activeBlock && (
-          <div
-            style={{
-              width: document
-                .getElementsByClassName("overlayblock-div")[0]
-                ?.getBoundingClientRect().width,
-            }}
-          >
-            <OverlayBlock
-              label={activeBlock.label}
-              color={activeBlock.color}
-              id={activeBlock.id}
-              block={canvasBlocks.find((b) => b.id === activeBlock.id)!}
-            />
-          </div>
-        )}
+        {activeBlock ? (
+          <OverlayBlock
+            id={activeBlock.id}
+            label={activeBlock.label}
+            color={activeBlock.color}
+            block={activeBlock}
+          />
+        ) : null}
       </DragOverlay>
     </DndContext>
   );

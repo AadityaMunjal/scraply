@@ -6,22 +6,15 @@ import { useBoardStore } from "~/state/boardStore";
 import { useTrainingStore } from "~/state/trainingStore";
 import { DEFAULT_TRAINING_CONFIG } from "~/configs/training";
 
-import {
-  validateTrainingConfig,
-  validateUILayers,
-  formatValidationErrors,
-} from "~/utils/validation";
 import SharedTrainingConfig from "./SharedTrainingConfig";
 import HistoryItem from "./HistoryItem";
-
-import ValidationDisplay from "../../ValidationDisplay";
 
 interface TrainingTabProps {
   selectedDataset: string;
 }
 
 const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
-  const { canvasBlocks, layerValidationErrors, layersValid } = useBoardStore();
+  const { canvasBlocks } = useBoardStore();
 
   const {
     // Configuration
@@ -36,10 +29,6 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
     setEpochs,
     setBatchSize,
     resetConfig,
-
-    // Validation state
-    validationErrors,
-    isValid,
 
     // Training state
     isTraining,
@@ -78,44 +67,20 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
               onResetBatchSize={() =>
                 setBatchSize(DEFAULT_TRAINING_CONFIG.batchSize)
               }
-              validationErrors={validationErrors}
-              variant="full"
             />
-
-            {/* Validation Display */}
-            <div className="mt-4">
-              <ValidationDisplay
-                errors={[...validationErrors, ...layerValidationErrors]}
-                isValid={isValid && layersValid}
-                showSuccess={false}
-                className="text-xs"
-              />
-            </div>
 
             {/* Train Button */}
             <div
               className={`m-2 ${isTraining && "mt-8"} flex justify-center transition-transform duration-300`}
             >
               <button
-                disabled={isTraining || !isValid || !layersValid}
+                disabled={isTraining}
                 className={`rounded-2xl px-6 py-2 text-lg ring-indigo-500 transition-colors duration-300 ease-in-out ${
                   isTraining
                     ? "bg-zinc-700 px-9 ring-2 ring-zinc-600"
-                    : !isValid || !layersValid
-                      ? "cursor-not-allowed bg-zinc-600 opacity-50"
-                      : "bg-zinc-700 hover:bg-indigo-600 active:bg-indigo-500"
+                    : "bg-zinc-700 hover:bg-indigo-600 active:bg-indigo-500"
                 }`}
                 onClick={async () => {
-                  // Validate UI layers first
-                  const layerErrors = validateUILayers(canvasBlocks);
-                  if (layerErrors.length > 0) {
-                    console.error(
-                      "Validation failed:",
-                      formatValidationErrors(layerErrors),
-                    );
-                    return;
-                  }
-
                   setIsTraining(true);
 
                   try {
@@ -128,12 +93,6 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                       epochs,
                       batchSize,
                     );
-
-                    // Validate the final config
-                    const configErrors = validateTrainingConfig(config);
-                    if (configErrors.length > 0) {
-                      throw new Error(formatValidationErrors(configErrors));
-                    }
 
                     const data = await startTraining(config);
                     const results = data.RESULTS;
