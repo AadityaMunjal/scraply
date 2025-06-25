@@ -1,16 +1,11 @@
-import {
-  DragEndEvent,
-  DragOverEvent,
-  DragStartEvent,
-  UniqueIdentifier,
-} from "@dnd-kit/core";
+import { DragEndEvent, DragOverEvent, DragStartEvent } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { LAYER_BLOCKS } from "~/util/LAYER_BLOCKS";
-import { ActivationFunction, UILayer } from "~/types";
+import { UILayer } from "~/types";
 
-const syncLayerConnections = (blocks: UILayer[]): UILayer[] => {
+const syncLayers = (blocks: UILayer[]): UILayer[] => {
   return blocks.map((block, index) => {
     if (index === 0) {
       return block;
@@ -34,6 +29,7 @@ interface BoardState {
   // Actions
   addBlock: (block: UILayer) => void;
   updateBlock: (id: string, updates: Partial<UILayer>) => void;
+  updateInputNeurons: (id: string, inputNeurons: number) => void;
   removeBlock: (id: string) => void;
   reorderBlocks: (oldIndex: number, newIndex: number) => void;
   clearCanvas: () => void;
@@ -52,7 +48,7 @@ export const useBoardStore = create<BoardState>()(
     addBlock: (block: UILayer) => {
       set((state) => {
         state.canvasBlocks.push(block);
-        state.canvasBlocks = syncLayerConnections(state.canvasBlocks);
+        state.canvasBlocks = syncLayers(state.canvasBlocks);
       });
     },
 
@@ -63,7 +59,34 @@ export const useBoardStore = create<BoardState>()(
           const currentBlock = state.canvasBlocks[blockIndex];
           if (currentBlock) {
             state.canvasBlocks[blockIndex] = { ...currentBlock, ...updates };
-            state.canvasBlocks = syncLayerConnections(state.canvasBlocks);
+            state.canvasBlocks = syncLayers(state.canvasBlocks);
+          }
+        }
+      });
+    },
+
+    updateInputNeurons: (id: string, inputNeurons: number) => {
+      set((state) => {
+        const blockIndex = state.canvasBlocks.findIndex((b) => b.id === id);
+        if (blockIndex !== -1) {
+          const currentBlock = state.canvasBlocks[blockIndex];
+          if (currentBlock) {
+            // Update the current block's input neurons
+            state.canvasBlocks[blockIndex] = { ...currentBlock, inputNeurons };
+
+            // Update previous layer's output neurons to match (reverse sync)
+            if (blockIndex > 0) {
+              const previousBlock = state.canvasBlocks[blockIndex - 1];
+              if (previousBlock) {
+                state.canvasBlocks[blockIndex - 1] = {
+                  ...previousBlock,
+                  outputNeurons: inputNeurons,
+                };
+              }
+            }
+
+            // Sync all layers to maintain connections
+            state.canvasBlocks = syncLayers(state.canvasBlocks);
           }
         }
       });
@@ -74,14 +97,14 @@ export const useBoardStore = create<BoardState>()(
         state.canvasBlocks = state.canvasBlocks.filter(
           (block) => block.id !== id,
         );
-        state.canvasBlocks = syncLayerConnections(state.canvasBlocks);
+        state.canvasBlocks = syncLayers(state.canvasBlocks);
       });
     },
 
     reorderBlocks: (oldIndex: number, newIndex: number) => {
       set((state) => {
         state.canvasBlocks = arrayMove(state.canvasBlocks, oldIndex, newIndex);
-        state.canvasBlocks = syncLayerConnections(state.canvasBlocks);
+        state.canvasBlocks = syncLayers(state.canvasBlocks);
       });
     },
 
@@ -143,7 +166,7 @@ export const useBoardStore = create<BoardState>()(
 
           set((state) => {
             state.canvasBlocks.push(newBlock);
-            state.canvasBlocks = syncLayerConnections(state.canvasBlocks);
+            state.canvasBlocks = syncLayers(state.canvasBlocks);
           });
         }
         return;
@@ -164,7 +187,7 @@ export const useBoardStore = create<BoardState>()(
             activeIndex,
             overIndex,
           );
-          state.canvasBlocks = syncLayerConnections(state.canvasBlocks);
+          state.canvasBlocks = syncLayers(state.canvasBlocks);
         });
       }
     },

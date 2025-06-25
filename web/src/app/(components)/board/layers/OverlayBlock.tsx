@@ -77,7 +77,7 @@ const OtherParamsInputs = ({
 };
 
 const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
-  const { updateBlock, removeBlock } = useBoardStore();
+  const { updateBlock, updateInputNeurons, removeBlock } = useBoardStore();
 
   const handleActivationChange = (activationFunction: ActivationFunction) => {
     updateBlock(id, { activationFunction });
@@ -85,7 +85,7 @@ const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
 
   const handleInputNeuronsChange = (inputNeurons: number) => {
     if (inputNeurons < 1) return;
-    updateBlock(id, { inputNeurons });
+    updateInputNeurons(id, inputNeurons);
   };
 
   const handleOutputNeuronsChange = (outputNeurons: number) => {
