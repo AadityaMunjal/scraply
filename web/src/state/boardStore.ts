@@ -3,9 +3,9 @@ import { arrayMove } from "@dnd-kit/sortable";
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { LAYER_BLOCKS } from "~/util/LAYER_BLOCKS";
-import { UILayer } from "~/types";
+import { LegacyUILayer } from "~/types";
 
-const syncLayers = (blocks: UILayer[]): UILayer[] => {
+const syncLayers = (blocks: LegacyUILayer[]): LegacyUILayer[] => {
   return blocks.map((block, index) => {
     if (index === 0) {
       return block;
@@ -23,12 +23,12 @@ const syncLayers = (blocks: UILayer[]): UILayer[] => {
 };
 
 interface BoardState {
-  canvasBlocks: UILayer[];
-  activeBlock: UILayer | null;
+  canvasBlocks: LegacyUILayer[];
+  activeBlock: LegacyUILayer | null;
 
   // Actions
-  addBlock: (block: UILayer) => void;
-  updateBlock: (id: string, updates: Partial<UILayer>) => void;
+  addBlock: (block: LegacyUILayer) => void;
+  updateBlock: (id: string, updates: Partial<LegacyUILayer>) => void;
   updateInputNeurons: (id: string, inputNeurons: number) => void;
   removeBlock: (id: string) => void;
   reorderBlocks: (oldIndex: number, newIndex: number) => void;
@@ -45,14 +45,14 @@ export const useBoardStore = create<BoardState>()(
     canvasBlocks: [],
     activeBlock: null,
 
-    addBlock: (block: UILayer) => {
+    addBlock: (block: LegacyUILayer) => {
       set((state) => {
         state.canvasBlocks.push(block);
         state.canvasBlocks = syncLayers(state.canvasBlocks);
       });
     },
 
-    updateBlock: (id: string, updates: Partial<UILayer>) => {
+    updateBlock: (id: string, updates: Partial<LegacyUILayer>) => {
       set((state) => {
         const blockIndex = state.canvasBlocks.findIndex((b) => b.id === id);
         if (blockIndex !== -1) {
@@ -159,7 +159,7 @@ export const useBoardStore = create<BoardState>()(
           (block) => block.id === activeId,
         );
         if (toolboxBlock) {
-          const newBlock: UILayer = {
+          const newBlock: LegacyUILayer = {
             ...toolboxBlock,
             id: `${toolboxBlock.id}-${Date.now()}`,
           };

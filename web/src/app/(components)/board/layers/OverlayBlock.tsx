@@ -2,14 +2,14 @@
 import { MdClose as CrossIcon } from "react-icons/md";
 import React from "react";
 import { useBoardStore } from "~/state/boardStore";
-import { ActivationFunction, UILayer } from "~/types";
+import { ActivationFunction, LegacyUILayer } from "~/types";
 import { PARAM_CONFIG } from "~/util/layerConfig";
 
 interface OverlayBlockProps {
   id: string;
   label: string;
   color: string;
-  block: UILayer;
+  block: LegacyUILayer;
 }
 
 const OtherParamsInputs = ({

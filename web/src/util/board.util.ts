@@ -1,14 +1,14 @@
 import {
   Config,
   TransformerConfig,
-  UILayer,
+  LegacyUILayer,
   LossFunction,
   OptimizerType,
 } from "~/types";
 
 export const getConfig = (
   input: string,
-  blocks: UILayer[],
+  blocks: LegacyUILayer[],
   loss: LossFunction,
   optimizer: OptimizerType,
   learningRate: number,

@@ -1,6 +1,6 @@
-import { UILayer } from "~/types";
+import { LegacyUILayer } from "~/types";
 
-export const LAYER_BLOCKS: UILayer[] = [
+export const LAYER_BLOCKS: LegacyUILayer[] = [
   {
     id: "linear",
     label: "Linear",

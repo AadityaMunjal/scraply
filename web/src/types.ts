@@ -6,7 +6,7 @@ export type Dataset = {
 export type LossFunction = "BCE" | "CrossEntropy";
 export type OptimizerType = "Adam" | "AdamW" | "SGD" | "RMSprop";
 
-export interface UILayer {
+export interface LegacyUILayer {
   id: string;
   label: string;
   color: string;
@@ -16,8 +16,58 @@ export interface UILayer {
   activationFunction: ActivationFunction;
 }
 
+export interface BaseLayer {
+  id: string;
+  label: string;
+  color: string;
+}
+
+export interface LayerWithNeurons extends BaseLayer {
+  inputNeurons: number;
+  outputNeurons: number;
+}
+
+export interface LayerWithNeuronsAndAF extends LayerWithNeurons {
+  activationFunction: ActivationFunction;
+}
+
+export interface LayerWithOtherParams<T> {
+  otherParams: T;
+}
+
+export type LinearLayer = LayerWithNeuronsAndAF;
+
+export type ConvLayer = LayerWithNeuronsAndAF &
+  LayerWithOtherParams<{
+    dimension: 1 | 2;
+    kernelSize: number;
+    stride: number;
+    padding: number;
+  }>;
+
+export type RNNLayer = LayerWithNeuronsAndAF &
+  LayerWithOtherParams<{
+    hiddenSize: number;
+    dropout: number;
+  }>;
+
+export type GRULayer = LayerWithNeuronsAndAF &
+  LayerWithOtherParams<{
+    hiddenSize: number;
+    dropout: number;
+  }>;
+
+export type FlattenLayer = LayerWithNeurons;
+
+export type MaxPoolLayer = BaseLayer &
+  LayerWithOtherParams<{
+    dimension: 1 | 2;
+    kernelSize: number;
+    stride: number;
+    padding: number;
+  }>;
+
 export type ActivationFunction =
-  | ""
   | "ReLU"
   | "Sigmoid"
   | "Tanh"
@@ -91,5 +141,4 @@ export enum AppTabs {
   LAYERS = "LAYERS",
   TRAINING = "TRAINING",
   OUTPUTS = "OUTPUTS",
-  // TRANSFORMERS = "TRANSFORMERS",
 }
