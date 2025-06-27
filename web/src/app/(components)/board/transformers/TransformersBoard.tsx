@@ -1,10 +1,13 @@
-import { useState } from "react";
+"use client";
+
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { startTransformerTraining, transformerTest } from "~/util/board.util";
 import { ResponsiveLine } from "@nivo/line";
-import { LossFunction, OptimizerType } from "~/types";
+import { LossFunction, OptimizerType } from "~/types/index";
 import { DEFAULT_TRAINING_CONFIG } from "~/configs/training";
 import SharedTrainingConfig from "../training/SharedTrainingConfig";
+import DATASETS from "~/util/DATASETS";
 
 interface Decoder {
   title: string;

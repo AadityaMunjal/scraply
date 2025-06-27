@@ -3,6 +3,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import OverlayBlock from "./OverlayBlock";
 import { useBoardStore } from "~/state/boardStore";
+import { UILayer } from "~/types/index";
 
 interface SortableBlockProps {
   id: string;
@@ -28,6 +29,9 @@ const SortableBlock = ({ id, label, color }: SortableBlockProps) => {
     minWidth: "40%",
   };
 
+  const block = canvasBlocks.find((block: UILayer) => block.id === id);
+  if (!block) return null;
+
   return (
     <div
       ref={setNodeRef}
@@ -36,12 +40,7 @@ const SortableBlock = ({ id, label, color }: SortableBlockProps) => {
       {...attributes}
       className="overlayblock-div"
     >
-      <OverlayBlock
-        label={label}
-        color={color}
-        id={id}
-        block={canvasBlocks.find((block) => block.id === id)!}
-      />
+      <OverlayBlock label={label} color={color} id={id} block={block} />
     </div>
   );
 };

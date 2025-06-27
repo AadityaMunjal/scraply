@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
-import { TrainingResult, LossFunction, OptimizerType } from "~/types";
+import { TrainingResult, LossFunction, OptimizerType } from "~/types/index";
 import { DEFAULT_TRAINING_CONFIG } from "~/configs/training";
 
 interface TrainingConfigState {

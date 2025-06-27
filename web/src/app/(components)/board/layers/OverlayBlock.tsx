@@ -2,14 +2,20 @@
 import { MdClose as CrossIcon } from "react-icons/md";
 import React from "react";
 import { useBoardStore } from "~/state/boardStore";
-import { ActivationFunction, LegacyUILayer } from "~/types";
+import {
+  ActivationFunction,
+  UILayer,
+  hasNeurons,
+  hasActivationFunction,
+  hasOtherParams,
+} from "~/types/index";
 import { PARAM_CONFIG } from "~/util/layerConfig";
 
 interface OverlayBlockProps {
   id: string;
   label: string;
   color: string;
-  block: LegacyUILayer;
+  block: UILayer;
 }
 
 const OtherParamsInputs = ({
@@ -80,7 +86,9 @@ const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
   const { updateBlock, updateInputNeurons, removeBlock } = useBoardStore();
 
   const handleActivationChange = (activationFunction: ActivationFunction) => {
-    updateBlock(id, { activationFunction });
+    if (hasActivationFunction(block)) {
+      updateBlock(id, { activationFunction } as Partial<UILayer>);
+    }
   };
 
   const handleInputNeuronsChange = (inputNeurons: number) => {
@@ -90,15 +98,19 @@ const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
 
   const handleOutputNeuronsChange = (outputNeurons: number) => {
     if (outputNeurons < 1) return;
-    updateBlock(id, { outputNeurons });
+    if (hasNeurons(block)) {
+      updateBlock(id, { outputNeurons } as Partial<UILayer>);
+    }
   };
 
   const handleParamChange = (paramKey: string, newValue: number) => {
-    const newOtherParams = {
-      ...block.otherParams,
-      [paramKey]: newValue,
-    };
-    updateBlock(id, { otherParams: newOtherParams });
+    if (hasOtherParams(block)) {
+      const newOtherParams = {
+        ...block.otherParams,
+        [paramKey]: newValue,
+      };
+      updateBlock(id, { otherParams: newOtherParams } as Partial<UILayer>);
+    }
   };
 
   return (
@@ -115,52 +127,54 @@ const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
             <h3 className="text-base font-semibold tracking-wide">{label}</h3>
           </div>
 
-          <div className="flex gap-1.5">
-            <div className="flex flex-col items-center gap-0.5">
-              <label className="text-xs font-medium text-white/70">In</label>
-              <input
-                className="h-7 w-10 rounded-md border-0 bg-white/90 text-center text-xs text-slate-900 shadow-sm outline-none backdrop-blur-sm transition-all duration-200 focus:ring-2 focus:ring-white/50"
-                type="number"
-                value={block?.inputNeurons}
-                onChange={(e) => {
-                  const newInputNeurons = parseInt(e.target.value);
-                  handleInputNeuronsChange(newInputNeurons);
-                }}
-              />
+          {hasNeurons(block) && (
+            <div className="flex gap-1.5">
+              <div className="flex flex-col items-center gap-0.5">
+                <label className="text-xs font-medium text-white/70">In</label>
+                <input
+                  className="h-7 w-10 rounded-md border-0 bg-white/90 text-center text-xs text-slate-900 shadow-sm outline-none backdrop-blur-sm transition-all duration-200 focus:ring-2 focus:ring-white/50"
+                  type="number"
+                  value={block.inputNeurons}
+                  onChange={(e) => {
+                    const newInputNeurons = parseInt(e.target.value);
+                    handleInputNeuronsChange(newInputNeurons);
+                  }}
+                />
+              </div>
+              <div className="flex flex-col items-center gap-0.5">
+                <label className="text-xs font-medium text-white/70">Out</label>
+                <input
+                  className="h-7 w-10 rounded-md border-0 bg-white/90 text-center text-xs text-slate-900 shadow-sm outline-none backdrop-blur-sm transition-all duration-200 focus:ring-2 focus:ring-white/50"
+                  type="number"
+                  value={block.outputNeurons}
+                  onChange={(e) => {
+                    const newOutputNeurons = parseInt(e.target.value);
+                    handleOutputNeuronsChange(newOutputNeurons);
+                  }}
+                />
+              </div>
             </div>
-            <div className="flex flex-col items-center gap-0.5">
-              <label className="text-xs font-medium text-white/70">Out</label>
-              <input
-                className="h-7 w-10 rounded-md border-0 bg-white/90 text-center text-xs text-slate-900 shadow-sm outline-none backdrop-blur-sm transition-all duration-200 focus:ring-2 focus:ring-white/50"
-                type="number"
-                value={block?.outputNeurons}
-                onChange={(e) => {
-                  const newOutputNeurons = parseInt(e.target.value);
-                  handleOutputNeuronsChange(newOutputNeurons);
-                }}
-              />
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Params section */}
         <div className="mb-3">
           <OtherParamsInputs
             id={id}
-            otherParams={block?.otherParams}
+            otherParams={hasOtherParams(block) ? block.otherParams : undefined}
             onParamChange={handleParamChange}
           />
         </div>
 
         {/* Activation function dropdown */}
-        {block?.activationFunction && (
+        {hasActivationFunction(block) && (
           <div className="relative">
             <label className="mb-1 block text-xs font-medium text-white/70">
               Activation
             </label>
             <select
               className="w-full cursor-pointer rounded-md border-0 bg-white/90 px-3 py-2 text-xs text-slate-900 shadow-sm outline-none backdrop-blur-sm transition-all duration-200 focus:ring-2 focus:ring-white/50"
-              value={block?.activationFunction as string}
+              value={block.activationFunction as string}
               onChange={(e) => {
                 const newActivationFunction = e.target.value;
                 handleActivationChange(

@@ -1,14 +1,17 @@
 import {
   Config,
   TransformerConfig,
-  LegacyUILayer,
+  UILayer,
   LossFunction,
   OptimizerType,
-} from "~/types";
+  hasNeurons,
+  hasActivationFunction,
+  hasOtherParams,
+} from "~/types/index";
 
 export const getConfig = (
   input: string,
-  blocks: LegacyUILayer[],
+  blocks: UILayer[],
   loss: LossFunction,
   optimizer: OptimizerType,
   learningRate: number,
@@ -19,25 +22,38 @@ export const getConfig = (
   for (let i = 0; i < blocks.length; i++) {
     const block = blocks[i]!;
 
-    const inputNeurons = block.inputNeurons;
-    const outputNeurons = block.outputNeurons;
+    // Handle layers that have input/output neurons
+    if (hasNeurons(block)) {
+      const inputNeurons = block.inputNeurons;
+      const outputNeurons = block.outputNeurons;
 
-    // Extract other parameters if they exist
-    const otherParamValues = block.otherParams
-      ? Object.values(block.otherParams)
-      : [];
+      // Extract other parameters if they exist
+      const otherParamValues = hasOtherParams(block)
+        ? Object.values(block.otherParams)
+        : [];
 
-    layers.push({
-      kind: block.label,
-      args:
-        otherParamValues.length > 0
-          ? [inputNeurons, outputNeurons, ...otherParamValues]
-          : [inputNeurons, outputNeurons],
-    });
-
-    if (block.activationFunction) {
       layers.push({
-        kind: block.activationFunction,
+        kind: block.label,
+        args:
+          otherParamValues.length > 0
+            ? [inputNeurons, outputNeurons, ...otherParamValues]
+            : [inputNeurons, outputNeurons],
+      });
+
+      if (hasActivationFunction(block)) {
+        layers.push({
+          kind: block.activationFunction,
+        });
+      }
+    } else {
+      // Handle layers without neurons (like MaxPool)
+      const otherParamValues = hasOtherParams(block)
+        ? Object.values(block.otherParams)
+        : [];
+
+      layers.push({
+        kind: block.label,
+        args: otherParamValues,
       });
     }
   }

@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
-import { LossFunction, OptimizerType } from "~/types";
+import { LossFunction, OptimizerType } from "~/types/index";
+import DATASETS from "~/util/DATASETS";
 import {
   TRAINING_DEFAULTS,
   LOSS_FUNCTIONS,

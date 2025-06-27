@@ -1,4 +1,4 @@
-import { TrainingResult, TrainingResultFormat } from "~/types";
+import { TrainingResult, TrainingResultFormat } from "~/types/index";
 import ToggleBlock from "../../ToggleBlock";
 import { ResponsiveLine } from "@nivo/line";
 import { downloadFile, getConfig } from "~/util/board.util";

@@ -1,4 +1,4 @@
-import { Dataset } from "~/types";
+import { Dataset } from "~/types/index";
 
 const LAYERS: Dataset[] = [
   {

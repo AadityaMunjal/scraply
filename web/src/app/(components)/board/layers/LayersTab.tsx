@@ -9,6 +9,7 @@ import {
 import React from "react";
 import { useBoardStore } from "~/state/boardStore";
 import { LAYER_BLOCKS } from "~/util/LAYER_BLOCKS";
+import { hasOtherParams } from "~/types/index";
 import DraggableBlock from "./DraggableBlock";
 import DroppableCanvas from "./DroppableCanvas";
 import OverlayBlock from "./OverlayBlock";
@@ -44,7 +45,9 @@ const LayersTab: React.FC<LayersTabProps> = () => {
                 id={block.id}
                 label={block.label}
                 color={block.color}
-                otherParams={block.otherParams}
+                otherParams={
+                  hasOtherParams(block) ? block.otherParams : undefined
+                }
               />
             ))}
           </div>

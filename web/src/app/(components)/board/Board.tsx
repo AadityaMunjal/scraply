@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import LayersTab from "./layers/LayersTab";
-import { AppTabs } from "~/types";
+import { AppTabs } from "~/types/index";
 import DATASETS from "~/util/DATASETS";
 import Toggle from "../Toggle";
 import TrainingTab from "./training/TrainingTab";
