@@ -210,8 +210,7 @@ class TransformerData(Dataset):
             file_path = "datasets/alice_1.txt"
         if inp == "shakespeare":
             file_path = "datasets/shakespeare.txt"
-        if inp == "mehek":
-            file_path = "datasets/mehek.txt"
+
 
         with open(file_path, "r", encoding="utf-8") as file:
             text = file.read()
