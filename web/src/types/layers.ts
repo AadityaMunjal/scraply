@@ -67,6 +67,11 @@ export type MaxPoolLayer = BaseLayer &
     padding: number;
   }>;
 
+export type DropoutLayer = BaseLayer &
+  LayerWithOtherParams<{
+    dropout: number;
+  }>;
+
 export type LayersToolbarMap = [
   LinearLayer,
   ConvLayer,
@@ -74,6 +79,7 @@ export type LayersToolbarMap = [
   GRULayer,
   FlattenLayer,
   MaxPoolLayer,
+  DropoutLayer,
 ];
 
 // Union type for all specific layer types
@@ -83,4 +89,5 @@ export type UILayer =
   | RNNLayer
   | GRULayer
   | FlattenLayer
-  | MaxPoolLayer;
+  | MaxPoolLayer
+  | DropoutLayer;

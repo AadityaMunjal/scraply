@@ -49,4 +49,10 @@ export const LAYER_BLOCKS: LayersToolbarMap = [
     color: "#0099CC",
     otherParams: { dimension: 2, kernelSize: 3, stride: 1, padding: 1 },
   },
+  {
+    id: "dropout",
+    label: "Dropout",
+    color: "#B266FF",
+    otherParams: { dropout: 0.25 },
+  },
 ];
