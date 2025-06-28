@@ -50,6 +50,7 @@ export type RNNLayer = LayerWithNeuronsAndAF &
     hiddenSize: number;
     dropout: number;
   }>;
+  // will be sent as a list ex: [1, 2]
 
 export type GRULayer = LayerWithNeuronsAndAF &
   LayerWithOtherParams<{
