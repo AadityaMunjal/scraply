@@ -12,16 +12,12 @@ from torchvision.transforms import ToTensor
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
 
-            
-    
 
 DATALOADERS = {
-    "alice": { # dataset for decoder-only transformer, demonstrating text generation
+    "alice": {  # dataset for decoder-only transformer, demonstrating text generation
         "file": "datasets/alice_1.txt"
     },
-    "shakespeare":{
-        "file": "datasets/shakespeare.txt"
-    },
+    "shakespeare": {"file": "datasets/shakespeare.txt"},
     "pima": {
         "X": pd.read_csv("datasets/pima-indians-diabetes.csv").iloc[:, :-1].values,
         "y": pd.read_csv("datasets/pima-indians-diabetes.csv").iloc[:, -1].values,
@@ -82,19 +78,35 @@ ACTIVATIONS = {
 
 
 LAYERS = {
-    "Flatten": lambda start_dim, end_dim: nn.Flatten(start_dim, end_dim), #  added unnecessary arguments to avoid weird params.lambda error
+    "Flatten": lambda start_dim, end_dim: nn.Flatten(
+        start_dim, end_dim
+    ),  #  added unnecessary arguments to avoid weird params.lambda error
     "Linear": lambda i, o: nn.Linear(i, o),
-    "Conv2D": lambda i, o, k_size: nn.Conv2d(i, o, k_size),  # i = input channels (1 --> grayscale, 3 --> RGB), o = output channels (number of filters), k_size = kernel size
-    "Conv1D": lambda i, o, k_size: nn.Conv1d(i, o, k_size),
-    "Conv3D": lambda i, o, k_size: nn.Conv3d(i, o, k_size),
-    "MaxPool2D": lambda k_size, stride: nn.MaxPool2d(k_size, stride),
-    "MaxPool1D": lambda k_size, stride: nn.MaxPool1d(k_size, stride),
-    "MaxPool3D": lambda k_size, stride: nn.MaxPool3d(k_size, stride),
-    "LSTM": lambda i, h_size: nn.LSTM(i, h_size),
-    "GRU": lambda i, h_size: nn.GRU(i, h_size),
-    "RNN": lambda i, h_size: nn.RNN(i, h_size),
-    "Dropout": lambda p: nn.Dropout(p), # need to add functionality for dropout layer?
-    "Decoder": lambda embed_dim, heads, hidden_dim: nn.TransformerDecoderLayer(d_model=embed_dim, nhead=heads, dim_feedforward=hidden_dim, batch_first=True),# USE IMPORTED CLASS FOR CONSTRUCTING DECODER HERE
+    "Conv1D": lambda i, o, _dim, k_size, stride, padding: nn.Conv1d(
+        i, o, k_size, stride, padding
+    ),
+    "Conv2D": lambda i, o, _dim, k_size, stride, padding: nn.Conv2d(
+        i, o, k_size, stride, padding
+    ),  # i = input channels (1 --> grayscale, 3 --> RGB), o = output channels (number of filters), k_size = kernel size
+    "Conv3D": lambda i, o, _dim, k_size, stride, padding: nn.Conv3d(
+        i, o, k_size, stride, padding
+    ),
+    "MaxPool1D": lambda _dim, k_size, stride, padding: nn.MaxPool1d(
+        k_size, stride, padding
+    ),
+    "MaxPool2D": lambda _dim, k_size, stride, padding: nn.MaxPool2d(
+        k_size, stride, padding
+    ),
+    "MaxPool3D": lambda _dim, k_size, stride, padding: nn.MaxPool3d(
+        k_size, stride, padding
+    ),
+    "LSTM": lambda i, h_size, dropout: nn.LSTM(i, h_size, dropout),
+    "GRU": lambda i, h_size, dropout: nn.GRU(i, h_size, dropout),
+    "RNN": lambda i, h_size, dropout: nn.RNN(i, h_size, dropout),
+    "Dropout": lambda p: nn.Dropout(p),  # need to add functionality for dropout layer?
+    "Decoder": lambda embed_dim, heads, hidden_dim: nn.TransformerDecoderLayer(
+        d_model=embed_dim, nhead=heads, dim_feedforward=hidden_dim, batch_first=True
+    ),  # USE IMPORTED CLASS FOR CONSTRUCTING DECODER HERE
     "Output": lambda p: nn.Dropout(p),
     # Output: [nn.Dropout(p), nn.Linear(embed_dim, vocab_size)], # would need to also access Linear layer after the dropout. Linear dimensions will be (embed_dim, vocab_size)
 }
