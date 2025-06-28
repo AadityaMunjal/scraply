@@ -32,12 +32,13 @@ class DynamicModel(nn.Module):
                     component = LAYERS[layer_type](i, o)
 
                 elif layer_type in ["Conv1D", "Conv2D", "Conv3D"]:
-                    i, o, k_size = layer_args
-                    component = LAYERS[layer_type](i, o, k_size)
+                    dim = layer_args[0]
+                    i, o, k_size, stride, padding = layer_args[1:]
+                    component = LAYERS[layer_type](dim, i, o, k_size, stride, padding)
 
                 elif layer_type in ["LSTM", "GRU", "RNN"]:
-                    i, h_size = layer_args
-                    component = LAYERS[layer_type](i, h_size)
+                    i, h_size, dropout = layer_args
+                    component = LAYERS[layer_type](i, h_size, dropout)
 
                 elif layer_type == "Dropout":
                     component = LAYERS[layer_type](p=layer_args)  # 1 arg
@@ -47,8 +48,9 @@ class DynamicModel(nn.Module):
                     component = LAYERS[layer_type](start_dim, end_dim)
 
                 elif layer_type in ["MaxPool1D", "MaxPool2D", "MaxPool3D"]:
-                    k_size, stride = layer_args
-                    component = LAYERS[layer_type](k_size, stride)
+                    dim = layer_args[0]
+                    k_size, stride, padding = layer_args[1:]
+                    component = LAYERS[layer_type](dim, k_size, stride, padding)
 
                 if component is None:
                     print(f"Layer {layer_type} not recognized or not implemented.")
@@ -248,7 +250,9 @@ class TransformerTrain:  # input is DATALOADERS
         self.device = (  # for GPU access --> works with CPU as well
             "cuda"
             if torch.cuda.is_available()
-            else "mps" if torch.backends.mps.is_available() else "cpu"
+            else "mps"
+            if torch.backends.mps.is_available()
+            else "cpu"
         )
         print(f"Using {self.device} device")
 
@@ -309,7 +313,9 @@ class Train:
         self.device = (  # for GPU access --> works with CPU as well
             "cuda"
             if torch.cuda.is_available()
-            else "mps" if torch.backends.mps.is_available() else "cpu"
+            else "mps"
+            if torch.backends.mps.is_available()
+            else "cpu"
         )
         print(f"Using {self.device} device")
 

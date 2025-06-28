@@ -82,13 +82,13 @@ LAYERS = {
         start_dim, end_dim
     ),  #  added unnecessary arguments to avoid weird params.lambda error
     "Linear": lambda i, o: nn.Linear(i, o),
-    "Conv1D": lambda i, o, _dim, k_size, stride, padding: nn.Conv1d(
+    "Conv1D": lambda _dim, i, o, k_size, stride, padding: nn.Conv1d(
         i, o, k_size, stride, padding
     ),
-    "Conv2D": lambda i, o, _dim, k_size, stride, padding: nn.Conv2d(
+    "Conv2D": lambda _dim, i, o, k_size, stride, padding: nn.Conv2d(
         i, o, k_size, stride, padding
     ),  # i = input channels (1 --> grayscale, 3 --> RGB), o = output channels (number of filters), k_size = kernel size
-    "Conv3D": lambda i, o, _dim, k_size, stride, padding: nn.Conv3d(
+    "Conv3D": lambda _dim, i, o, k_size, stride, padding: nn.Conv3d(
         i, o, k_size, stride, padding
     ),
     "MaxPool1D": lambda _dim, k_size, stride, padding: nn.MaxPool1d(
