@@ -31,7 +31,7 @@ DATALOADERS = {
         ),
         "test": datasets.MNIST(
             root="data",
-            train=True,
+            train=False,
             download=True,
             transform=transforms.Compose([transforms.ToTensor()]),
         ),
@@ -45,7 +45,7 @@ DATALOADERS = {
         ),
         "test": datasets.FashionMNIST(
             root="data",
-            train=True,
+            train=False,
             download=True,
             transform=transforms.Compose([transforms.ToTensor()]),
         ),
@@ -59,7 +59,7 @@ DATALOADERS = {
         ),
         "test": datasets.CIFAR10(
             root="data",
-            train=True,
+            train=False,
             download=True,
             transform=transforms.Compose([transforms.ToTensor()]),
         ),
@@ -75,7 +75,6 @@ ACTIVATIONS = {
     "LeakyReLU": nn.LeakyReLU(),
     "PReLU": nn.PReLU(),
 }
-
 
 
 LAYERS = {
