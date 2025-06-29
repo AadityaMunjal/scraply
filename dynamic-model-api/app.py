@@ -1,13 +1,12 @@
 from flask import Flask, request, send_file
-from models import (
-    DynamicModel,
-    Train,
+from models import (DynamicModel, Train, )
+from transformer_models import (
     TransformerModel,
     TransformerData,
     TransformerTrain,
     Inference,
 )
-from flask_cors import CORS
+from flask_cors import CORS # pip install flask-cors (i think)
 from generate import Generate
 
 # dumb imports that i gyatt to add
@@ -44,28 +43,28 @@ def generate():
         return {"status": "failed", "error": str(e)}
 
 
-@app.post("/train") # this is basically train AND test
+@app.post("/train")  # this is basically train AND test
 def train():
     # example data
-# data = {
-#     "input": "MNIST",
-#     "layers": [
-#         {"kind": "Conv2D", "args": (1, 16, 3)},
-#         {"kind": "ReLU"},
-#         {"kind": "MaxPool2D", "args": (2, 2)},
-#         {"kind": "Conv2D", "args": (16, 32, 3)},
-#         {"kind": "ReLU"},
-#         {"kind": "MaxPool2D", "args": (2, 2)},
-#         {"kind": "Flatten", "args": [1,-1]},
-#         {"kind": "Linear", "args": (800, 128)}, # supposed to be 32 * 7 * 7
-#         {"kind": "ReLU"},
-#         {"kind": "Linear", "args": (128, 10)}, 
-#     ],
-#     "loss": "CrossEntropy",
-#     "optimizer": {"kind": "Adam", "lr": 0.001},
-#     "epoch": 5,
-#     "batch_size": 64,
-# }
+    # data = {
+    #     "input": "MNIST",
+    #     "layers": [
+    #         {"kind": "Conv2D", "args": (1, 16, 3)},
+    #         {"kind": "ReLU"},
+    #         {"kind": "MaxPool2D", "args": (2, 2)},
+    #         {"kind": "Conv2D", "args": (16, 32, 3)},
+    #         {"kind": "ReLU"},
+    #         {"kind": "MaxPool2D", "args": (2, 2)},
+    #         {"kind": "Flatten", "args": [1,-1]},
+    #         {"kind": "Linear", "args": (800, 128)}, # supposed to be 32 * 7 * 7
+    #         {"kind": "ReLU"},
+    #         {"kind": "Linear", "args": (128, 10)},
+    #     ],
+    #     "loss": "CrossEntropy",
+    #     "optimizer": {"kind": "Adam", "lr": 0.001},
+    #     "epoch": 5,
+    #     "batch_size": 64,
+    # }
 
     data = request.get_json()
     print("Received data:", data)
@@ -152,6 +151,7 @@ def transformertrain():
         print("it worked!")
 
         RESULTS = t.train(n_epochs)
+        print("RESULTS:", RESULTS)
 
     except Exception as e:
         print("Error:", e)
@@ -198,7 +198,7 @@ def transformertest():
 
     try:
         dataset = TransformerData(data["input"])
-        
+
         if torch.cuda.is_available():
             torch.cuda.empty_cache()  # clear GPU memory
 
@@ -208,16 +208,17 @@ def transformertest():
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        model.load_state_dict(torch.load("datasets/model2.pth", weights_only=True, map_location=device))
-        
+        model.load_state_dict(
+            torch.load("datasets/model2.pth", weights_only=True, map_location=device)
+        )
 
         print("Model loaded successfully!")
 
         word_to_int = dataset.word_to_int
         int_to_word = dataset.int_to_word
         SEQUENCE_LENGTH = dataset.sequence_length
-        
-        model.to(device) # move model to device
+
+        model.to(device)  # move model to device
 
         text_gen = Inference(model, word_to_int, int_to_word, SEQUENCE_LENGTH)
         sample = text_gen.generate_text(

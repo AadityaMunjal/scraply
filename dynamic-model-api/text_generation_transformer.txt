@@ -1,3 +1,6 @@
+# baseline script i used for the transformer code
+# i converted this into an actual api for flask in models.py / transformer_models.py 
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
