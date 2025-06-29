@@ -11,6 +11,7 @@ from collections import Counter
 import time
 from params import DATALOADERS, LAYERS, ACTIVATIONS, LOSSES, OPTIMIZERS
 
+
 # data loader + suggestions
 # expected data example from the api
 
@@ -20,16 +21,17 @@ class DynamicModel(nn.Module):
         super().__init__()
         raw_layers = layers
         self.layer_list = []
-
+        #
         for l in raw_layers:
             component = None
 
             layer_type = l["kind"]
             if layer_type in LAYERS.keys():  # is a layer
                 layer_args = l["args"]
+
                 if layer_type == "Linear":
                     i, o = layer_args
-                    component = LAYERS[layer_type](i, o)
+                    component = nn.Linear(i, o)
 
                 elif layer_type in ["Conv1D", "Conv2D", "Conv3D"]:
                     dim = layer_args[0]
@@ -38,14 +40,17 @@ class DynamicModel(nn.Module):
 
                 elif layer_type in ["LSTM", "GRU", "RNN"]:
                     i, h_size, dropout = layer_args
-                    component = LAYERS[layer_type](i, h_size, dropout)
+                    component = nn.LSTM(i, h_size, dropout)
 
                 elif layer_type == "Dropout":
-                    component = LAYERS[layer_type](p=layer_args)  # 1 arg
+                    p = layer_args
+                    component = nn.Dropout(p)  # 1 arg
 
                 elif layer_type == "Flatten":
-                    start_dim, end_dim = layer_args
-                    component = LAYERS[layer_type](start_dim, end_dim)
+                    start_dim = 1
+                    end_dim = -1  # I AM FORCING 1,-1. CURRENT UI DOES NOT SUPPORT NEGATIVE DIMS. 6/28/25
+                    # start_dim, end_dim = layer_args
+                    component = nn.Flatten(start_dim, end_dim)
 
                 elif layer_type in ["MaxPool1D", "MaxPool2D", "MaxPool3D"]:
                     dim = layer_args[0]
@@ -210,7 +215,6 @@ class TransformerData(Dataset):
             file_path = "datasets/alice_1.txt"
         if inp == "shakespeare":
             file_path = "datasets/shakespeare.txt"
-
 
         with open(file_path, "r", encoding="utf-8") as file:
             text = file.read()

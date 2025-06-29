@@ -77,6 +77,7 @@ ACTIVATIONS = {
 }
 
 
+
 LAYERS = {
     "Flatten": lambda start_dim, end_dim: nn.Flatten(
         start_dim, end_dim
