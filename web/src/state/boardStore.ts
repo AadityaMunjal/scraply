@@ -174,8 +174,16 @@ export const useBoardStore = create<BoardState>()(
       const activeId = active.id as string;
       const overId = over.id as string;
 
-      // Handle dropping from toolbox to canvas
-      if (overId === "canvas") {
+      // Check if we're dragging from the toolbox (not from canvas)
+      const isFromToolbox = LAYER_BLOCKS.some(
+        (block: any) => block.id === activeId,
+      );
+      const isFromCanvas = get().canvasBlocks.some(
+        (block: any) => block.id === activeId,
+      );
+
+      // Handle dropping from toolbox to canvas or to existing canvas blocks
+      if (isFromToolbox && !isFromCanvas) {
         const toolboxBlock = LAYER_BLOCKS.find(
           (block: any) => block.id === activeId,
         );
@@ -185,31 +193,44 @@ export const useBoardStore = create<BoardState>()(
             id: `${toolboxBlock.id}-${Date.now()}`,
           };
 
-          set((state) => {
-            state.canvasBlocks.push(newBlock);
-            state.canvasBlocks = syncLayers(state.canvasBlocks);
-          });
+          // If dropping on canvas, empty skeleton, or any existing canvas block, add to end
+          if (
+            overId === "canvas" ||
+            overId === "empty-skeleton" ||
+            get().canvasBlocks.some((block: any) => block.id === overId)
+          ) {
+            set((state) => {
+              state.canvasBlocks.push(newBlock);
+              state.canvasBlocks = syncLayers(state.canvasBlocks);
+            });
+          }
         }
         return;
       }
 
-      // Handle reordering within canvas
-      const activeIndex = get().canvasBlocks.findIndex(
-        (block: any) => block.id === activeId,
-      );
-      const overIndex = get().canvasBlocks.findIndex(
-        (block: any) => block.id === overId,
-      );
+      // Handle reordering within canvas (only when dragging existing canvas blocks)
+      if (isFromCanvas) {
+        const activeIndex = get().canvasBlocks.findIndex(
+          (block: any) => block.id === activeId,
+        );
+        const overIndex = get().canvasBlocks.findIndex(
+          (block: any) => block.id === overId,
+        );
 
-      if (activeIndex !== -1 && overIndex !== -1 && activeIndex !== overIndex) {
-        set((state) => {
-          state.canvasBlocks = arrayMove(
-            state.canvasBlocks,
-            activeIndex,
-            overIndex,
-          );
-          state.canvasBlocks = syncLayers(state.canvasBlocks);
-        });
+        if (
+          activeIndex !== -1 &&
+          overIndex !== -1 &&
+          activeIndex !== overIndex
+        ) {
+          set((state) => {
+            state.canvasBlocks = arrayMove(
+              state.canvasBlocks,
+              activeIndex,
+              overIndex,
+            );
+            state.canvasBlocks = syncLayers(state.canvasBlocks);
+          });
+        }
       }
     },
   })),
