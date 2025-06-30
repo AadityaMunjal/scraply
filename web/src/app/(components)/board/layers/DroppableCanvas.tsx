@@ -5,6 +5,7 @@ import {
   SortableContext,
 } from "@dnd-kit/sortable";
 import { MdAdd as PlusIcon } from "react-icons/md";
+import { useEffect, useRef } from "react";
 import SortableBlock from "./SortableBlock";
 import { useBoardStore } from "~/state/boardStore";
 import { UILayer } from "~/types/index";
@@ -13,6 +14,9 @@ interface DroppableCanvasProps {}
 
 const DroppableCanvas = ({}: DroppableCanvasProps) => {
   const { canvasBlocks } = useBoardStore();
+  const canvasElementRef = useRef<HTMLDivElement | null>(null);
+  const prevCanvasBlocksLength = useRef(canvasBlocks.length);
+
   const { setNodeRef } = useDroppable({
     id: "canvas",
   });
@@ -22,10 +26,35 @@ const DroppableCanvas = ({}: DroppableCanvasProps) => {
       id: "empty-skeleton",
     });
 
+  // Auto-scroll to bottom when new layer is added
+  useEffect(() => {
+    if (canvasBlocks.length > prevCanvasBlocksLength.current) {
+      // Small delay to ensure DOM has updated
+      setTimeout(() => {
+        if (canvasElementRef.current) {
+          canvasElementRef.current.scrollTo({
+            top: canvasElementRef.current.scrollHeight,
+            behavior: "smooth",
+          });
+        }
+      }, 25);
+    }
+    prevCanvasBlocksLength.current = canvasBlocks.length;
+  }, [canvasBlocks.length]);
+
+  const combinedRef = (node: HTMLDivElement | null) => {
+    setNodeRef(node);
+    canvasElementRef.current = node;
+  };
+
   return (
     <div
-      ref={setNodeRef}
-      className="z-10 flex min-h-[600px] flex-col items-center whitespace-nowrap rounded-2xl border-2 border-dashed border-blue-600 bg-zinc-900 p-2 pb-[100px]"
+      ref={combinedRef}
+      className="canvas-scroll z-10 flex h-[75vh] flex-col items-center overflow-y-auto whitespace-nowrap rounded-2xl border-2 border-dashed border-blue-600 bg-zinc-900 p-2 pb-[100px]"
+      style={{
+        scrollbarWidth: "thin",
+        scrollbarColor: "#52525b #27272a",
+      }}
     >
       <SortableContext
         items={canvasBlocks.map((block: UILayer) => block.id)}
