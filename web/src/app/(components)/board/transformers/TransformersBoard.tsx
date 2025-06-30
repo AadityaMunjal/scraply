@@ -2,10 +2,13 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { startTransformerTraining, transformerTest } from "~/util/board.util";
+import {
+  useStartTransformerTraining,
+  useTransformerTest,
+} from "~/hooks/useApi";
 import { ResponsiveLine } from "@nivo/line";
 import { LossFunction, OptimizerType } from "~/types/index";
-import { DEFAULT_TRAINING_CONFIG } from "~/configs/training";
+import { DEFAULT_TRAINING_CONFIG } from "~/util/trainingConfig";
 import SharedTrainingConfig from "../training/SharedTrainingConfig";
 import DATASETS from "~/util/DATASETS";
 
@@ -100,7 +103,6 @@ const TrainConfig: React.FC<{
   const [epochs, setEpochs] = useState(DEFAULT_TRAINING_CONFIG.epochs);
   const [batchSize, setBatchSize] = useState(DEFAULT_TRAINING_CONFIG.batchSize);
 
-  const [isTraining, setIsTraining] = useState(false);
   const [results, setResults] = useState<{ train_loss: number[] } | null>(null);
   const [graphData, setGraphData] = useState<
     | {
@@ -110,10 +112,70 @@ const TrainConfig: React.FC<{
     | null
   >(null);
 
-  const [isTestLoading, setIsTestLoading] = useState(false);
   const [temperature, setTemperature] = useState(0.1);
   const [prompt, setPrompt] = useState("");
   const [generatedText, setGeneratedText] = useState("");
+
+  // TanStack Query hooks
+  const startTransformerTrainingMutation = useStartTransformerTraining();
+  const transformerTestMutation = useTransformerTest();
+
+  const handleTrain = async () => {
+    try {
+      const l = decoders.map((decoder) => {
+        return {
+          kind: "Decoder",
+          args: [
+            decoder.saHiddenDim,
+            decoder.saAttentionHeads,
+            decoder.ffLinearLayers,
+          ],
+        };
+      });
+      l.push({
+        kind: "Output",
+        args: [dropout],
+      });
+
+      const data = await startTransformerTrainingMutation.mutateAsync({
+        loss,
+        optimizer: {
+          kind: optimizer,
+          lr: learningRate,
+        },
+        epoch: epochs,
+        batch_size: batchSize,
+        input: selectedDataset,
+        layers: l,
+      });
+
+      console.log(data);
+      setResults(data.RESULTS);
+      setGraphData([
+        {
+          id: "train_loss",
+          data: data.RESULTS.train_loss.map((loss: number, i: number) => ({
+            x: i,
+            y: loss,
+          })),
+        },
+      ]);
+    } catch (error) {
+      console.error("Transformer training failed:", error);
+    }
+  };
+
+  const handleTest = async () => {
+    try {
+      const data = await transformerTestMutation.mutateAsync({
+        temperature,
+        prompt,
+      });
+      setGeneratedText(data.text);
+    } catch (error) {
+      console.error("Transformer test failed:", error);
+    }
+  };
 
   return (
     <div className="my-4 w-2/3">
@@ -135,96 +197,63 @@ const TrainConfig: React.FC<{
             setBatchSize={setBatchSize}
           />
           <div
-            className={`m-2 ${isTraining && "mt-8"} flex justify-center transition-all duration-300`}
+            className={`m-2 ${startTransformerTrainingMutation.isPending && "mt-8"} flex justify-center transition-all duration-300`}
           >
             <button
-              disabled={isTraining}
+              disabled={startTransformerTrainingMutation.isPending}
               className={`rounded-2xl bg-zinc-700 px-6 py-2 text-lg transition-all ease-in-out ${
-                !isTraining &&
+                !startTransformerTrainingMutation.isPending &&
                 "hover:bg-indigo-600 hover:px-8 hover:ring-2 active:bg-indigo-500 active:px-9"
               } ring-indigo-500 duration-300 ${
-                isTraining && "animate-bounce px-9 ring-2 ring-zinc-600"
+                startTransformerTrainingMutation.isPending &&
+                "animate-bounce px-9 ring-2 ring-zinc-600"
               }`}
-              onClick={() => {
-                setIsTraining(true);
-                const l = decoders.map((decoder) => {
-                  return {
-                    kind: "Decoder",
-                    args: [
-                      decoder.saHiddenDim,
-                      decoder.saAttentionHeads,
-                      decoder.ffLinearLayers,
-                    ],
-                  };
-                });
-                l.push({
-                  kind: "Output",
-                  args: [dropout],
-                });
-                startTransformerTraining({
-                  loss,
-                  optimizer: {
-                    kind: optimizer,
-                    lr: learningRate,
-                  },
-                  epoch: epochs,
-                  batch_size: batchSize,
-                  input: selectedDataset,
-                  layers: l,
-                })
-                  .then((data: any) => {
-                    console.log(data);
-                    setResults(data.RESULTS);
-                    setGraphData([
-                      {
-                        id: "train_loss",
-                        data: data.RESULTS.train_loss.map(
-                          (loss: number, i: number) => ({
-                            x: i,
-                            y: loss,
-                          }),
-                        ),
-                      },
-                    ]);
-                  })
-                  .finally(() => {
-                    setIsTraining(false);
-                    // showNotification(
-                    //   "Training Complete!",
-                    //   "Your model has been trained successfully.",
-                    // );
-                  });
-              }}
+              onClick={handleTrain}
             >
-              {isTraining ? (
+              {startTransformerTrainingMutation.isPending ? (
                 <div className="flex items-center">
-                  <div>Training...</div>{" "}
-                  {/* <img src="dino-running.gif" className="w-14" /> */}
+                  <div className="mr-2 animate-spin">⟳</div>
+                  Training...
                 </div>
               ) : (
                 "Train"
               )}
             </button>
           </div>
+
+          {/* Error Display for Training */}
+          {startTransformerTrainingMutation.error && (
+            <div className="mx-2 rounded-lg border border-red-600 bg-red-900/20 p-3 text-sm text-red-300">
+              Training failed: {String(startTransformerTrainingMutation.error)}
+            </div>
+          )}
+
+          {/* Graph Display */}
           {graphData && (
-            <div className="mt-2 h-72 w-72 rounded-md bg-zinc-50 text-center">
+            <div className="my-4 h-80 rounded-lg bg-zinc-900/50 p-3">
               <ResponsiveLine
                 data={graphData}
                 margin={{ top: 50, right: 110, bottom: 50, left: 60 }}
-                enableGridX={false}
-                enableGridY={false}
                 xScale={{ type: "point" }}
                 yScale={{
                   type: "linear",
                   min: "auto",
                   max: "auto",
-                  stacked: true,
+                  stacked: false,
                   reverse: false,
                 }}
-                colors={{ scheme: "accent" }}
+                yFormat=" >-.2f"
+                curve="catmullRom"
                 axisTop={null}
                 axisRight={null}
-                axisBottom={null}
+                axisBottom={{
+                  tickSize: 5,
+                  tickPadding: 5,
+                  tickRotation: 0,
+                  legend: "Epoch",
+                  legendOffset: 36,
+                  legendPosition: "middle",
+                }}
                 axisLeft={{
                   tickSize: 5,
                   tickPadding: 5,
@@ -233,7 +262,7 @@ const TrainConfig: React.FC<{
                   legendOffset: -40,
                   legendPosition: "middle",
                 }}
-                pointSize={2}
+                pointSize={10}
                 pointColor={{ theme: "background" }}
                 pointBorderWidth={2}
                 pointBorderColor={{ from: "serieColor" }}
@@ -308,27 +337,33 @@ const TrainConfig: React.FC<{
           </div>
           <div className="m-2 flex justify-center">
             <button
-              disabled={isTestLoading}
+              disabled={transformerTestMutation.isPending}
               className={`rounded-2xl bg-zinc-700 px-6 py-2 text-lg transition-all ease-in-out ${
-                !isTestLoading &&
+                !transformerTestMutation.isPending &&
                 "hover:bg-indigo-600 hover:px-8 hover:ring-2 active:bg-indigo-500 active:px-9"
               } ring-indigo-500 duration-300 ${
-                isTestLoading && "animate-bounce px-9 ring-2 ring-zinc-600"
+                transformerTestMutation.isPending &&
+                "animate-bounce px-9 ring-2 ring-zinc-600"
               }`}
-              onClick={() => {
-                setIsTestLoading(true);
-                transformerTest(temperature, prompt)
-                  .then((data) => {
-                    setGeneratedText(data.text);
-                  })
-                  .finally(() => {
-                    setIsTestLoading(false);
-                  });
-              }}
+              onClick={handleTest}
             >
-              Predict
+              {transformerTestMutation.isPending ? (
+                <div className="flex items-center">
+                  <div className="mr-2 animate-spin">⟳</div>
+                  Testing...
+                </div>
+              ) : (
+                "Predict"
+              )}
             </button>
           </div>
+
+          {/* Error Display for Testing */}
+          {transformerTestMutation.error && (
+            <div className="mx-2 rounded-lg border border-red-600 bg-red-900/20 p-3 text-sm text-red-300">
+              Test failed: {String(transformerTestMutation.error)}
+            </div>
+          )}
         </div>
       </div>
     </div>

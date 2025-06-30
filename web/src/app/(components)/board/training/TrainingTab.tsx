@@ -1,10 +1,10 @@
 "use client";
 import { CgSpinnerTwoAlt as SpinnerIcon } from "react-icons/cg";
 import { getConfig } from "~/util/board.util";
-import { startTraining, downloadFile } from "~/util/board.util";
+import { useStartTraining } from "~/hooks/useApi";
 import { useBoardStore } from "~/state/boardStore";
 import { useTrainingStore } from "~/state/trainingStore";
-import { DEFAULT_TRAINING_CONFIG } from "~/configs/training";
+import { DEFAULT_TRAINING_CONFIG } from "~/util/trainingConfig";
 
 import SharedTrainingConfig from "./SharedTrainingConfig";
 import HistoryItem from "./HistoryItem";
@@ -15,6 +15,7 @@ interface TrainingTabProps {
 
 const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
   const { canvasBlocks } = useBoardStore();
+  const startTrainingMutation = useStartTraining();
 
   const {
     // Configuration
@@ -39,6 +40,39 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
     setOpenHistoryItem,
     clearHistory,
   } = useTrainingStore();
+
+  const handleTrain = async () => {
+    setIsTraining(true);
+
+    try {
+      const config = getConfig(
+        selectedDataset,
+        canvasBlocks,
+        loss,
+        optimizer,
+        learningRate,
+        epochs,
+        batchSize,
+      );
+
+      const data = await startTrainingMutation.mutateAsync(config);
+      const results = data.RESULTS;
+
+      addTrainingResult({
+        avg_train_loss: results.avg_train_loss,
+        avg_train_acc: results.avg_train_acc,
+        avg_test_loss: results.avg_test_loss,
+        avg_test_acc: results.avg_test_acc,
+        train_losses: results.train_losses,
+        test_losses: results.test_losses,
+        trainingConfig: config,
+      });
+    } catch (error) {
+      console.error("Training failed:", error);
+    } finally {
+      setIsTraining(false);
+    }
+  };
 
   return (
     <>
@@ -74,46 +108,15 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
               className={`m-2 ${isTraining && "mt-8"} flex justify-center transition-transform duration-300`}
             >
               <button
-                disabled={isTraining}
+                disabled={isTraining || startTrainingMutation.isPending}
                 className={`rounded-2xl px-6 py-2 text-lg ring-indigo-500 transition-colors duration-300 ease-in-out ${
-                  isTraining
+                  isTraining || startTrainingMutation.isPending
                     ? "bg-zinc-700 px-9 ring-2 ring-zinc-600"
                     : "bg-zinc-700 hover:bg-indigo-600 active:bg-indigo-500"
                 }`}
-                onClick={async () => {
-                  setIsTraining(true);
-
-                  try {
-                    const config = getConfig(
-                      selectedDataset,
-                      canvasBlocks,
-                      loss,
-                      optimizer,
-                      learningRate,
-                      epochs,
-                      batchSize,
-                    );
-
-                    const data = await startTraining(config);
-                    const results = data.RESULTS;
-
-                    addTrainingResult({
-                      avg_train_loss: results.avg_train_loss,
-                      avg_train_acc: results.avg_train_acc,
-                      avg_test_loss: results.avg_test_loss,
-                      avg_test_acc: results.avg_test_acc,
-                      train_losses: results.train_losses,
-                      test_losses: results.test_losses,
-                      trainingConfig: config,
-                    });
-                  } catch (error) {
-                    console.error("Training failed:", error);
-                  } finally {
-                    setIsTraining(false);
-                  }
-                }}
+                onClick={handleTrain}
               >
-                {isTraining ? (
+                {isTraining || startTrainingMutation.isPending ? (
                   <div className="flex items-center">
                     <div className="flex">
                       <SpinnerIcon className="my-auto mr-2 h-5 animate-spin" />
@@ -125,6 +128,13 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                 )}
               </button>
             </div>
+
+            {/* Error Display */}
+            {startTrainingMutation.error && (
+              <div className="mx-2 rounded-lg border border-red-600 bg-red-900/20 p-3 text-sm text-red-300">
+                Training failed: {String(startTrainingMutation.error)}
+              </div>
+            )}
           </div>
         </div>
         <div className="mx-10 mt-0 h-1/2 w-1/3 self-start rounded-xl">

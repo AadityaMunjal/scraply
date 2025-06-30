@@ -1,0 +1,137 @@
+import { useMutation } from "@tanstack/react-query";
+import { Config, TransformerConfig } from "~/types/index";
+
+// API functions
+const downloadFile = async (config: Config): Promise<Blob> => {
+  const response = await fetch("http://127.0.0.1:5000/generate", {
+    method: "POST",
+    body: JSON.stringify(config),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Download failed: ${response.status} ${response.statusText}`,
+    );
+  }
+
+  return response.blob();
+};
+
+const startTraining = async (config: Config) => {
+  const response = await fetch("http://127.0.0.1:5000/train", {
+    method: "POST",
+    body: JSON.stringify(config),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Training failed: ${response.status} ${response.statusText}`,
+    );
+  }
+
+  return response.json();
+};
+
+const startTransformerTraining = async (config: TransformerConfig) => {
+  const response = await fetch("http://127.0.0.1:5000/transformertrain", {
+    method: "POST",
+    body: JSON.stringify(config),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Transformer training failed: ${response.status} ${response.statusText}`,
+    );
+  }
+
+  return response.json();
+};
+
+const transformerTest = async (params: {
+  temperature: number;
+  prompt: string;
+}) => {
+  const response = await fetch("http://127.0.0.1:5000/transformertest", {
+    method: "POST",
+    body: JSON.stringify(params),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Transformer test failed: ${response.status} ${response.statusText}`,
+    );
+  }
+
+  return response.json();
+};
+
+// hooks
+export const useDownloadFile = () => {
+  return useMutation({
+    mutationFn: downloadFile,
+    onSuccess: (blob) => {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.style.display = "none";
+      a.href = url;
+      a.download = "generated_notebook.ipynb";
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    },
+    onError: (error) => {
+      console.error("Error downloading file:", error);
+    },
+  });
+};
+
+export const useStartTraining = () => {
+  return useMutation({
+    mutationFn: startTraining,
+    onSuccess: (data) => {
+      console.log("Training completed:", data);
+    },
+    onError: (error) => {
+      console.error("Training error:", error);
+    },
+  });
+};
+
+export const useStartTransformerTraining = () => {
+  return useMutation({
+    mutationFn: startTransformerTraining,
+    onSuccess: (data) => {
+      console.log("Transformer training completed:", data);
+    },
+    onError: (error) => {
+      console.error("Transformer training error:", error);
+    },
+  });
+};
+
+export const useTransformerTest = () => {
+  return useMutation({
+    mutationFn: transformerTest,
+  });
+};
+
+// Raw API functions for backward compatibility
+export {
+  downloadFile as downloadFileApi,
+  startTraining as startTrainingApi,
+  startTransformerTraining as startTransformerTrainingApi,
+  transformerTest as transformerTestApi,
+};
