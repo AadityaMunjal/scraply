@@ -2,8 +2,8 @@ import "~/styles/globals.css";
 
 import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
-import { DemoProvider } from "~/state/DemoContext";
 import Navbar from "./(components)/Navbar";
+import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: "scraply",
@@ -15,13 +15,13 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <DemoProvider>
-      <html lang="en" className={`${GeistSans.variable}`}>
-        <body className="h-screen bg-zinc-900 text-white">
+    <html lang="en" className={`${GeistSans.variable}`}>
+      <body className="h-screen bg-zinc-900 text-white">
+        <Providers>
           <Navbar />
           {children}
-        </body>
-      </html>
-    </DemoProvider>
+        </Providers>
+      </body>
+    </html>
   );
 }

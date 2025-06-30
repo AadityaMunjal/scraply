@@ -6,7 +6,7 @@ import {
   TRAINING_DEFAULTS,
   LOSS_FUNCTIONS,
   OPTIMIZERS,
-} from "~/configs/training";
+} from "~/util/trainingConfig";
 import TrainingConfigItem from "./TrainingConfigItem";
 
 interface SharedTrainingConfigProps {
