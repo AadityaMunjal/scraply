@@ -7,7 +7,7 @@ import {
   UILayer,
   hasNeurons,
   hasActivationFunction,
-  hasOtherParams,
+  hasParams,
 } from "~/types/index";
 import { PARAM_CONFIG } from "~/util/layerConfig";
 
@@ -20,14 +20,14 @@ interface OverlayBlockProps {
 
 const OtherParamsInputs = ({
   id,
-  otherParams,
+  params,
   onParamChange,
 }: {
   id: string;
-  otherParams?: Record<string, number>;
+  params?: Record<string, number>;
   onParamChange: (paramKey: string, newValue: number) => void;
 }) => {
-  if (!otherParams || Object.keys(otherParams).length === 0) {
+  if (!params || Object.keys(params).length === 0) {
     return null;
   }
 
@@ -42,42 +42,44 @@ const OtherParamsInputs = ({
 
   return (
     <div className="space-y-2">
-      {Object.entries(otherParams).map(([paramKey, paramValue]) => {
-        const config = PARAM_CONFIG[paramKey] || {
-          label: paramKey.charAt(0).toUpperCase() + paramKey.slice(1),
-          shortLabel: paramKey,
-          min: 0,
-          defaultValue: 1,
-          step: 1,
-        };
+      {Object.entries(params)
+        .filter(([key]) => key !== "inputNeurons" && key !== "outputNeurons")
+        .map(([paramKey, paramValue]) => {
+          const config = PARAM_CONFIG[paramKey] || {
+            label: paramKey.charAt(0).toUpperCase() + paramKey.slice(1),
+            shortLabel: paramKey,
+            min: 0,
+            defaultValue: 1,
+            step: 1,
+          };
 
-        return (
-          <div
-            key={paramKey}
-            className="flex items-center justify-between gap-2"
-          >
-            <label className="min-w-fit text-xs font-medium text-white/80">
-              {config.label}
-            </label>
-            <input
-              type="number"
-              className="h-6 w-12 rounded-md border-0 bg-white/90 text-center text-xs text-slate-900 shadow-sm outline-none backdrop-blur-sm transition-all duration-200 focus:ring-2 focus:ring-white/50"
-              value={paramValue}
-              min={config.min}
-              step={config.step || 1}
-              onChange={(e) => {
-                const newValue =
-                  config.step === 0.1
-                    ? parseFloat(e.target.value)
-                    : parseInt(e.target.value);
-                if (!isNaN(newValue)) {
-                  handleParamChange(paramKey, newValue);
-                }
-              }}
-            />
-          </div>
-        );
-      })}
+          return (
+            <div
+              key={paramKey}
+              className="flex items-center justify-between gap-2"
+            >
+              <label className="min-w-fit text-xs font-medium text-white/80">
+                {config.label}
+              </label>
+              <input
+                type="number"
+                className="h-6 w-12 rounded-md border-0 bg-white/90 text-center text-xs text-slate-900 shadow-sm outline-none backdrop-blur-sm transition-all duration-200 focus:ring-2 focus:ring-white/50"
+                value={paramValue}
+                min={config.min}
+                step={config.step || 1}
+                onChange={(e) => {
+                  const newValue =
+                    config.step === 0.1
+                      ? parseFloat(e.target.value)
+                      : parseInt(e.target.value);
+                  if (!isNaN(newValue)) {
+                    handleParamChange(paramKey, newValue);
+                  }
+                }}
+              />
+            </div>
+          );
+        })}
     </div>
   );
 };
@@ -99,17 +101,22 @@ const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
   const handleOutputNeuronsChange = (outputNeurons: number) => {
     if (outputNeurons < 1) return;
     if (hasNeurons(block)) {
-      updateBlock(id, { outputNeurons } as Partial<UILayer>);
+      updateBlock(id, {
+        params: {
+          ...(block.params as Record<string, any>),
+          outputNeurons,
+        },
+      });
     }
   };
 
   const handleParamChange = (paramKey: string, newValue: number) => {
-    if (hasOtherParams(block)) {
-      const newOtherParams = {
-        ...block.otherParams,
+    if (hasParams(block)) {
+      const newParams = {
+        ...(block.params as Record<string, any>),
         [paramKey]: newValue,
       };
-      updateBlock(id, { otherParams: newOtherParams } as Partial<UILayer>);
+      updateBlock(id, { params: newParams });
     }
   };
 
@@ -134,7 +141,7 @@ const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
                 <input
                   className="h-7 w-10 rounded-md border-0 bg-white/90 text-center text-xs text-slate-900 shadow-sm outline-none backdrop-blur-sm transition-all duration-200 focus:ring-2 focus:ring-white/50"
                   type="number"
-                  value={block.inputNeurons}
+                  value={block.params.inputNeurons}
                   onChange={(e) => {
                     const newInputNeurons = parseInt(e.target.value);
                     handleInputNeuronsChange(newInputNeurons);
@@ -146,7 +153,7 @@ const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
                 <input
                   className="h-7 w-10 rounded-md border-0 bg-white/90 text-center text-xs text-slate-900 shadow-sm outline-none backdrop-blur-sm transition-all duration-200 focus:ring-2 focus:ring-white/50"
                   type="number"
-                  value={block.outputNeurons}
+                  value={block.params.outputNeurons}
                   onChange={(e) => {
                     const newOutputNeurons = parseInt(e.target.value);
                     handleOutputNeuronsChange(newOutputNeurons);
@@ -161,7 +168,11 @@ const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
         <div className="mb-3">
           <OtherParamsInputs
             id={id}
-            otherParams={hasOtherParams(block) ? block.otherParams : undefined}
+            params={
+              hasParams(block)
+                ? (block.params as Record<string, number>)
+                : undefined
+            }
             onParamChange={handleParamChange}
           />
         </div>

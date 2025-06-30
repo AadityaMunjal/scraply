@@ -5,7 +5,7 @@ import { immer } from "zustand/middleware/immer";
 import { LAYER_BLOCKS } from "~/util/LAYER_BLOCKS";
 import { UILayer, hasNeurons } from "~/types/index";
 
-const syncLayers = (blocks: UILayer[]): UILayer[] => {
+const syncLayers = (blocks: any[]): any[] => {
   return blocks.map((block, index) => {
     if (index === 0) {
       return block;
@@ -15,7 +15,10 @@ const syncLayers = (blocks: UILayer[]): UILayer[] => {
     if (previousLayer && hasNeurons(previousLayer) && hasNeurons(block)) {
       return {
         ...block,
-        inputNeurons: previousLayer.outputNeurons,
+        params: {
+          ...block.params,
+          inputNeurons: previousLayer.params.outputNeurons,
+        },
       };
     }
     return block;
@@ -23,12 +26,12 @@ const syncLayers = (blocks: UILayer[]): UILayer[] => {
 };
 
 interface BoardState {
-  canvasBlocks: UILayer[];
+  canvasBlocks: any[];
   activeBlock: UILayer | null;
 
   // Actions
-  addBlock: (block: UILayer) => void;
-  updateBlock: (id: string, updates: Partial<UILayer>) => void;
+  addBlock: (block: any) => void;
+  updateBlock: (id: string, updates: any) => void;
   updateInputNeurons: (id: string, inputNeurons: number) => void;
   removeBlock: (id: string) => void;
   reorderBlocks: (oldIndex: number, newIndex: number) => void;
@@ -52,10 +55,10 @@ export const useBoardStore = create<BoardState>()(
       });
     },
 
-    updateBlock: (id: string, updates: Partial<UILayer>) => {
+    updateBlock: (id: string, updates: any) => {
       set((state) => {
         const blockIndex = state.canvasBlocks.findIndex(
-          (b: UILayer) => b.id === id,
+          (b: any) => b.id === id,
         );
         if (blockIndex !== -1) {
           const currentBlock = state.canvasBlocks[blockIndex];
@@ -63,7 +66,7 @@ export const useBoardStore = create<BoardState>()(
             state.canvasBlocks[blockIndex] = {
               ...currentBlock,
               ...updates,
-            } as UILayer;
+            };
             state.canvasBlocks = syncLayers(state.canvasBlocks);
           }
         }
@@ -73,13 +76,19 @@ export const useBoardStore = create<BoardState>()(
     updateInputNeurons: (id: string, inputNeurons: number) => {
       set((state) => {
         const blockIndex = state.canvasBlocks.findIndex(
-          (b: UILayer) => b.id === id,
+          (b: any) => b.id === id,
         );
         if (blockIndex !== -1) {
           const currentBlock = state.canvasBlocks[blockIndex];
           if (currentBlock && hasNeurons(currentBlock)) {
             // Update the current block's input neurons
-            state.canvasBlocks[blockIndex] = { ...currentBlock, inputNeurons };
+            state.canvasBlocks[blockIndex] = {
+              ...currentBlock,
+              params: {
+                ...(currentBlock.params as any),
+                inputNeurons,
+              },
+            };
 
             // Update previous layer's output neurons to match (reverse sync)
             if (blockIndex > 0) {
@@ -87,7 +96,10 @@ export const useBoardStore = create<BoardState>()(
               if (previousBlock && hasNeurons(previousBlock)) {
                 state.canvasBlocks[blockIndex - 1] = {
                   ...previousBlock,
-                  outputNeurons: inputNeurons,
+                  params: {
+                    ...(previousBlock.params as any),
+                    outputNeurons: inputNeurons,
+                  },
                 };
               }
             }
@@ -102,7 +114,7 @@ export const useBoardStore = create<BoardState>()(
     removeBlock: (id: string) => {
       set((state) => {
         state.canvasBlocks = state.canvasBlocks.filter(
-          (block: UILayer) => block.id !== id,
+          (block: any) => block.id !== id,
         );
         state.canvasBlocks = syncLayers(state.canvasBlocks);
       });
@@ -127,9 +139,7 @@ export const useBoardStore = create<BoardState>()(
       const id = active.id as string;
 
       // Find block in toolbox first
-      const toolboxBlock = LAYER_BLOCKS.find(
-        (block: UILayer) => block.id === id,
-      );
+      const toolboxBlock = LAYER_BLOCKS.find((block: any) => block.id === id);
       if (toolboxBlock) {
         set((state) => {
           state.activeBlock = toolboxBlock;
@@ -139,7 +149,7 @@ export const useBoardStore = create<BoardState>()(
 
       // Then find in canvas
       const canvasBlock = get().canvasBlocks.find(
-        (block: UILayer) => block.id === id,
+        (block: any) => block.id === id,
       );
       if (canvasBlock) {
         set((state) => {
@@ -167,10 +177,10 @@ export const useBoardStore = create<BoardState>()(
       // Handle dropping from toolbox to canvas
       if (overId === "canvas") {
         const toolboxBlock = LAYER_BLOCKS.find(
-          (block: UILayer) => block.id === activeId,
+          (block: any) => block.id === activeId,
         );
         if (toolboxBlock) {
-          const newBlock: UILayer = {
+          const newBlock = {
             ...toolboxBlock,
             id: `${toolboxBlock.id}-${Date.now()}`,
           };
@@ -185,10 +195,10 @@ export const useBoardStore = create<BoardState>()(
 
       // Handle reordering within canvas
       const activeIndex = get().canvasBlocks.findIndex(
-        (block: UILayer) => block.id === activeId,
+        (block: any) => block.id === activeId,
       );
       const overIndex = get().canvasBlocks.findIndex(
-        (block: UILayer) => block.id === overId,
+        (block: any) => block.id === overId,
       );
 
       if (activeIndex !== -1 && overIndex !== -1 && activeIndex !== overIndex) {

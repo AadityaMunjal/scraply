@@ -22,46 +22,53 @@ export interface BaseLayer {
   color: string;
 }
 
-export interface LayerWithNeurons extends BaseLayer {
-  inputNeurons: number;
-  outputNeurons: number;
-}
-
-export interface LayerWithNeuronsAndAF extends LayerWithNeurons {
+export interface LayerWithAF extends BaseLayer {
   activationFunction: ActivationFunction;
 }
 
-export interface LayerWithOtherParams<T> {
-  otherParams: T;
+export interface LayerWithParams<T> {
+  params: T;
 }
 
-export type LinearLayer = LayerWithNeuronsAndAF;
+export type LayerWithNeurons = LayerWithParams<{
+  inputNeurons: number;
+  outputNeurons: number;
+}>;
 
-export type ConvLayer = LayerWithNeuronsAndAF &
-  LayerWithOtherParams<{
+export type LinearLayer = LayerWithAF & LayerWithNeurons;
+
+export type ConvLayer = LayerWithAF &
+  LayerWithNeurons &
+  LayerWithParams<{
     dimension: 1 | 2;
     kernelSize: number;
     stride: number;
     padding: number;
   }>;
 
-export type RNNLayer = LayerWithNeuronsAndAF &
-  LayerWithOtherParams<{
+export type RNNLayer = LayerWithAF &
+  LayerWithNeurons &
+  LayerWithParams<{
     hiddenSize: number;
     dropout: number;
   }>;
   // will be sent as a list ex: [1, 2]
 
-export type GRULayer = LayerWithNeuronsAndAF &
-  LayerWithOtherParams<{
+export type GRULayer = LayerWithAF &
+  LayerWithNeurons &
+  LayerWithParams<{
     hiddenSize: number;
     dropout: number;
   }>;
 
-export type FlattenLayer = LayerWithNeurons;
+export type FlattenLayer = BaseLayer & {
+  inputNeurons: number;
+  startDimension: number;
+  endDimension: number;
+};
 
 export type MaxPoolLayer = BaseLayer &
-  LayerWithOtherParams<{
+  LayerWithParams<{
     dimension: 1 | 2;
     kernelSize: number;
     stride: number;
@@ -69,7 +76,7 @@ export type MaxPoolLayer = BaseLayer &
   }>;
 
 export type DropoutLayer = BaseLayer &
-  LayerWithOtherParams<{
+  LayerWithParams<{
     dropout: number;
   }>;
 

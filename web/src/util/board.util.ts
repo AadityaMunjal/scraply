@@ -6,7 +6,8 @@ import {
   OptimizerType,
   hasNeurons,
   hasActivationFunction,
-  hasOtherParams,
+  hasParams,
+  hasDimension,
 } from "~/types/index";
 
 export const getConfig = (
@@ -22,18 +23,30 @@ export const getConfig = (
   for (let i = 0; i < blocks.length; i++) {
     const block = blocks[i]!;
 
+    // Determine the layer kind (label) for backend
+    let layerKind = block.label;
+
+    // For Conv layers, change label based on dimension parameter
+    if (block.label === "Conv" && hasDimension(block)) {
+      layerKind = block.params.dimension === 1 ? "Conv1D" : "Conv2D";
+    }
+
     // Handle layers that have input/output neurons
     if (hasNeurons(block)) {
-      const inputNeurons = block.inputNeurons;
-      const outputNeurons = block.outputNeurons;
+      const inputNeurons = block.params.inputNeurons;
+      const outputNeurons = block.params.outputNeurons;
 
-      // Extract other parameters if they exist
-      const otherParamValues = hasOtherParams(block)
-        ? Object.values(block.otherParams)
+      // Extract other parameters if they exist (excluding inputNeurons and outputNeurons)
+      const otherParamValues = hasParams(block)
+        ? Object.entries(block.params)
+            .filter(
+              ([key]) => key !== "inputNeurons" && key !== "outputNeurons",
+            )
+            .map(([_, value]) => value)
         : [];
 
       layers.push({
-        kind: block.label,
+        kind: layerKind,
         args:
           otherParamValues.length > 0
             ? [inputNeurons, outputNeurons, ...otherParamValues]
@@ -46,13 +59,13 @@ export const getConfig = (
         });
       }
     } else {
-      // Handle layers without neurons (like MaxPool)
-      const otherParamValues = hasOtherParams(block)
-        ? Object.values(block.otherParams)
+      // Handle layers without neurons (like MaxPool, Dropout)
+      const otherParamValues = hasParams(block)
+        ? Object.values(block.params as Record<string, any>)
         : [];
 
       layers.push({
-        kind: block.label,
+        kind: layerKind,
         args: otherParamValues,
       });
     }

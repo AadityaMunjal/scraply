@@ -16,7 +16,7 @@ const Board = () => {
   const Tabs: Record<AppTabs, React.ReactNode> = {
     [AppTabs.LAYERS]: <LayersTab />,
     [AppTabs.TRAINING]: <TrainingTab selectedDataset={selectedDataset} />,
-    [AppTabs.OUTPUTS]: <OutputsTab />,
+    [AppTabs.OUTPUTS]: <OutputsTab selectedDataset={selectedDataset} />,
   };
 
   return (

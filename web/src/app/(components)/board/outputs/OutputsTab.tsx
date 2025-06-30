@@ -1,9 +1,20 @@
 "use client";
 
-interface OutputsTabProps {}
+import DATASETS from "~/util/DATASETS";
+import ClassificationOutput from "./ClassificationOutput";
 
-const OutputsTab: React.FC<OutputsTabProps> = () => {
-  return <div>Outputs tab</div>;
+interface OutputsTabProps {
+  selectedDataset: string;
+}
+
+const OutputsTab: React.FC<OutputsTabProps> = ({ selectedDataset }) => {
+  const dataset = DATASETS.find((d) => d.inputName === selectedDataset);
+
+  if (dataset?.kind === "classification") {
+    return <ClassificationOutput />;
+  } else if (dataset?.kind === "regression") {
+    return <div>Regression</div>;
+  }
 };
 
 export default OutputsTab;
