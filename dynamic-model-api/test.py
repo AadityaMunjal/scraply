@@ -1,34 +1,34 @@
 import requests
 
 
-# # ---- for testing linear layers -----
-# URL = "http://127.0.0.1:5000/train"
+# ---- for testing linear layers -----
+URL = "http://127.0.0.1:5000/train"
 
-# data = {
-#     "input": "pima",
-#     "layers": [
-#         {"kind": "Linear", "args": (8, 12)},
-#         {"kind": "ReLU"},
-#         {"kind": "Linear", "args": (12, 8)},
-#         {"kind": "ReLU"},
-#         {"kind": "Linear", "args": (8, 1)},
-#         {"kind": "Sigmoid"},
-#     ],
-#     "loss": "BCE",
-#     "optimizer": {"kind": "Adam", "lr": 0.001},
-#     "epoch": 3,
-#     "batch_size": 10,
-# }
+data = {
+    "input": "pima",
+    "layers": [
+        {"kind": "Linear", "args": (8, 12)},
+        {"kind": "ReLU"},
+        {"kind": "Linear", "args": (12, 8)},
+        {"kind": "ReLU"},
+        {"kind": "Linear", "args": (8, 1)},
+        {"kind": "Sigmoid"},
+    ],
+    "loss": "BCE",
+    "optimizer": {"kind": "Adam", "lr": 0.001},
+    "epoch": 3,
+    "batch_size": 10,
+}
 
-# print("ok, sending training request to the server...")
+print("ok, sending training request to the server...")
 
-# try:
-#     response = requests.post(URL, json=data)
-#     # Print the response
-#     print(f"Status Code: {response.status_code}")
-#     print(f"Response: {response.json()}")
-# except:
-#     print("url not found")
+try:
+    response = requests.post(URL, json=data)
+    # Print the response
+    print(f"Status Code: {response.status_code}")
+    print(f"Response: {response.json()}")
+except:
+    print("url not found")
 
 
 
@@ -84,7 +84,7 @@ import requests
 
 
 
-# ------ for testing CNN stuff ------
+# # ------ for testing CNN stuff ------
 
 URL = "http://127.0.0.1:5000/train"
 
@@ -105,7 +105,7 @@ data = {
     ],
     "loss": "CrossEntropy",
     "optimizer": {"kind": "Adam", "lr": 0.001},
-    "epoch": 1,
+    "epoch": 2,
     "batch_size": 64,
 }
 
