@@ -830,9 +830,11 @@ class Train:
 
         if self.input != "pima":
             # Return three separate dictionaries
-            return ORIGINAL_OUTPUT, RANDOM_SAMPLES_ENCODED, MISCLASSIFIED_SAMPLES_ENCODED
+            #return ORIGINAL_OUTPUT, RANDOM_SAMPLES_ENCODED, MISCLASSIFIED_SAMPLES_ENCODED
+            return ORIGINAL_OUTPUT
         else:
-            return ORIGINAL_OUTPUT, {}, {}  # Return empty dicts for non-image datasets
+            #return ORIGINAL_OUTPUT, {}, {}  # Return empty dicts for non-image datasets
+            return ORIGINAL_OUTPUT
 
     def generate_peek_dict(self, random_samples, misclassified_samples):
         print("hello")
