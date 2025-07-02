@@ -398,6 +398,96 @@ class Train:
 
         return misclassified_samples
 
+    def process_image_samples(self, samples_dict, base_dir):
+        """Process and save images and peek maps for a given set of samples.
+
+        Args:
+            samples_dict (dict): Dictionary containing samples in format {class_label: [(idx, true_label, pred_label), ...]}
+            base_dir (str): Base directory to save the images and peek maps
+        """
+        if self.input == "pima":  # Skip processing for non-image datasets
+            return
+
+        os.makedirs(base_dir, exist_ok=True)
+        print(f"Processing samples in directory: {base_dir}")
+
+        for class_label, samples in samples_dict.items():
+            class_dir = os.path.join(base_dir, f"class_{class_label}")
+            os.makedirs(class_dir, exist_ok=True)
+
+            for idx, true_label, pred_label in samples:
+                image, _ = self.test_loader.dataset[idx]
+                image = image.unsqueeze(0).to(self.device)
+
+                # Get image dimensions
+                if len(image.shape) == 4:  # B, C, H, W format
+                    _, _, h, w = image.shape
+                elif len(image.shape) == 3:  # C, H, W format
+                    _, h, w = image.shape
+                else:  # H, W format
+                    h, w = image.shape
+
+                self.model.feature_save = True  # Enable feature map saving
+                with torch.no_grad():
+                    output = self.model(image)
+
+                    # Save original image
+                    image_np = image[0, 0].cpu().numpy()
+                    image_np = (
+                        (image_np - image_np.min())
+                        * (255.0 / (image_np.max() - image_np.min()))
+                    ).astype(np.uint8)
+                    image_np = cv2.resize(
+                        image_np, (400, 400), interpolation=cv2.INTER_NEAREST
+                    )
+                    cv2.imwrite(
+                        os.path.join(class_dir, f"image_{idx}_original.png"), image_np
+                    )
+
+                    if self.model.isConv:
+                        # Process feature maps for convolutional layers
+                        feature_maps = self.model.feature_maps
+                        for layer, fmap in feature_maps.items():
+                            fmap = fmap.cpu().numpy()
+                            fmap = fmap[0]  # Remove batch dimension
+                            fmap = np.moveaxis(fmap, 0, -1)  # Rearrange channels
+                            peek_map = self.compute_PEEK(fmap, h, w)
+
+                            # Create peek map overlay
+                            peek_map_norm = (peek_map - peek_map.min()) / (
+                                peek_map.max() - peek_map.min()
+                            )
+                            peek_map_norm = cv2.resize(
+                                peek_map_norm,
+                                (400, 400),
+                                interpolation=cv2.INTER_NEAREST,
+                            )
+                            heatmap = cv2.applyColorMap(
+                                (peek_map_norm * 255).astype(np.uint8), cv2.COLORMAP_JET
+                            )
+                            overlay = cv2.addWeighted(
+                                cv2.cvtColor(image_np, cv2.COLOR_GRAY2BGR),
+                                0.3,
+                                heatmap,
+                                0.7,
+                                0,
+                            )
+
+                            cv2.imwrite(
+                                os.path.join(class_dir, f"image_{idx}_{layer}.png"),
+                                overlay,
+                            )
+                            print(
+                                f"Saved original image and peek map for class {true_label}, sample {idx}"
+                            )
+                    else:
+                        print(
+                            f"Saved original image for class {true_label}, sample {idx} (no convolutional layers)"
+                        )
+
+                self.model.feature_save = False  # Disable feature map saving
+                self.model.clear_feature_maps()  # Clear stored feature maps
+
     def train_test_log(self, n_epochs, batch_size):
         # i think it would be a good idea to do the images stuff in here
         # # this needs to be a stream
@@ -437,10 +527,204 @@ class Train:
                 # example of misclassified_samples: # ALL ARE MISCLASSIFIED EXAMPLES
                 # misclassified_samples {2: [(9527, 2, 0), (7279, 2, 0), (3660, 2, 1)], 4: [(1939, 4, 6), (5831, 4, 9), ...
 
-                # only get output info for the last epoch
-                # now we have random_samples and misclassified_samples which are dictionaries of lists. each list contains (idx, true_label, pred_label)
-                # so basically these means that we now have our image indicies from the test set
-                # then generate a peek for each if model.isConv is true.
+                # Create directory for random samples if it doesn't exist
+                print("----------processing random samples-----------")
+                if self.input != "pima":  # Only process images for non-pima datasets
+                    # Process random samples
+                    base_dir = "cnn_analysis_results"
+                    os.makedirs(base_dir, exist_ok=True)
+
+                    for key in random_samples.keys():  # key is the class label
+                        class_dir = os.path.join(base_dir, f"class_{key}")
+                        os.makedirs(class_dir, exist_ok=True)
+
+                        for idx, true_label, pred_label in random_samples[key]:
+                            image, _ = self.test_loader.dataset[idx]
+                            image = image.unsqueeze(0).to(self.device)
+
+                            # Get dimensions
+                            if len(image.shape) == 4:  # B, C, H, W format
+                                _, _, h, w = image.shape
+                            elif len(image.shape) == 3:  # C, H, W format
+                                _, h, w = image.shape
+                            else:  # H, W format
+                                h, w = image.shape
+
+                            self.model.feature_save = True
+                            with torch.no_grad():
+                                output = self.model(image)
+
+                                # Save original image
+                                image_np = image[0, 0].cpu().numpy()
+                                image_np = (
+                                    (image_np - image_np.min())
+                                    * (255.0 / (image_np.max() - image_np.min()))
+                                ).astype(np.uint8)
+                                image_np = cv2.resize(
+                                    image_np,
+                                    (400, 400),
+                                    interpolation=cv2.INTER_NEAREST,
+                                )
+                                cv2.imwrite(
+                                    os.path.join(
+                                        class_dir, f"image_{idx}_original.png"
+                                    ),
+                                    image_np,
+                                )
+
+                                if self.model.isConv:
+                                    # Process feature maps
+                                    feature_maps = self.model.feature_maps
+                                    for layer, fmap in feature_maps.items():
+                                        fmap = fmap.cpu().numpy()
+                                        fmap = fmap[0]  # Remove batch dimension
+                                        fmap = np.moveaxis(
+                                            fmap, 0, -1
+                                        )  # Rearrange channels
+                                        peek_map = self.compute_PEEK(fmap, h, w)
+
+                                        # Create peek map overlay
+                                        peek_map_norm = (peek_map - peek_map.min()) / (
+                                            peek_map.max() - peek_map.min()
+                                        )
+                                        peek_map_norm = cv2.resize(
+                                            peek_map_norm,
+                                            (400, 400),
+                                            interpolation=cv2.INTER_NEAREST,
+                                        )
+                                        heatmap = cv2.applyColorMap(
+                                            (peek_map_norm * 255).astype(np.uint8),
+                                            cv2.COLORMAP_JET,
+                                        )
+                                        overlay = cv2.addWeighted(
+                                            cv2.cvtColor(image_np, cv2.COLOR_GRAY2BGR),
+                                            0.3,
+                                            heatmap,
+                                            0.7,
+                                            0,
+                                        )
+
+                                        cv2.imwrite(
+                                            os.path.join(
+                                                class_dir, f"image_{idx}_{layer}.png"
+                                            ),
+                                            overlay,
+                                        )
+                                        print(
+                                            f"Saved original image and peek map for class {true_label}, sample {idx}"
+                                        )
+
+                                self.model.feature_save = False
+                                self.model.clear_feature_maps()
+                else:
+                    print("Skipping image processing for pima dataset")
+
+                print("--------processing misclassified samples-----------")
+                if self.input != "pima":  # Only process images for non-pima datasets
+                    # Process misclassified samples
+                    base_dir = os.path.join(
+                        "cnn_analysis_results", "lowest_accuracy_classes"
+                    )
+                    os.makedirs(base_dir, exist_ok=True)
+
+                    # Reorganize misclassified samples by predicted label
+                    pred_label_samples = {}
+                    for true_class, samples in misclassified_samples.items():
+                        for idx, true_label, pred_label in samples:
+                            if pred_label not in pred_label_samples:
+                                pred_label_samples[pred_label] = []
+                            pred_label_samples[pred_label].append(
+                                (idx, true_label, pred_label)
+                            )
+
+                    # Now process samples grouped by predicted label
+                    for pred_label, samples in pred_label_samples.items():
+                        class_dir = os.path.join(base_dir, f"misclass_to_{pred_label}")
+                        os.makedirs(class_dir, exist_ok=True)
+
+                        for idx, true_label, pred_label in samples:
+                            image, _ = self.test_loader.dataset[idx]
+                            image = image.unsqueeze(0).to(self.device)
+
+                            # Get dimensions
+                            if len(image.shape) == 4:  # B, C, H, W format
+                                _, _, h, w = image.shape
+                            elif len(image.shape) == 3:  # C, H, W format
+                                _, h, w = image.shape
+                            else:  # H, W format
+                                h, w = image.shape
+
+                            self.model.feature_save = True
+                            with torch.no_grad():
+                                output = self.model(image)
+
+                                # Save original image
+                                image_np = image[0, 0].cpu().numpy()
+                                image_np = (
+                                    (image_np - image_np.min())
+                                    * (255.0 / (image_np.max() - image_np.min()))
+                                ).astype(np.uint8)
+                                image_np = cv2.resize(
+                                    image_np,
+                                    (400, 400),
+                                    interpolation=cv2.INTER_NEAREST,
+                                )
+                                # Include true label in filename for reference
+                                cv2.imwrite(
+                                    os.path.join(
+                                        class_dir,
+                                        f"true_{true_label}_pred_{pred_label}_idx_{idx}_original.png",
+                                    ),
+                                    image_np,
+                                )
+
+                                if self.model.isConv:
+                                    # Process feature maps
+                                    feature_maps = self.model.feature_maps
+                                    for layer, fmap in feature_maps.items():
+                                        fmap = fmap.cpu().numpy()
+                                        fmap = fmap[0]  # Remove batch dimension
+                                        fmap = np.moveaxis(
+                                            fmap, 0, -1
+                                        )  # Rearrange channels
+                                        peek_map = self.compute_PEEK(fmap, h, w)
+
+                                        # Create peek map overlay
+                                        peek_map_norm = (peek_map - peek_map.min()) / (
+                                            peek_map.max() - peek_map.min()
+                                        )
+                                        peek_map_norm = cv2.resize(
+                                            peek_map_norm,
+                                            (400, 400),
+                                            interpolation=cv2.INTER_NEAREST,
+                                        )
+                                        heatmap = cv2.applyColorMap(
+                                            (peek_map_norm * 255).astype(np.uint8),
+                                            cv2.COLORMAP_JET,
+                                        )
+                                        overlay = cv2.addWeighted(
+                                            cv2.cvtColor(image_np, cv2.COLOR_GRAY2BGR),
+                                            0.3,
+                                            heatmap,
+                                            0.7,
+                                            0,
+                                        )
+
+                                        cv2.imwrite(
+                                            os.path.join(
+                                                class_dir,
+                                                f"true_{true_label}_pred_{pred_label}_idx_{idx}_{layer}.png",
+                                            ),
+                                            overlay,
+                                        )
+                                        print(
+                                            f"Saved original image and peek map for misclassified sample (true: {true_label}, pred: {pred_label})"
+                                        )
+
+                                self.model.feature_save = False
+                                self.model.clear_feature_maps()
+                else:
+                    print("Skipping misclassified samples processing for pima dataset")
 
             print("LEGACY OUTPUT. do not mess with this lil bro")
             print(
@@ -454,141 +738,6 @@ class Train:
             test_accs.append(float(test_avg_acc))
 
         # for loop has ended so we are in after last epoch right now
-
-        # Create directory for random samples if it doesn't exist
-        print("----------processing random samples-----------")
-        if self.input != "pima":  # Only process images for non-pima datasets
-            random_samples_dir = "random_samples"
-            if not os.path.exists(random_samples_dir):
-                os.makedirs(random_samples_dir)
-                print(f"Created directory: {random_samples_dir}")
-
-            for key in random_samples.keys():  # key is the class label.
-                for idx, true_label, pred_label in random_samples[
-                    key
-                ]:  # this is a list of tuples
-                    image, _ = self.test_loader.dataset[idx]
-                    image = image.unsqueeze(0).to(self.device)
-                    # Get height and width from the image tensor shape
-                    if len(image.shape) == 4:  # B, C, H, W format
-                        _, _, h, w = image.shape
-                    elif len(image.shape) == 3:  # C, H, W format
-                        _, h, w = image.shape
-                    else:  # H, W format
-                        h, w = image.shape
-
-                    self.model.feature_save = True  # for convolutional layers only
-                    with torch.no_grad():
-                        output = self.model(image)  # feature map has been saved
-                        _, predicted = torch.max(output, 1)
-
-                        if self.model.isConv:
-                            # get the feature maps
-                            feature_maps = self.model.feature_maps
-                            # Create directory structure
-                            base_dir = "random_samples"
-                            class_dir = os.path.join(base_dir, f"class_{true_label}")
-                            os.makedirs(class_dir, exist_ok=True)
-
-                            # save the feature maps
-                            for layer, fmap in feature_maps.items():
-                                fmap = fmap.cpu().numpy()
-                                # Handle batch dimension and channel arrangement before compute_PEEK
-                                fmap = fmap[0]  # Remove batch dimension
-                                fmap = np.moveaxis(fmap, 0, -1)  # Rearrange channels
-                                peek_map = self.compute_PEEK(
-                                    fmap, h, w
-                                )  # raw peek map has been made
-
-                                # First save the original image
-                                image_np = (
-                                    image[0, 0].cpu().numpy()
-                                )  # Convert to numpy and get first channel
-                                # Normalize to 0-255 range and convert to uint8
-                                image_np = (
-                                    (image_np - image_np.min())
-                                    * (255.0 / (image_np.max() - image_np.min()))
-                                ).astype(np.uint8)
-                                # Resize image to be larger (400x400 pixels)
-                                image_np = cv2.resize(
-                                    image_np,
-                                    (400, 400),
-                                    interpolation=cv2.INTER_NEAREST,
-                                )
-                                cv2.imwrite(
-                                    os.path.join(
-                                        class_dir, f"image_{idx}_original.png"
-                                    ),
-                                    image_np,
-                                )
-
-                                # Then save the peek map overlay
-                                # Normalize peek map to 0-1 range for heatmap
-                                peek_map_norm = (peek_map - peek_map.min()) / (
-                                    peek_map.max() - peek_map.min()
-                                )
-                                # Resize peek map to match image size
-                                peek_map_norm = cv2.resize(
-                                    peek_map_norm,
-                                    (400, 400),
-                                    interpolation=cv2.INTER_NEAREST,
-                                )
-                                # Convert to heatmap
-                                heatmap = cv2.applyColorMap(
-                                    (peek_map_norm * 255).astype(np.uint8),
-                                    cv2.COLORMAP_JET,
-                                )
-                                # Create overlay
-                                overlay = cv2.addWeighted(
-                                    cv2.cvtColor(image_np, cv2.COLOR_GRAY2BGR),
-                                    0.3,
-                                    heatmap,
-                                    0.7,
-                                    0,
-                                )
-
-                                
-                                cv2.imwrite(
-                                    os.path.join(
-                                        class_dir,
-                                        f"image_{idx}_peek_maps_{layer}.png",
-                                    ),
-                                    overlay,
-                                )
-    
-                                
-                                print(
-                                    f"Saved original image and peek map for class {true_label}, layer {layer}"
-                                )
-
-                        else:
-                            # Save original image for non-convolutional case
-                            image_np = image[0, 0].cpu().numpy()
-                            # Normalize to 0-255 range and convert to uint8
-                            image_np = (
-                                (image_np - image_np.min())
-                                * (255.0 / (image_np.max() - image_np.min()))
-                            ).astype(np.uint8)
-                            # Resize image to be larger (400x400 pixels)
-                            image_np = cv2.resize(
-                                image_np, (400, 400), interpolation=cv2.INTER_NEAREST
-                            )
-                            cv2.imwrite(
-                                os.path.join(class_dir, f"image_{idx}_original.png"),
-                                image_np,
-                            )
-                            print(
-                                f"Saved original image for class {true_label} (no convolutional layers)"
-                            )
-        else:
-            print("Skipping image processing for pima dataset")
-
-        print("--------processing misclassified samples-----------")
-        if self.input != "pima":  # Only process images for non-pima datasets
-            # Process misclassified samples here (similar to random samples)
-            print("Processing misclassified samples for image dataset")
-        else:
-            print("Skipping misclassified samples processing for pima dataset")
 
         print("---------------------------------------------")
         DO_NOT_MESS_WITH_THIS_CODE_FOR_NOW = {}
@@ -641,14 +790,14 @@ class Train:
 if __name__ == "__main__":
     # example data
     data = {
-    "input": "pima",
-    "layers": [
-        {"kind": "Linear", "args": (8, 12)},
-        {"kind": "ReLU"},
-        {"kind": "Linear", "args": (12, 8)},
-        {"kind": "ReLU"},
-        {"kind": "Linear", "args": (8, 1)},
-        {"kind": "Sigmoid"},
+        "input": "pima",
+        "layers": [
+            {"kind": "Linear", "args": (8, 12)},
+            {"kind": "ReLU"},
+            {"kind": "Linear", "args": (12, 8)},
+            {"kind": "ReLU"},
+            {"kind": "Linear", "args": (8, 1)},
+            {"kind": "Sigmoid"},
         ],
         "loss": "BCE",
         "optimizer": {"kind": "Adam", "lr": 0.001},
