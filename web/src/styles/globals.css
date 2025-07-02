@@ -1,3 +1,22 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom scrollbar styles for canvas */
+.canvas-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.canvas-scroll::-webkit-scrollbar-track {
+  background: #27272a;
+  border-radius: 4px;
+}
+
+.canvas-scroll::-webkit-scrollbar-thumb {
+  background: #52525b;
+  border-radius: 4px;
+}
+
+.canvas-scroll::-webkit-scrollbar-thumb:hover {
+  background: #71717a;
+}
