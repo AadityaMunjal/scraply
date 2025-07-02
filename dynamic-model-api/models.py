@@ -16,6 +16,9 @@ import os
 import numpy as np
 from scipy.special import entr
 import matplotlib
+import base64
+import json
+from io import BytesIO
 
 matplotlib.use("Agg")  # Set the backend to non-interactive Agg
 import matplotlib.pyplot as plt
@@ -534,9 +537,13 @@ class Train:
                     base_dir = "cnn_analysis_results"
                     os.makedirs(base_dir, exist_ok=True)
 
+                    # Dictionary to store base64 encoded images
+                    RANDOM_SAMPLES_ENCODED = {}
+
                     for key in random_samples.keys():  # key is the class label
                         class_dir = os.path.join(base_dir, f"class_{key}")
                         os.makedirs(class_dir, exist_ok=True)
+                        RANDOM_SAMPLES_ENCODED[key] = []
 
                         for idx, true_label, pred_label in random_samples[key]:
                             image, _ = self.test_loader.dataset[idx]
@@ -565,12 +572,27 @@ class Train:
                                     (400, 400),
                                     interpolation=cv2.INTER_NEAREST,
                                 )
+
+                                # Save to disk
                                 cv2.imwrite(
                                     os.path.join(
                                         class_dir, f"image_{idx}_original.png"
                                     ),
                                     image_np,
                                 )
+
+                                # Base64 encode original image
+                                _, buffer = cv2.imencode(".png", image_np)
+                                img_b64 = base64.b64encode(buffer.tobytes()).decode(
+                                    "utf-8"
+                                )
+                                image_data = {
+                                    "original": img_b64,
+                                    "peek_maps": [],
+                                    "true_label": int(true_label),
+                                    "pred_label": int(pred_label),
+                                    "idx": idx,
+                                }
 
                                 if self.model.isConv:
                                     # Process feature maps
@@ -604,15 +626,28 @@ class Train:
                                             0,
                                         )
 
+                                        # Save to disk
                                         cv2.imwrite(
                                             os.path.join(
                                                 class_dir, f"image_{idx}_{layer}.png"
                                             ),
                                             overlay,
                                         )
+
+                                        # Base64 encode peek map
+                                        _, buffer = cv2.imencode(".png", overlay)
+                                        peek_b64 = base64.b64encode(
+                                            buffer.tobytes()
+                                        ).decode("utf-8")
+                                        image_data["peek_maps"].append(
+                                            {"layer": str(layer), "image": peek_b64}
+                                        )
+
                                         print(
                                             f"Saved original image and peek map for class {true_label}, sample {idx}"
                                         )
+
+                                RANDOM_SAMPLES_ENCODED[key].append(image_data)
 
                                 self.model.feature_save = False
                                 self.model.clear_feature_maps()
@@ -626,6 +661,9 @@ class Train:
                         "cnn_analysis_results", "lowest_accuracy_classes"
                     )
                     os.makedirs(base_dir, exist_ok=True)
+
+                    # Dictionary to store base64 encoded misclassified images
+                    MISCLASSIFIED_SAMPLES_ENCODED = {}
 
                     # Reorganize misclassified samples by predicted label
                     pred_label_samples = {}
@@ -641,6 +679,7 @@ class Train:
                     for pred_label, samples in pred_label_samples.items():
                         class_dir = os.path.join(base_dir, f"misclass_to_{pred_label}")
                         os.makedirs(class_dir, exist_ok=True)
+                        MISCLASSIFIED_SAMPLES_ENCODED[pred_label] = []
 
                         for idx, true_label, pred_label in samples:
                             image, _ = self.test_loader.dataset[idx]
@@ -669,7 +708,8 @@ class Train:
                                     (400, 400),
                                     interpolation=cv2.INTER_NEAREST,
                                 )
-                                # Include true label in filename for reference
+
+                                # Save to disk
                                 cv2.imwrite(
                                     os.path.join(
                                         class_dir,
@@ -677,6 +717,19 @@ class Train:
                                     ),
                                     image_np,
                                 )
+
+                                # Base64 encode original image
+                                _, buffer = cv2.imencode(".png", image_np)
+                                img_b64 = base64.b64encode(buffer.tobytes()).decode(
+                                    "utf-8"
+                                )
+                                image_data = {
+                                    "original": img_b64,
+                                    "peek_maps": [],
+                                    "true_label": int(true_label),
+                                    "pred_label": int(pred_label),
+                                    "idx": idx,
+                                }
 
                                 if self.model.isConv:
                                     # Process feature maps
@@ -710,6 +763,7 @@ class Train:
                                             0,
                                         )
 
+                                        # Save to disk
                                         cv2.imwrite(
                                             os.path.join(
                                                 class_dir,
@@ -717,9 +771,21 @@ class Train:
                                             ),
                                             overlay,
                                         )
+
+                                        # Base64 encode peek map
+                                        _, buffer = cv2.imencode(".png", overlay)
+                                        peek_b64 = base64.b64encode(
+                                            buffer.tobytes()
+                                        ).decode("utf-8")
+                                        image_data["peek_maps"].append(
+                                            {"layer": str(layer), "image": peek_b64}
+                                        )
+
                                         print(
                                             f"Saved original image and peek map for misclassified sample (true: {true_label}, pred: {pred_label})"
                                         )
+
+                                MISCLASSIFIED_SAMPLES_ENCODED[pred_label].append(image_data)
 
                                 self.model.feature_save = False
                                 self.model.clear_feature_maps()
@@ -740,7 +806,6 @@ class Train:
         # for loop has ended so we are in after last epoch right now
 
         print("---------------------------------------------")
-        DO_NOT_MESS_WITH_THIS_CODE_FOR_NOW = {}
         # calculate average accuracy and average loss
         avg_train_acc = sum(train_accs) / len(train_accs)
         avg_test_acc = sum(test_accs) / len(test_accs)
@@ -763,9 +828,11 @@ class Train:
             "avg_test_acc": avg_test_acc,
         }
 
-        return ORIGINAL_OUTPUT  # , NEW_OUTPUT
-
-        # can add more information to this dictionary, like the saved model, best epochs, etc.
+        if self.input != "pima":
+            # Return three separate dictionaries
+            return ORIGINAL_OUTPUT, RANDOM_SAMPLES_ENCODED, MISCLASSIFIED_SAMPLES_ENCODED
+        else:
+            return ORIGINAL_OUTPUT, {}, {}  # Return empty dicts for non-image datasets
 
     def generate_peek_dict(self, random_samples, misclassified_samples):
         print("hello")
