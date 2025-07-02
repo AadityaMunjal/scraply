@@ -789,6 +789,7 @@ class Train:
 
 if __name__ == "__main__":
     # example data
+    print("pima linear layer test")
     data = {
         "input": "pima",
         "layers": [
@@ -827,3 +828,50 @@ if __name__ == "__main__":
     RESULTS = t.train_test_log(n_epochs, batch_size)
 
     print(RESULTS)
+    
+    print("mnist cnn test")
+    
+    data = {
+    "input": "MNIST",
+    "layers": [
+        {"kind": "Conv2D", "args": (2, 1, 16, 3, 1, 0)}, # dim, input, output, kernel size, stride, padding. 
+        # dim is a fake arg we made up so we just ignore it in the actual api. same for maxpool layers.
+        {"kind": "ReLU"},
+        {"kind": "MaxPool2D", "args": (2, 2, 2, 0)},
+        {"kind": "Conv2D", "args": (2, 16, 32, 3, 1, 0)},
+        {"kind": "ReLU"},
+        {"kind": "MaxPool2D", "args": (2, 2, 2, 0)},
+        {"kind": "Flatten", "args": [1, -1]},
+        {"kind": "Linear", "args": (800, 128)},  # supposed to be 32 * 7 * 7
+        {"kind": "ReLU"},
+        {"kind": "Linear", "args": (128, 10)},
+        ],
+        "loss": "CrossEntropy",
+        "optimizer": {"kind": "Adam", "lr": 0.001},
+        "epoch": 2,
+        "batch_size": 64,
+    }
+    
+    inp = data["input"]
+    layers = data["layers"]
+    loss = data["loss"]
+    optimizer = data["optimizer"]
+    n_epochs = data["epoch"]
+    batch_size = data["batch_size"]
+
+    RESULTS = {}
+
+    model = DynamicModel(layers)
+
+    t = Train(
+        model=model,
+        input=inp,
+        loss=loss,
+        optimizer=optimizer,
+        batch_size=batch_size,
+    )
+
+    RESULTS = t.train_test_log(n_epochs, batch_size)
+    
+    
+
