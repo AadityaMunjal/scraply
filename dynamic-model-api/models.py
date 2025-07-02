@@ -7,9 +7,18 @@ from torch.utils.data import DataLoader, TensorDataset
 import torch.nn.functional as F
 from sklearn.model_selection import train_test_split  # --> pip install scikit-learn
 import math
-from collections import Counter
+from collections import Counter, defaultdict
+import cv2  # --> pip install opencv-python
 import time
+import random
 from params import DATALOADERS, LAYERS, ACTIVATIONS, LOSSES, OPTIMIZERS
+import os
+import numpy as np
+from scipy.special import entr
+import matplotlib
+
+matplotlib.use("Agg")  # Set the backend to non-interactive Agg
+import matplotlib.pyplot as plt
 
 # Import transformer-related classes from the new file
 from transformer_models import (
@@ -21,8 +30,13 @@ from transformer_models import (
 )
 
 
-# data loader + suggestions
-# expected data example from the api
+class ConditionalActivationSaver:
+    def __init__(self, model):
+        self.model = model
+
+    def hook(self, module, input, output):
+        if self.model.feature_save and not self.model.training:
+            self.model.feature_maps[module] = output.detach().clone()
 
 
 class DynamicModel(nn.Module):
@@ -30,6 +44,8 @@ class DynamicModel(nn.Module):
         super().__init__()
         raw_layers = layers
         self.layer_list = []
+        self.feature_save = False
+        self.isConv = False  # set to true if the model has a convolutional layer
 
         # Initialize feature_maps dictionary to store convolutional layer outputs during inference
         self.feature_maps = {}
@@ -48,6 +64,7 @@ class DynamicModel(nn.Module):
                     dim = layer_args[0]
                     i, o, k_size, stride, padding = layer_args[1:]
                     component = LAYERS[layer_type](dim, i, o, k_size, stride, padding)
+                    self.isConv = True
 
                 elif layer_type in ["LSTM", "GRU", "RNN"]:
                     i, h_size, dropout = layer_args
@@ -78,28 +95,22 @@ class DynamicModel(nn.Module):
                 print("Invalid layer type")
                 break
 
+            # if the layer is convolutional then just put the fries in the bag bro (jk)
+
             self.layer_list.append(component)
 
         self.layers = nn.ModuleList(self.layer_list)
 
         # Register hooks for convolutional layers only
-        self._register_conv_hooks()
+        saver = ConditionalActivationSaver(self)  # pass in the model to the saver
+        # saver.save = self.feature_save  # set the save flag to the feature_save flag
+        self._register_conv_hooks(saver.hook)
 
-    def _hook_fn(self, module, input, output):
-        """Hook function that only activates in eval mode for convolutional layers"""
-        if not self.training:  # Ensures it only runs in eval mode
-            print(
-                f"Forward Hook (Inference Only) - {module.__class__.__name__}: Output Shape {output.shape}"
-            )
-            self.feature_maps[module] = (
-                output  # storing key-value pair in feature_maps dictionary
-            )
-
-    def _register_conv_hooks(self):
+    def _register_conv_hooks(self, hook_fn):
         """Register forward hooks on all convolutional layers"""
         for layer in self.layers:
             if isinstance(layer, (nn.Conv1d, nn.Conv2d, nn.Conv3d)):
-                layer.register_forward_hook(self._hook_fn)
+                layer.register_forward_hook(hook_fn)
 
     def get_feature_maps(self):
         """Return the current feature maps dictionary"""
@@ -115,10 +126,35 @@ class DynamicModel(nn.Module):
 
         return x
 
+    # # In evaluation:
+    # saver.save = True
+    # _ = model(input_data)  # this will save activations
+    # saver.save = False
+    # _ = model(input_data)  # this will skip saving
+
 
 class Train:
+    # in training.
+    # i want to not do anything with the feature maps. flag must be set to false
+
+    # during testing, i stil do not want to save the feature maps.
+
+    # then after training, i need to pick 3 random images from the 10 predicted classes and save the indicies.
+    # create folder for each class. save the images in the folder.
+    # create a dictionary for each class. save images and their peek map images in it like this: placeholder_img_b64 = base64.b64encode(b"_placeholdetext__" + bytes(str(i), 'utf-8')).decode('utf-8')
+    # then i need to get the 3 lowest class acurracies and get 3 incorrect predictions from each of the 3 lowest class acurracies. and save the indicies
+    # include true and predicted labels in the dictionary
+
+    # create a folder for the 3 lowest class acurracies. save the images in the folder.
+    # create a dictionary for the 3 lowest class acurracies. save images and their peek map images in it like this: placeholder_img_b64 = base64.b64encode(b"_placeholdetext__" + bytes(str(i), 'utf-8')).decode('utf-8').
+    # include true and predicted labels in the dictionary
+
+    # each peek map MUST be a SEPERATE IMAGE. i DO NOT WANT TO SAVE THEM AS A SINGLE IMAGE.
     def __init__(self, model, input, loss, optimizer, batch_size):
         self.input = input
+        self.num_classes = (
+            0  # this will be set to the number of classes in the dataset (hopefully)
+        )
         ds = DATALOADERS[input]
 
         self.device = (  # for GPU access --> works with CPU as well
@@ -134,7 +170,8 @@ class Train:
         self.model = model.to(self.device)
 
         # preprocessing data here!!!
-        if input == "pima":
+        if self.input == "pima":
+            self.num_classes = 2
             X = ds["X"]
             y = ds["y"]
 
@@ -163,6 +200,11 @@ class Train:
         else:
             train_set = ds["train"]
             test_set = ds["test"]
+            self.num_classes = (
+                len(train_set.classes)
+                if hasattr(train_set, "classes")
+                else len(torch.unique(torch.tensor([label for _, label in train_set])))
+            )  # this might not work chat :D
             self.train_loader = DataLoader(
                 train_set, batch_size=batch_size, shuffle=True
             )
@@ -178,8 +220,7 @@ class Train:
         self.final_loss = -1
 
     def train(self, n_epochs, batch_size):
-        size = len(self.train_loader.dataset)
-        # num_batches = len(self.train_loader)
+        self.model.feature_save = False  # set the feature_save flag to false
         self.model.train()
         train_loss = 0
         correct = 0
@@ -202,14 +243,9 @@ class Train:
                 ).float()  # apply threshold for binary classification
             else:
                 _, predicted = torch.max(pred, 1)  # for multi-class classification
-
             # Get the predicted class (index with max value)
             correct += (predicted == y).sum().item()  # Count correct predictions
             total += y.size(0)  # Count total predictions
-
-            if batch % 100 == 0:
-                loss, current = loss.item(), (batch + 1) * len(X)
-                # print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
         # Average loss over all batches
         avg_train_loss = train_loss / len(self.train_loader)
@@ -217,46 +253,196 @@ class Train:
         avg_acc = 100 * correct / total
         return avg_train_loss, avg_acc
 
-    def test(self, n_epochs, batch_size):
-        size = len(self.test_loader.dataset)
-        num_batches = len(self.test_loader)
+    def test(self, output_info=False):
+        self.model.feature_save = False  # set the feature_save flag to false
         self.model.eval()  # model mode change is especially important for dropout layers
-        test_loss, correct = 0, 0
+
+        all_predictions = []
+        all_labels = []
+        all_indices = []
+
+        test_loss, correct, total = 0, 0, 0  # Add total for accuracy calculation
 
         with torch.no_grad():
-            for X, y in self.test_loader:
+            for idx, (X, y) in enumerate(
+                self.test_loader
+            ):  # this might not work with pima
                 X, y = X.to(self.device), y.to(self.device)
                 # Compute prediction error
-                pred = self.model(X)
+                pred = self.model(X)  # outputs
                 test_loss += self.loss_fn(pred, y).item()
                 if self.input == "pima":
                     predicted = (pred > 0.5).type(torch.float)
                     correct += (predicted == y).sum().item()
                 else:
-                    correct += (
-                        (pred.argmax(1) == y).type(torch.float).sum().item()
-                    )  # for accuracy
+                    _, predicted = torch.max(pred, 1)  # Get predicted class indices
+                    correct += (predicted == y).sum().item()  # for accuracy
 
-        test_loss /= num_batches
-        correct /= size
-        avg_acc = 100 * correct
+                total += y.size(0)  # Count total predictions
+                if output_info and self.input != "pima":
+                    all_predictions.extend(predicted.cpu().numpy().tolist())
+                    all_labels.extend(y.cpu().numpy().tolist())
+                    all_indices.extend([idx * y.size(0) + i for i in range(y.size(0))])
 
-        # Average loss over all batches
+        if output_info and self.input != "pima":
+            # Calculate per-class accuracy
+            class_correct = defaultdict(int)
+            class_total = defaultdict(int)
+            class_predictions = defaultdict(
+                list
+            )  # Store (idx, true_label, pred_label) for each class
+            # class_predictions is a dictionary of lists. each list contains (idx, true_label, pred_label)
+            # ex: class_predictions[class_label] = [(idx, true_label, pred_label), (idx, true_label, pred_label), (idx, true_label, pred_label)]
+            # ex: class_predictions[class_label] = [(idx, true_label, pred_label), (idx, true_label, pred_label), (idx, true_label, pred_label)]
+
+            for idx, (true_label, pred_label) in enumerate(
+                zip(all_labels, all_predictions)
+            ):
+                class_total[true_label] += 1
+                class_predictions[true_label].append((idx, true_label, pred_label))
+
+                if true_label == pred_label:
+                    class_correct[true_label] += 1
+
+            # Calculate accuracy for each class
+            class_accuracy = {}
+            for class_label in range(self.num_classes):
+                if class_total[class_label] > 0:
+                    class_accuracy[class_label] = (
+                        class_correct[class_label] / class_total[class_label]
+                    )
+                else:
+                    class_accuracy[class_label] = 0.0
+
+            # get the 3 lowest class acurracies
+            sorted_classes = sorted(class_accuracy.items(), key=lambda x: x[1])
+            lowest_accuracy_classes = [
+                class_label for class_label, accuracy in sorted_classes[:3]
+            ]
+            lowest_accuracy_classes_info = {}
+            for class_label in lowest_accuracy_classes:
+                lowest_accuracy_classes_info[class_label] = class_predictions[
+                    class_label
+                ]
+
+            print(f"\n3 lowest accuracy classes: {lowest_accuracy_classes}")
+
+            # # Get random predictions per class (3 per class)
+            print("\nGetting random predictions per class...")
+            random_samples = self.get_random_predictions_per_class(
+                class_predictions, num_samples=3
+            )
+
+            # now we have random_samples which is a dictionary of lists. each list contains (idx, true_label, pred_label)
+            # so basically these means that we now have our image indicies from the test set
+
+            # Get misclassified samples for lowest accuracy classes
+            print("Getting misclassified samples for lowest accuracy classes...")
+            misclassified_samples = self.get_misclassified_samples(
+                lowest_accuracy_classes_info, num_samples=3
+            )
+
+            # now we have misclassified_samples which is a dictionary of lists. each list contains (idx, true_label, pred_label)
+            # so basically these means that we now have our image indicies from the test set
+
+            # then generate a peek for each if model.isConv is true. --> I THINK I WILL DO THIS OUTSIDE OF THE TEST FUNCTION
+
+        # returning test loss here :)
         avg_test_loss = test_loss / len(self.test_loader)
-        return avg_test_loss, avg_acc
+        avg_acc = 100 * correct / total
+
+        if output_info and self.input != "pima":
+            return avg_test_loss, avg_acc, random_samples, misclassified_samples
+        else:
+            return avg_test_loss, avg_acc  # ORIGINAL OUTPUT
+
+    def get_random_predictions_per_class(
+        self, class_predictions, num_samples=3
+    ):  # BEWARE: THIS IS VIBE CODED
+        """Get random samples for each class (regardless of prediction correctness)"""
+        random_samples = {}
+
+        for class_label in range(10):
+            if class_label in class_predictions:
+                # Get all predictions for this class
+                samples = class_predictions[class_label]
+                # Randomly sample up to num_samples
+                if len(samples) >= num_samples:
+                    random_samples[class_label] = random.sample(samples, num_samples)
+                else:
+                    random_samples[class_label] = samples
+
+        return random_samples
+
+    def get_misclassified_samples(
+        self, class_predictions, num_samples=3
+    ):  # BEWARE: THIS IS VIBE CODED
+        """Get misclassified samples for each class"""
+        misclassified_samples = {}
+
+        for class_label in range(self.num_classes):  # self.num_classes might not work.
+            if class_label in class_predictions:
+                # Get only misclassified samples for this class
+                misclassified = [
+                    (idx, true_label, pred_label)
+                    for idx, true_label, pred_label in class_predictions[class_label]
+                    if true_label != pred_label
+                ]
+
+                if len(misclassified) >= num_samples:
+                    misclassified_samples[class_label] = random.sample(
+                        misclassified, num_samples
+                    )
+                else:
+                    misclassified_samples[class_label] = misclassified
+
+        return misclassified_samples
 
     def train_test_log(self, n_epochs, batch_size):
+        # i think it would be a good idea to do the images stuff in here
+        # # this needs to be a stream
+        # # DUMMY EXAMPLE:
+        # def train_and_stream():
+        # for epoch in range(1, 6):
+        # # Simulate training metrics
+        #     data = {"epoch": epoch, "loss": 0.1*epoch, "accuracy": 0.9 - 0.05*epoch}
+        #     yield f"data: {data}\n\n"
+        #     time.sleep(1)  # simulate time per epoch
+
         train_losses = []
         train_accs = []
         test_losses = []
         test_accs = []
         for t in range(n_epochs):
             print(f"Epoch {t + 1}/{n_epochs}...")
+
             avg_train_loss, train_avg_acc = self.train(n_epochs, batch_size)
+
             print(
                 f"Train Loss: {avg_train_loss:.4f}, Train Accuracy: {train_avg_acc:.2f}%\n"
             )
-            avg_test_loss, test_avg_acc = self.test(n_epochs, batch_size)
+
+            if t != n_epochs - 1 or self.input == "pima":
+                avg_test_loss, test_avg_acc = self.test(output_info=False)
+            else:
+                avg_test_loss, test_avg_acc, random_samples, misclassified_samples = (
+                    self.test(output_info=True)
+                )
+
+                # example of random_samples:
+                # random_samples {0: [(9527, 0, 0), (7279, 0, 0), (3660, 0, 0)], 1: [(1939, 1, 1), (5831, 1, 1), ...
+                # (idx, true_label, pred_label) --> idx is the index of the image in the test set
+                # dictionary key is the class label
+
+                # example of misclassified_samples: # ALL ARE MISCLASSIFIED EXAMPLES
+                # misclassified_samples {2: [(9527, 2, 0), (7279, 2, 0), (3660, 2, 1)], 4: [(1939, 4, 6), (5831, 4, 9), ...
+
+                # only get output info for the last epoch
+                # now we have random_samples and misclassified_samples which are dictionaries of lists. each list contains (idx, true_label, pred_label)
+                # so basically these means that we now have our image indicies from the test set
+                # then generate a peek for each if model.isConv is true.
+
+            print("LEGACY OUTPUT. do not mess with this lil bro")
             print(
                 f"Test Loss: {avg_test_loss:.4f}, Test Accuracy: {test_avg_acc:.2f}%\n"
             )
@@ -267,6 +453,145 @@ class Train:
             test_losses.append(float(avg_test_loss))
             test_accs.append(float(test_avg_acc))
 
+        # for loop has ended so we are in after last epoch right now
+
+        # Create directory for random samples if it doesn't exist
+        print("----------processing random samples-----------")
+        if self.input != "pima":  # Only process images for non-pima datasets
+            random_samples_dir = "random_samples"
+            if not os.path.exists(random_samples_dir):
+                os.makedirs(random_samples_dir)
+                print(f"Created directory: {random_samples_dir}")
+
+            for key in random_samples.keys():  # key is the class label.
+                for idx, true_label, pred_label in random_samples[
+                    key
+                ]:  # this is a list of tuples
+                    image, _ = self.test_loader.dataset[idx]
+                    image = image.unsqueeze(0).to(self.device)
+                    # Get height and width from the image tensor shape
+                    if len(image.shape) == 4:  # B, C, H, W format
+                        _, _, h, w = image.shape
+                    elif len(image.shape) == 3:  # C, H, W format
+                        _, h, w = image.shape
+                    else:  # H, W format
+                        h, w = image.shape
+
+                    self.model.feature_save = True  # for convolutional layers only
+                    with torch.no_grad():
+                        output = self.model(image)  # feature map has been saved
+                        _, predicted = torch.max(output, 1)
+
+                        if self.model.isConv:
+                            # get the feature maps
+                            feature_maps = self.model.feature_maps
+                            # Create directory structure
+                            base_dir = "random_samples"
+                            class_dir = os.path.join(base_dir, f"class_{true_label}")
+                            os.makedirs(class_dir, exist_ok=True)
+
+                            # save the feature maps
+                            for layer, fmap in feature_maps.items():
+                                fmap = fmap.cpu().numpy()
+                                # Handle batch dimension and channel arrangement before compute_PEEK
+                                fmap = fmap[0]  # Remove batch dimension
+                                fmap = np.moveaxis(fmap, 0, -1)  # Rearrange channels
+                                peek_map = self.compute_PEEK(
+                                    fmap, h, w
+                                )  # raw peek map has been made
+
+                                # First save the original image
+                                image_np = (
+                                    image[0, 0].cpu().numpy()
+                                )  # Convert to numpy and get first channel
+                                # Normalize to 0-255 range and convert to uint8
+                                image_np = (
+                                    (image_np - image_np.min())
+                                    * (255.0 / (image_np.max() - image_np.min()))
+                                ).astype(np.uint8)
+                                # Resize image to be larger (400x400 pixels)
+                                image_np = cv2.resize(
+                                    image_np,
+                                    (400, 400),
+                                    interpolation=cv2.INTER_NEAREST,
+                                )
+                                cv2.imwrite(
+                                    os.path.join(
+                                        class_dir, f"image_{idx}_original.png"
+                                    ),
+                                    image_np,
+                                )
+
+                                # Then save the peek map overlay
+                                # Normalize peek map to 0-1 range for heatmap
+                                peek_map_norm = (peek_map - peek_map.min()) / (
+                                    peek_map.max() - peek_map.min()
+                                )
+                                # Resize peek map to match image size
+                                peek_map_norm = cv2.resize(
+                                    peek_map_norm,
+                                    (400, 400),
+                                    interpolation=cv2.INTER_NEAREST,
+                                )
+                                # Convert to heatmap
+                                heatmap = cv2.applyColorMap(
+                                    (peek_map_norm * 255).astype(np.uint8),
+                                    cv2.COLORMAP_JET,
+                                )
+                                # Create overlay
+                                overlay = cv2.addWeighted(
+                                    cv2.cvtColor(image_np, cv2.COLOR_GRAY2BGR),
+                                    0.3,
+                                    heatmap,
+                                    0.7,
+                                    0,
+                                )
+
+                                
+                                cv2.imwrite(
+                                    os.path.join(
+                                        class_dir,
+                                        f"image_{idx}_peek_maps_{layer}.png",
+                                    ),
+                                    overlay,
+                                )
+    
+                                
+                                print(
+                                    f"Saved original image and peek map for class {true_label}, layer {layer}"
+                                )
+
+                        else:
+                            # Save original image for non-convolutional case
+                            image_np = image[0, 0].cpu().numpy()
+                            # Normalize to 0-255 range and convert to uint8
+                            image_np = (
+                                (image_np - image_np.min())
+                                * (255.0 / (image_np.max() - image_np.min()))
+                            ).astype(np.uint8)
+                            # Resize image to be larger (400x400 pixels)
+                            image_np = cv2.resize(
+                                image_np, (400, 400), interpolation=cv2.INTER_NEAREST
+                            )
+                            cv2.imwrite(
+                                os.path.join(class_dir, f"image_{idx}_original.png"),
+                                image_np,
+                            )
+                            print(
+                                f"Saved original image for class {true_label} (no convolutional layers)"
+                            )
+        else:
+            print("Skipping image processing for pima dataset")
+
+        print("--------processing misclassified samples-----------")
+        if self.input != "pima":  # Only process images for non-pima datasets
+            # Process misclassified samples here (similar to random samples)
+            print("Processing misclassified samples for image dataset")
+        else:
+            print("Skipping misclassified samples processing for pima dataset")
+
+        print("---------------------------------------------")
+        DO_NOT_MESS_WITH_THIS_CODE_FOR_NOW = {}
         # calculate average accuracy and average loss
         avg_train_acc = sum(train_accs) / len(train_accs)
         avg_test_acc = sum(test_accs) / len(test_accs)
@@ -280,7 +605,7 @@ class Train:
         train_losses = [{"x": i, "y": v} for i, v in enumerate(train_losses)]
         test_losses = [{"x": i, "y": v} for i, v in enumerate(test_losses)]
 
-        return {
+        ORIGINAL_OUTPUT = {
             "train_losses": train_losses,
             "test_losses": test_losses,
             "avg_train_loss": avg_train_loss,
@@ -289,4 +614,67 @@ class Train:
             "avg_test_acc": avg_test_acc,
         }
 
+        return ORIGINAL_OUTPUT  # , NEW_OUTPUT
+
         # can add more information to this dictionary, like the saved model, best epochs, etc.
+
+    def generate_peek_dict(self, random_samples, misclassified_samples):
+        print("hello")
+        # returns two dictionaries. one for random_sampples and one for misclassified_samples
+        # each dictionary contains keys of the class labels.
+        # the value is another dictonary that contains: true label, original image, [peek map image, peek map image, peek map image]
+        # the number of peek maps in the list is equal to the number of Conv layers in the model
+
+    def generate_image_dict(self, random_samples, misclassified_samples):
+        print("hello")
+        # does everything that generate peek dict except for any peek map related stuff
+        # this is the same as generate_peek_dict but without the peek map related stuff
+
+    def compute_PEEK(self, feature_maps, h, w):
+        """Compute PEEK map from feature maps"""
+        positivized_maps = feature_maps + np.abs(np.min(feature_maps))
+        entropy_map = -np.sum(entr(positivized_maps), axis=-1)
+        peek_map = cv2.resize(entropy_map, (w, h))
+        return peek_map
+
+
+if __name__ == "__main__":
+    # example data
+    data = {
+    "input": "pima",
+    "layers": [
+        {"kind": "Linear", "args": (8, 12)},
+        {"kind": "ReLU"},
+        {"kind": "Linear", "args": (12, 8)},
+        {"kind": "ReLU"},
+        {"kind": "Linear", "args": (8, 1)},
+        {"kind": "Sigmoid"},
+        ],
+        "loss": "BCE",
+        "optimizer": {"kind": "Adam", "lr": 0.001},
+        "epoch": 3,
+        "batch_size": 10,
+    }
+
+    inp = data["input"]
+    layers = data["layers"]
+    loss = data["loss"]
+    optimizer = data["optimizer"]
+    n_epochs = data["epoch"]
+    batch_size = data["batch_size"]
+
+    RESULTS = {}
+
+    model = DynamicModel(layers)
+
+    t = Train(
+        model=model,
+        input=inp,
+        loss=loss,
+        optimizer=optimizer,
+        batch_size=batch_size,
+    )
+
+    RESULTS = t.train_test_log(n_epochs, batch_size)
+
+    print(RESULTS)
