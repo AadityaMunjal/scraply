@@ -36,6 +36,7 @@ interface BoardState {
   removeBlock: (id: string) => void;
   reorderBlocks: (oldIndex: number, newIndex: number) => void;
   clearCanvas: () => void;
+  loadDefaultConfig: (blocks: UILayer[]) => void;
 
   // Drag and drop handlers
   dragStart: (event: DragStartEvent) => void;
@@ -130,6 +131,13 @@ export const useBoardStore = create<BoardState>()(
     clearCanvas: () => {
       set((state) => {
         state.canvasBlocks = [];
+      });
+    },
+
+    loadDefaultConfig: (blocks: UILayer[]) => {
+      set((state) => {
+        state.canvasBlocks = blocks;
+        state.canvasBlocks = syncLayers(state.canvasBlocks);
       });
     },
 
