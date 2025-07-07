@@ -15,17 +15,6 @@ export const DEFAULT_DATASET_CONFIGS: Record<string, UILayer[]> = {
         dimension: 2,
         kernelSize: 3,
         stride: 1,
-        padding: 1,
-      },
-    },
-    {
-      id: `maxpool-${Date.now()}-1`,
-      label: "MaxPool",
-      color: "#0099CC",
-      params: {
-        dimension: 2,
-        kernelSize: 2,
-        stride: 2,
         padding: 0,
       },
     },
@@ -40,11 +29,11 @@ export const DEFAULT_DATASET_CONFIGS: Record<string, UILayer[]> = {
         dimension: 2,
         kernelSize: 3,
         stride: 1,
-        padding: 1,
+        padding: 0,
       },
     },
     {
-      id: `maxpool-${Date.now()}-2`,
+      id: `maxpool-${Date.now()}`,
       label: "MaxPool",
       color: "#0099CC",
       params: {
@@ -55,10 +44,18 @@ export const DEFAULT_DATASET_CONFIGS: Record<string, UILayer[]> = {
       },
     },
     {
+      id: `dropout-${Date.now()}-1`,
+      label: "Dropout",
+      color: "#B266FF",
+      params: {
+        dropout: 0.25,
+      },
+    },
+    {
       id: `flatten-${Date.now()}`,
       label: "Flatten",
       color: "#E6007A",
-      inputNeurons: 3136,
+      inputNeurons: 9216,
       startDimension: 1,
       endDimension: -1,
     },
@@ -68,12 +65,12 @@ export const DEFAULT_DATASET_CONFIGS: Record<string, UILayer[]> = {
       color: "#00B359",
       activationFunction: "ReLU",
       params: {
-        inputNeurons: 3136,
+        inputNeurons: 9216,
         outputNeurons: 128,
       },
     },
     {
-      id: `dropout-${Date.now()}`,
+      id: `dropout-${Date.now()}-2`,
       label: "Dropout",
       color: "#B266FF",
       params: {
