@@ -8,7 +8,7 @@ export type ActivationFunction =
 
 export interface LegacyUILayer {
   id: string;
-  label: string;
+  label: Labels;
   color: string;
   inputNeurons: number;
   outputNeurons: number;
@@ -16,13 +16,26 @@ export interface LegacyUILayer {
   activationFunction: ActivationFunction;
 }
 
-export interface BaseLayer {
+export type Labels =
+  | "Linear"
+  | "Conv"
+  | "Conv1D"
+  | "Conv2D"
+  | "RNN"
+  | "GRU"
+  | "Flatten"
+  | "MaxPool"
+  | "MaxPool1D"
+  | "MaxPool2D"
+  | "Dropout";
+
+export interface BaseLayer<L extends Labels> {
   id: string;
-  label: string;
+  label: L;
   color: string;
 }
 
-export interface LayerWithAF extends BaseLayer {
+export interface LayerWithAF<L extends Labels> extends BaseLayer<L> {
   activationFunction: ActivationFunction;
 }
 
@@ -35,9 +48,9 @@ export type LayerWithNeurons = LayerWithParams<{
   outputNeurons: number;
 }>;
 
-export type LinearLayer = LayerWithAF & LayerWithNeurons;
+export type LinearLayer = LayerWithAF<"Linear"> & LayerWithNeurons;
 
-export type ConvLayer = LayerWithAF &
+export type ConvLayer = LayerWithAF<"Conv"> &
   LayerWithNeurons &
   LayerWithParams<{
     dimension: 1 | 2;
@@ -46,28 +59,28 @@ export type ConvLayer = LayerWithAF &
     padding: number;
   }>;
 
-export type RNNLayer = LayerWithAF &
+export type RNNLayer = LayerWithAF<"RNN"> &
   LayerWithNeurons &
   LayerWithParams<{
     hiddenSize: number;
     dropout: number;
   }>;
-  // will be sent as a list ex: [1, 2]
+// will be sent as a list ex: [1, 2]
 
-export type GRULayer = LayerWithAF &
+export type GRULayer = LayerWithAF<"GRU"> &
   LayerWithNeurons &
   LayerWithParams<{
     hiddenSize: number;
     dropout: number;
   }>;
 
-export type FlattenLayer = BaseLayer & {
+export type FlattenLayer = BaseLayer<"Flatten"> & {
   inputNeurons: number;
   startDimension: number;
   endDimension: number;
 };
 
-export type MaxPoolLayer = BaseLayer &
+export type MaxPoolLayer = BaseLayer<"MaxPool"> &
   LayerWithParams<{
     dimension: 1 | 2;
     kernelSize: number;
@@ -75,7 +88,7 @@ export type MaxPoolLayer = BaseLayer &
     padding: number;
   }>;
 
-export type DropoutLayer = BaseLayer &
+export type DropoutLayer = BaseLayer<"Dropout"> &
   LayerWithParams<{
     dropout: number;
   }>;
