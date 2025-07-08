@@ -32,7 +32,7 @@ export const getConfig = (
     const block = blocks[i]!;
 
     // Determine the layer kind (label) for backend
-    let layerKind = block.label;
+    let layerKind: string = block.label;
 
     // For Conv layers, change label based on dimension parameter
     if (block.label === "Conv" && hasDimension(block)) {
@@ -49,21 +49,38 @@ export const getConfig = (
       const inputNeurons = block.params.inputNeurons;
       const outputNeurons = block.params.outputNeurons;
 
-      // Extract other parameters if they exist (excluding inputNeurons and outputNeurons)
-      const otherParamValues = hasParams(block)
-        ? Object.entries(block.params)
-            .filter(
-              ([key]) => key !== "inputNeurons" && key !== "outputNeurons",
-            )
-            .map(([_, value]) => value)
-        : [];
+      let args: number[];
+
+      // Special handling for Conv layers - backend expects: [dimension, inputChannels, outputChannels, kernelSize, stride, padding]
+      if (block.label === "Conv" && hasParams(block)) {
+        const params = block.params as any;
+        args = [
+          params.dimension,
+          inputNeurons,
+          outputNeurons,
+          params.kernelSize,
+          params.stride,
+          params.padding,
+        ];
+      } else {
+        // For other layers with neurons (Linear, RNN, GRU), extract other parameters
+        const otherParamValues = hasParams(block)
+          ? Object.entries(block.params)
+              .filter(
+                ([key]) => key !== "inputNeurons" && key !== "outputNeurons",
+              )
+              .map(([_, value]) => value)
+          : [];
+
+        args =
+          otherParamValues.length > 0
+            ? [inputNeurons, outputNeurons, ...otherParamValues]
+            : [inputNeurons, outputNeurons];
+      }
 
       layers.push({
         kind: layerKind,
-        args:
-          otherParamValues.length > 0
-            ? [inputNeurons, outputNeurons, ...otherParamValues]
-            : [inputNeurons, outputNeurons],
+        args,
       });
 
       if (hasActivationFunction(block)) {
@@ -73,13 +90,27 @@ export const getConfig = (
       }
     } else {
       // Handle layers without neurons (like MaxPool, Dropout)
-      const otherParamValues = hasParams(block)
-        ? Object.values(block.params as Record<string, any>)
-        : [];
+      let args: number[];
+
+      // Special handling for MaxPool layers - backend expects: [dimension, kernelSize, stride, padding]
+      if (block.label === "MaxPool" && hasParams(block)) {
+        const params = block.params as any;
+        args = [
+          params.dimension,
+          params.kernelSize,
+          params.stride,
+          params.padding,
+        ];
+      } else {
+        // For other layers without neurons, use all parameter values
+        args = hasParams(block)
+          ? Object.values(block.params as Record<string, any>)
+          : [];
+      }
 
       layers.push({
         kind: layerKind,
-        args: otherParamValues,
+        args,
       });
     }
   }
