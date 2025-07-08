@@ -74,12 +74,14 @@ class DynamicModel(nn.Module):
                     component = LAYERS[layer_type](i, h_size, dropout)
 
                 elif layer_type == "Dropout":
-                    p = layer_args
+                    p = layer_args[0]
                     component = nn.Dropout(p)  # 1 arg
 
                 elif layer_type == "Flatten":
                     start_dim = 1
-                    end_dim = -1  # I AM FORCING 1,-1. CURRENT UI DOES NOT SUPPORT NEGATIVE DIMS. 6/28/25
+                    end_dim = (
+                        -1
+                    )  # I AM FORCING 1,-1. CURRENT UI DOES NOT SUPPORT NEGATIVE DIMS. 6/28/25
                     # start_dim, end_dim = layer_args
                     component = nn.Flatten(start_dim, end_dim)
 
@@ -163,9 +165,7 @@ class Train:
         self.device = (  # for GPU access --> works with CPU as well
             "cuda"
             if torch.cuda.is_available()
-            else "mps"
-            if torch.backends.mps.is_available()
-            else "cpu"
+            else "mps" if torch.backends.mps.is_available() else "cpu"
         )
         print(f"Using {self.device} device")
 
@@ -785,7 +785,9 @@ class Train:
                                             f"Saved original image and peek map for misclassified sample (true: {true_label}, pred: {pred_label})"
                                         )
 
-                                MISCLASSIFIED_SAMPLES_ENCODED[pred_label].append(image_data)
+                                MISCLASSIFIED_SAMPLES_ENCODED[pred_label].append(
+                                    image_data
+                                )
 
                                 self.model.feature_save = False
                                 self.model.clear_feature_maps()
@@ -830,10 +832,10 @@ class Train:
 
         if self.input != "pima":
             # Return three separate dictionaries
-            #return ORIGINAL_OUTPUT, RANDOM_SAMPLES_ENCODED, MISCLASSIFIED_SAMPLES_ENCODED
+            # return ORIGINAL_OUTPUT, RANDOM_SAMPLES_ENCODED, MISCLASSIFIED_SAMPLES_ENCODED
             return ORIGINAL_OUTPUT
         else:
-            #return ORIGINAL_OUTPUT, {}, {}  # Return empty dicts for non-image datasets
+            # return ORIGINAL_OUTPUT, {}, {}  # Return empty dicts for non-image datasets
             return ORIGINAL_OUTPUT
 
     def generate_peek_dict(self, random_samples, misclassified_samples):
@@ -897,30 +899,33 @@ if __name__ == "__main__":
     RESULTS = t.train_test_log(n_epochs, batch_size)
 
     print(RESULTS)
-    
+
     print("mnist cnn test")
-    
+
     data = {
-    "input": "MNIST",
-    "layers": [
-        {"kind": "Conv2D", "args": (2, 1, 16, 3, 1, 0)}, # dim, input, output, kernel size, stride, padding. 
-        # dim is a fake arg we made up so we just ignore it in the actual api. same for maxpool layers.
-        {"kind": "ReLU"},
-        {"kind": "MaxPool2D", "args": (2, 2, 2, 0)},
-        {"kind": "Conv2D", "args": (2, 16, 32, 3, 1, 0)},
-        {"kind": "ReLU"},
-        {"kind": "MaxPool2D", "args": (2, 2, 2, 0)},
-        {"kind": "Flatten", "args": [1, -1]},
-        {"kind": "Linear", "args": (800, 128)},  # supposed to be 32 * 7 * 7
-        {"kind": "ReLU"},
-        {"kind": "Linear", "args": (128, 10)},
+        "input": "MNIST",
+        "layers": [
+            {
+                "kind": "Conv2D",
+                "args": (2, 1, 16, 3, 1, 0),
+            },  # dim, input, output, kernel size, stride, padding.
+            # dim is a fake arg we made up so we just ignore it in the actual api. same for maxpool layers.
+            {"kind": "ReLU"},
+            {"kind": "MaxPool2D", "args": (2, 2, 2, 0)},
+            {"kind": "Conv2D", "args": (2, 16, 32, 3, 1, 0)},
+            {"kind": "ReLU"},
+            {"kind": "MaxPool2D", "args": (2, 2, 2, 0)},
+            {"kind": "Flatten", "args": [1, -1]},
+            {"kind": "Linear", "args": (800, 128)},  # supposed to be 32 * 7 * 7
+            {"kind": "ReLU"},
+            {"kind": "Linear", "args": (128, 10)},
         ],
         "loss": "CrossEntropy",
         "optimizer": {"kind": "Adam", "lr": 0.001},
         "epoch": 2,
         "batch_size": 64,
     }
-    
+
     inp = data["input"]
     layers = data["layers"]
     loss = data["loss"]
@@ -941,6 +946,3 @@ if __name__ == "__main__":
     )
 
     RESULTS = t.train_test_log(n_epochs, batch_size)
-    
-    
-
