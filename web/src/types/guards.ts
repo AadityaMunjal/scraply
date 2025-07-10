@@ -1,9 +1,4 @@
-import {
-  UILayer,
-  ActivationFunction,
-  LayerWithNeurons,
-  LayerWithAF,
-} from "./layers";
+import { UILayer, LayerWithNeurons, LayerWithAF, Labels } from "./layers";
 
 // Type guard to check if a layer has neurons
 export const hasNeurons = (
@@ -21,7 +16,7 @@ export const hasNeurons = (
 // Type guard to check if a layer has activation function
 export const hasActivationFunction = (
   layer: UILayer,
-): layer is UILayer & LayerWithAF => {
+): layer is UILayer & LayerWithAF<Labels> => {
   return "activationFunction" in layer;
 };
 
