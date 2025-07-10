@@ -8,6 +8,7 @@ import { DEFAULT_TRAINING_CONFIG } from "~/util/trainingConfig";
 
 import SharedTrainingConfig from "./SharedTrainingConfig";
 import HistoryItem from "./HistoryItem";
+import posthog from "posthog-js";
 
 interface TrainingTabProps {
   selectedDataset: string;
@@ -55,6 +56,8 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
         batchSize,
       );
 
+      posthog.capture("train_started", { config });
+
       const data = await startTrainingMutation.mutateAsync(config);
       const results = data.RESULTS;
 
@@ -69,6 +72,7 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
       });
     } catch (error) {
       console.error("Training failed:", error);
+      posthog.captureException(error);
     } finally {
       setIsTraining(false);
     }
