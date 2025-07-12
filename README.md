@@ -14,7 +14,7 @@
 
 The scraply server isn't deployed yet, therefore you need to run your own backend!
 
-1. visit [scraply](scraply-prod.vercel.app) (server status shows offline)
+1. visit [scraply](https://scraply-prod.vercel.app) (server status shows offline)
 2. clone github repo `git clone https://github.com/the-AMA-team/scraply.git`
 3. go to the api directory `cd scraply/dynamic-model-api/`
 4. run server `python3 -m flask run`
