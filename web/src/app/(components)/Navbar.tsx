@@ -1,8 +1,7 @@
 "use client";
-import { useDemo } from "~/state/DemoContext";
+import { AiOutlineStar } from "react-icons/ai";
 
 const Navbar = () => {
-  const { isDemoing, setIsDemoing } = useDemo();
   return (
     <div className="flex justify-between bg-zinc-800 text-white">
       <div className="flex">
@@ -10,12 +9,15 @@ const Navbar = () => {
         <div className="mx-4 py-4 pr-7 font-semibold">scraply</div>
       </div>
       <div className="flex">
-        {/* <button
-          className="relative mx-4 my-auto h-4/5 rounded-md bg-blue-500 px-4 hover:bg-blue-600"
-          onClick={() => setIsDemoing(true)}
+        <a
+          href="https://github.com/the-AMA-team/scraply"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mx-4 my-auto flex h-4/5 items-center gap-2 rounded-md bg-zinc-700 px-4 py-2 transition-colors duration-200 hover:bg-zinc-600"
         >
-          Demo
-        </button> */}
+          <AiOutlineStar className="h-4 w-4" />
+          <span className="text-sm font-medium">Star on GitHub</span>
+        </a>
       </div>
     </div>
   );
