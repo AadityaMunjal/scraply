@@ -1,6 +1,6 @@
 # Scraply
 
-### A no-code, deep learning platform 🚀 -- The "Scratch" for Neural Networks 
+### A no-code, deep learning platform 🚀 -- The "Scratch" for Neural Networks
 
 **Best Developer Tool (HackPrinceton'24)**
 
@@ -10,15 +10,24 @@ Scraply is a web app where users can run neural networks using a scratch-like in
 
 <img width="1456" alt="Screenshot 2025-03-30 at 11 31 50 PM" src="https://github.com/user-attachments/assets/4e16cf72-b552-4f96-b4ae-2786f3dfceb6" />
 
-**New Feature: {Feb. 2025}**
-Users can also experiment with different transformer architectures for text generation. To prompt it, try using the inference tab!
+### Running locally
+
+The scraply server isn't deployed yet, therefore you need to run your own backend!
+
+1. visit `scraply-prod.vercel.app` (server status is offline)
+2. clone github repo `git clone https://github.com/the-AMA-team/scraply.git`
+3. go to the api directory `cd scraply/dynamic-model-api/`
+4. run server `python3 -m flask run`
+
+### Updates in Summer'25 Release:
+
+- 👾 explainability features
+- 👾 outputs tab with model insights
 
 ### Updates Coming Soon:
 
 - 👾 ability to run in browser (using tf.js)
 - 👾 uploading custom datasets and data pre-processing
-- 👾 explainability features
-- 👾 data exploration & results tab
 - 👾 encoder support for transformers
 
 ### Developed by the-AMA-team
