@@ -1,12 +1,15 @@
 from flask import Flask, request, send_file
-from models import (DynamicModel, Train, )
+from models import (
+    DynamicModel,
+    Train,
+)
 from transformer_models import (
     TransformerModel,
     TransformerData,
     TransformerTrain,
     Inference,
 )
-from flask_cors import CORS # pip install flask-cors (i think)
+from flask_cors import CORS  # pip install flask-cors (i think)
 from generate import Generate
 
 # dumb imports that i gyatt to add
@@ -54,6 +57,11 @@ CORS(app)
 @app.route("/")
 def hello_world():
     return {"data": "hello"}
+
+
+@app.route("/health", methods=["GET"])
+def health_check():
+    return {"status": "online", "message": "Server is running"}
 
 
 @app.route("/generate", methods=["POST"])
@@ -115,9 +123,9 @@ def train():
         )
 
         print("slay... model initialized successfully!")
-        #RESULTS, ENCODED_IMAGES, ENCODED_MISCLASSIFIED = t.train_test_log(n_epochs, batch_size)
+        # RESULTS, ENCODED_IMAGES, ENCODED_MISCLASSIFIED = t.train_test_log(n_epochs, batch_size)
         RESULTS = t.train_test_log(n_epochs, batch_size)
-        
+
         # ENCODED_IMAGES and ENCODED_MISCLASSIFIED may be empty dictionaries if the input is not an image.
         # the structure is also different if there is a convolutional layer due to peek map images
 
@@ -130,7 +138,7 @@ def train():
     #     "ENCODED IMAGES": ENCODED_IMAGES,
     #     "ENCODED MISCLASSIFIED": ENCODED_MISCLASSIFIED,
     # }  # training loss
-    
+
     return {
         "RESULTS": RESULTS,
     }
