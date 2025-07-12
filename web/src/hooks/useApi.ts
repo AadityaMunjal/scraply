@@ -77,6 +77,20 @@ const transformerTest = async (params: {
   return response.json();
 };
 
+const checkServerHealth = async () => {
+  const response = await fetch("http://127.0.0.1:5000/health", {
+    method: "GET",
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Health check failed: ${response.status} ${response.statusText}`,
+    );
+  }
+
+  return response.json();
+};
+
 // hooks
 export const useDownloadFile = () => {
   return useMutation({
@@ -128,10 +142,17 @@ export const useTransformerTest = () => {
   });
 };
 
+export const useServerHealth = () => {
+  return useMutation({
+    mutationFn: checkServerHealth,
+  });
+};
+
 // Raw API functions for backward compatibility
 export {
   downloadFile as downloadFileApi,
   startTraining as startTrainingApi,
   startTransformerTraining as startTransformerTrainingApi,
   transformerTest as transformerTestApi,
+  checkServerHealth as checkServerHealthApi,
 };
