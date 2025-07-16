@@ -1,456 +1,563 @@
 import nbformat as nbf
-
-# Load params from test.py
 import sys
 
-sys.path.append(".")  # Allow import from current directory
-# from test import params  # Import params from test.py
+sys.path.append(".")
 from params import DATALOADERS, LAYERS, ACTIVATIONS, LOSSES, OPTIMIZERS
-
-# format of tax
-# params = {
-#     "input": "pima",
-#     "layers": [
-#         {"kind": "Linear", "args": (8, 12)},
-#         {"kind": "ReLU"},
-#         {"kind": "Linear", "args": (12, 8)},
-#         {"kind": "ReLU"},
-#         {"kind": "Linear", "args": (8, 1)},
-#         {"kind": "Sigmoid"},
-#     ],
-#     "loss": "BCE",
-#     "optimizer": {"kind": "Adam", "lr": 0.001},
-#     "epoch": 3,
-#     "batch_size": 10,
-# }
-
-# Install dependencies
-
-install_cell = """
-# Install necessary dependencies
-%pip install torch numpy scikit-learn
-"""
-
-# Code cell 1: Import necessary libraries and set test
-code_cell_1 = f"""\
-# import necessary libraries
-import torch
-import torch.nn as nn
-import torch.optim as optim
-import matplotlib as plt
-from torch.utils.data import DataLoader, TensorDataset, random_split
-import numpy as np
-from sklearn.model_selection import train_test_split
-import pandas as pd
-import torch.optim as optim
-from torchvision import datasets
-from torch.utils.data import DataLoader
-from torchvision import datasets, transforms
-import matplotlib.pyplot as plt
-"""
-
-add_params = f"""\
-
-DATALOADERS = {{
-    "pima": {{
-        "X": pd.read_csv("datasets/pima-indians-diabetes.csv").iloc[:, :-1].values,
-        "y": pd.read_csv("datasets/pima-indians-diabetes.csv").iloc[:, -1].values,
-    }},
-    "MNIST": {{
-        "train": datasets.MNIST(
-            root="data",
-            train=True,
-            download=True,
-            transform=transforms.Compose([transforms.ToTensor()]),
-        ),
-        "test": datasets.MNIST(
-            root="data",
-            train=True,
-            download=True,
-            transform=transforms.Compose([transforms.ToTensor()]),
-        ),
-    }},
-    "FashionMNIST": {{
-        "train": datasets.FashionMNIST(
-            root="data",
-            train=True,
-            download=True,
-            transform=transforms.Compose([transforms.ToTensor()]),
-        ),
-        "test": datasets.FashionMNIST(
-            root="data",
-            train=True,
-            download=True,
-            transform=transforms.Compose([transforms.ToTensor()]),
-        ),
-    }},
-    "CIFAR10": {{
-        "train": datasets.CIFAR10(
-            root="data",
-            train=True,
-            download=True,
-            transform=transforms.Compose([transforms.ToTensor()]),
-        ),
-        "test": datasets.CIFAR10(
-            root="data",
-            train=True,
-            download=True,
-            transform=transforms.Compose([transforms.ToTensor()]),
-        ),
-    }},
-}}
-
-
-ACTIVATIONS = {{
-    "ReLU": nn.ReLU(),
-    "Sigmoid": nn.Sigmoid(),
-    "Tanh": nn.Tanh(),
-    "Softmax": nn.Softmax(),
-    "LeakyReLU": nn.LeakyReLU(),
-    "PReLU": nn.PReLU(),
-}}
-
-
-LAYERS = {{
-    "Flatten": nn.Flatten(), # no argumnets for Flatten()
-    "Linear": lambda i, o: nn.Linear(i, o),
-    "Conv2D": lambda i, o, k_size: nn.Conv2d(i, o, k_size), # i = input channels (1 --> grayscale, 3 --> RGB), o = output channels (number of filters), k_size = kernel size
-    "Conv1D": lambda i, o, k_size: nn.Conv1d(i, o, k_size),
-    "Conv3D": lambda i, o, k_size: nn.Conv3d(i, o, k_size),
-    "LSTM": lambda i, h_size: nn.LSTM(i, h_size),
-    "GRU": lambda i, h_size: nn.GRU(i, h_size),
-    "RNN": lambda i, h_size: nn.RNN(i, h_size),
-    "Dropout": lambda p: nn.Dropout(p),
-}}
-
-
-LOSSES = {{
-    "BCE": nn.BCELoss(),  # binary cross entropy --> 0 or 1 classification models
-    "CrossEntropy": nn.CrossEntropyLoss(),  # multi-class classification models
-    # "MSE": nn.MSELoss() # regression models
-}}
-
-
-OPTIMIZERS = {{
-    "Adam": lambda model_params, lr: optim.Adam(
-        model_params, lr
-    ),  # momentum parameter is optional
-    "AdamW": lambda model_params, lr: optim.AdamW(model_params, lr),
-    "SGD": lambda model_params, lr: optim.SGD(model_params, lr),
-    "RMSprop": lambda model_params, lr: optim.RMSprop(model_params, lr),
-}}
-"""
-
-# print(params["layers"])
-# parse_layer(params["layers"])
-# print(layer_list)
-
-
-# Code cell 4: Training loop
-code_cell_4 = f"""\
-# Training the model
-
-def train(self, n_epochs, batch_size):
-    # if self.input == "pima":
-    #     # PIMA TRAINING FUNCTION
-    #     for epoch in range(n_epochs):
-    #         for i in range(0, len(self.X), batch_size):
-    #             batchX = self.X[i : i + batch_size]
-    #             y_pred = self.model(batchX)
-    #             y_batch = self.Y[i : i + batch_size]
-    #             loss = self.loss_fn(y_pred, y_batch)
-    #             self.optimizer.zero_grad()
-    #             loss.backward()
-    #             self.optimizer.step()
-
-    #             self.final_loss = loss
-
-    #     return self.final_loss
-    # else:
-    #     # IMAGE DATASETS TRAINING FUNCTION
-    size = len(self.train_loader.dataset)
-    # num_batches = len(self.train_loader)
-    self.model.train()
-    train_loss = 0
-    correct = 0
-    total = 0
-
-    for batch, (X, y) in enumerate(self.train_loader):
-        X, y = X.to(self.device), y.to(self.device)
-        # Compute prediction error
-        pred = self.model(X)
-        loss = self.loss_fn(pred, y)
-        # Backpropagation
-        loss.backward()
-        self.optimizer.step()
-        self.optimizer.zero_grad()
-        train_loss += loss.item()
-        # Calculate accuracy
-        _, predicted = torch.max(
-            pred, 1
-        )  # Get the predicted class (index with max value)
-        correct += (predicted == y).sum().item()  # Count correct predictions
-        total += y.size(0)  # Count total predictions
-
-        if batch % 100 == 0:
-            loss, current = loss.item(), (batch + 1) * len(X)
-            print(f"loss: {{loss:>7f}}  [{{current:>5d}}/{{size:>5d}}]")
-
-    # Average loss over all batches
-    avg_train_loss = train_loss / len(self.train_loader)
-    # Calculate accuracy as a percentage
-    avg_acc = 100 * correct / total
-    return avg_train_loss, avg_acc
-
-Train.train = train
-"""
-
-code_cell_5 = f"""\
-def test(self, n_epochs, batch_size):
-    # if self.input == "pima":
-    #     # PIMA TRAINING FUNCTION
-    #     # do nothing, because pima currently does not have a test_dataset (only has X, y dataset --> has not been split yet)
-    #     print("PIMA is not configured to have a test dataset yet")
-    # else:
-    size = len(self.test_loader.dataset)
-    num_batches = len(self.test_loader)
-    self.model.eval() # model mode change is especially important for dropout layer 
-    test_loss, correct = 0, 0
-
-    with torch.no_grad():
-        for X, y in self.test_loader:
-            X, y = X.to(self.device), y.to(self.device)
-            # Compute prediction error
-            pred = self.model(X)
-            test_loss += self.loss_fn(pred, y).item()
-            correct += (
-                (pred.argmax(1) == y).type(torch.float).sum().item()
-            )  # for accuracy
-
-    test_loss /= num_batches
-    correct /= size
-    avg_acc = 100 * correct
-
-    # Print loss & accuracy
-    print(
-        f"Test Error: \\n Accuracy: {{(avg_acc):>0.1f}}%, Avg loss: {{test_loss:>8f}} \\n"
-    )
-
-    # Average loss over all batches
-    avg_test_loss = test_loss / len(self.test_loader)
-    return avg_test_loss, avg_acc
-Train.test = test
-"""
-
-code_cell_6 = f"""\
-def train_test_log(self, n_epochs, batch_size):
-        train_losses = []
-        train_accs = []
-        test_losses = []
-        test_accs = []
-        for t in range(n_epochs):
-            print(f"Epoch {{t+1}}\\n-------------------------------")
-            avg_train_loss, train_avg_acc = self.train(n_epochs, batch_size)
-            avg_test_loss, test_avg_acc = self.test(n_epochs, batch_size)
-
-            # Store losses
-            train_losses.append(avg_train_loss)
-            train_accs.append(train_avg_acc)
-            test_losses.append(avg_test_loss)
-            test_accs.append(test_avg_acc)
-
-        # calculate average accuracy and average loss
-        avg_train_acc = sum(train_accs) / len(train_accs)
-        avg_test_acc = sum(test_accs) / len(test_accs)
-        avg_train_loss = sum(train_losses) / len(train_losses)
-        avg_test_loss = sum(test_losses) / len(test_losses)
-
-        print("Done!")
-
-        return {{
-            "train_losses": train_losses,
-            "test_losses": test_losses,
-            "avg_train_loss": avg_train_loss,
-            "avg_test_loss": avg_test_loss,
-            "avg_train_acc": avg_train_acc,
-            "avg_test_acc": avg_test_acc,
-        }}
-
-Train.train_test_log = train_test_log
-        # can add more information to this dictionary, like the saved model, best epochs, etc.
-"""
-
-
-code_cell_8 = f"""\
-plt.figure(figsize=(10, 5))
-plt.plot(range(1, n_epochs + 1), train_losses, label="Train Loss")
-plt.xlabel("Epoch")
-plt.ylabel("Loss")
-plt.title("Training Loss Over Epochs")
-plt.legend()
-plt.show()
-"""
 
 
 class Generate:
-
     def __init__(self, params):
         self.params = params
-        self.layers_code = ""
-        for layer in params["layers"]:
+        self.layers_code = self._generate_layers_code()
+        self.dataset_info = self._get_dataset_info()
+
+    def _generate_layers_code(self):
+        """Generate the layers code based on the architecture parameters"""
+        layers_code = ""
+        for layer in self.params["layers"]:
             if layer["kind"] == "Linear":
-                self.layers_code += (
-                    f'nn.Linear({layer["args"][0]}, {layer["args"][1]}),'
+                layers_code += (
+                    f"nn.Linear({layer['args'][0]}, {layer['args'][1]}),\n            "
                 )
             elif layer["kind"] == "ReLU":
-                self.layers_code += "nn.ReLU(),"
+                layers_code += "nn.ReLU(),\n            "
             elif layer["kind"] == "Sigmoid":
-                self.layers_code += "nn.Sigmoid(),"
+                layers_code += "nn.Sigmoid(),\n            "
+            elif layer["kind"] == "Tanh":
+                layers_code += "nn.Tanh(),\n            "
+            elif layer["kind"] == "Conv2D":
+                # args: (dim, input_channels, output_channels, kernel_size, stride, padding)
+                layers_code += f"nn.Conv2d({layer['args'][1]}, {layer['args'][2]}, {layer['args'][3]}, stride={layer['args'][4]}, padding={layer['args'][5]}),\n            "
+            elif layer["kind"] == "MaxPool2D":
+                # args: (dim, kernel_size, stride, padding)
+                layers_code += f"nn.MaxPool2d({layer['args'][1]}, stride={layer['args'][2]}),\n            "
+            elif layer["kind"] == "Flatten":
+                layers_code += "nn.Flatten(),\n            "
+            elif layer["kind"] == "Dropout":
+                layers_code += f"nn.Dropout({layer['args'][0]}),\n            "
+            elif layer["kind"] == "LeakyReLU":
+                layers_code += "nn.LeakyReLU(),\n            "
+            elif layer["kind"] == "PReLU":
+                layers_code += "nn.PReLU(),\n            "
 
-        # Initialize a new notebook
+        return layers_code.rstrip(",\n            ") + "\n        "
 
-    def generate_notebook(self):
-        # Add the generated code cells to the notebook
+    def _get_dataset_info(self):
+        """Get dataset-specific information"""
+        dataset_name = self.params["input"]
+        if dataset_name == "pima":
+            return {
+                "type": "tabular",
+                "input_features": 8,
+                "num_classes": 2,
+                "data_shape": "tabular",
+                "description": "PIMA Indians Diabetes Dataset - Binary classification",
+            }
+        elif dataset_name in ["MNIST", "FashionMNIST"]:
+            return {
+                "type": "image",
+                "input_features": 784,  # 28x28 flattened
+                "num_classes": 10,
+                "data_shape": "(1, 28, 28)",  # grayscale
+                "description": f"{dataset_name} - 10-class image classification",
+            }
+        elif dataset_name == "CIFAR10":
+            return {
+                "type": "image",
+                "input_features": 3072,  # 3x32x32 flattened
+                "num_classes": 10,
+                "data_shape": "(3, 32, 32)",  # RGB
+                "description": "CIFAR-10 - 10-class color image classification",
+            }
+        else:
+            return {
+                "type": "unknown",
+                "input_features": "unknown",
+                "num_classes": "unknown",
+                "data_shape": "unknown",
+                "description": f"Unknown dataset: {dataset_name}",
+            }
 
-        # Code cell 2:
-        code_cell_2 = f"""\
-class DynamicModel(nn.Module):
+    def _generate_dataset_cell(self):
+        """Generate dataset-specific initialization code"""
+        dataset_name = self.params["input"]
+        batch_size = self.params["batch_size"]
+
+        if dataset_name == "pima":
+            return f"""# Dataset Setup - PIMA Indians Diabetes (Tabular)
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from torch.utils.data import DataLoader, TensorDataset
+
+# Load PIMA dataset
+data = pd.read_csv("datasets/pima-indians-diabetes.csv")
+X = data.iloc[:, :-1].values  # All columns except last
+y = data.iloc[:, -1].values   # Last column (target)
+
+# Split data
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# Convert to tensors
+import torch
+X_train_tensor = torch.tensor(X_train, dtype=torch.float32)
+y_train_tensor = torch.tensor(y_train, dtype=torch.float32).reshape(-1, 1)
+X_test_tensor = torch.tensor(X_test, dtype=torch.float32)
+y_test_tensor = torch.tensor(y_test, dtype=torch.float32).reshape(-1, 1)
+
+# Create datasets
+train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
+test_dataset = TensorDataset(X_test_tensor, y_test_tensor)
+
+# Create data loaders
+train_loader = DataLoader(train_dataset, batch_size={batch_size}, shuffle=True)
+test_loader = DataLoader(test_dataset, batch_size={batch_size}, shuffle=False)
+
+print(f"PIMA Dataset loaded:")
+print(f"  Training samples: {{len(train_dataset)}}")
+print(f"  Test samples: {{len(test_dataset)}}")
+print(f"  Input features: {{X_train.shape[1]}}")
+print(f"  Classes: Binary (0/1)")"""
+
+        else:  # Image datasets
+            return f"""# Dataset Setup - {dataset_name} (Image)
+from torchvision import datasets, transforms
+from torch.utils.data import DataLoader
+
+# Define transforms
+transform = transforms.Compose([
+    transforms.ToTensor(),
+])
+
+# Load dataset
+train_dataset = datasets.{dataset_name}(
+    root="data",
+    train=True,
+    download=True,
+    transform=transform
+)
+
+test_dataset = datasets.{dataset_name}(
+    root="data", 
+    train=False,
+    download=True,
+    transform=transform
+)
+
+# Create data loaders
+train_loader = DataLoader(train_dataset, batch_size={batch_size}, shuffle=True)
+test_loader = DataLoader(test_dataset, batch_size={batch_size}, shuffle=False)
+
+# Get sample data to understand dimensions
+sample_data, _ = next(iter(train_loader))
+print(f"{dataset_name} Dataset loaded:")
+print(f"  Training samples: {{len(train_dataset)}}")
+print(f"  Test samples: {{len(test_dataset)}}")
+print(f"  Input shape: {{sample_data.shape[1:]}}")
+print(f"  Number of classes: {{len(train_dataset.classes) if hasattr(train_dataset, 'classes') else 'Unknown'}}")"""
+
+    def _generate_model_cell(self):
+        """Generate model architecture code"""
+        dataset_info = self.dataset_info
+        dataset_name = self.params["input"]
+
+        if dataset_name == "pima":
+            return f"""# Model Architecture for PIMA (Tabular)
+import torch.nn as nn
+
+class PimaModel(nn.Module):
     def __init__(self):
         super().__init__()
-        layers_list = [
+        self.layers = nn.ModuleList([
             {self.layers_code}
-        ]
-        self.layers = nn.ModuleList(layers_list)
+        ])
     def forward(self, x):
-        for l in self.layers:
-            x = l(x)
-
+        for layer in self.layers:
+            x = layer(x)
         return x
-"""
 
-        # Code cell 3: instantiate training class
+model = PimaModel()
 
-        code_cell_3 = f"""\
-class Train:
-    def __init__(self, model, input, loss, optimizer, batch_size):
-        # validate data inputs before this point, each valid key should exist and errors for invalid
-        self.input = input
-        ds = DATALOADERS["{self.params["input"]}"]
+total_params = sum(p.numel() for p in model.parameters())
+trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+print("Model Architecture:")
+print(model)
+print(f"\\nTotal parameters: {{total_params:,}}")
+print(f"Trainable parameters: {{trainable_params:,}}")
 
-        self.device = (  # for GPU access --> works with CPU as well
-            "cuda"
-            if torch.cuda.is_available()
-            else "mps"
-            if torch.backends.mps.is_available()
-            else "cpu"
-        )
-        print(f"Using {{self.device}} device")
-
-        # MOVE MODEL TO DEVICE
-        self.model = model.to(self.device)
-
-        # preprocessing data here!!!
-        if input == "pima":
-            X = ds["X"]
-            y = ds["y"]
-
-            # split test and training data using ski-kit learn module
-            X_train, X_test, y_train, y_test = train_test_split(
-                X, y, test_size=0.2, random_state=42
-            )
-            # could normalize the data here
-            # create tensors
-            X_train_tensor = torch.tensor(X_train, dtype=torch.float32)
-            y_train_tensor = torch.tensor(y_train, dtype=torch.float32).reshape(
-                -1, 1
-            )  # Reshape for binary classification
-            X_test_tensor = torch.tensor(X_test, dtype=torch.float32)
-            y_test_tensor = torch.tensor(y_test, dtype=torch.float32).reshape(-1, 1)
-            # create dataset objects
-            train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
-            test_dataset = TensorDataset(X_test_tensor, y_test_tensor)
-            # create dataLoader objects
-            self.train_loader = DataLoader(
-                train_dataset, batch_size=batch_size, shuffle=True
-            )
-            self.test_loader = DataLoader(
-                test_dataset, batch_size=batch_size, shuffle=False
-            )
+device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
+model = model.to(device)
+print(f"Model moved to: {{device}}")"""
         else:
-            train_set = ds[
-                "train"
-            ]  # ds["train"] is a dataset object, already transformed into tensor
-            test_set = ds["test"]
-            self.train_loader = DataLoader(
-                train_set, batch_size=batch_size, shuffle=True
-            )
-            self.test_loader = DataLoader(
-                test_set, batch_size=batch_size, shuffle=False
-            )
+            return f"""# Model Architecture for {dataset_name} (Image)
+import torch.nn as nn
 
-        self.loss_fn = LOSSES["{self.params["loss"]}"]
-        self.optimizer = OPTIMIZERS["{self.params["optimizer"]["kind"]}"](
-            self.model.parameters(), {self.params["optimizer"]["lr"]}
-        )
+class {dataset_name.capitalize()}Model(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.layers = nn.ModuleList([
+            {self.layers_code}
+        ])
+    def forward(self, x):
+        for layer in self.layers:
+            x = layer(x)
+        return x
 
-        self.final_loss = -1
-                    """
+model = {dataset_name.capitalize()}Model()
 
-        code_cell_7 = f"""\
-if __name__ == "__main__":
+total_params = sum(p.numel() for p in model.parameters())
+trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+print("Model Architecture:")
+print(model)
+print(f"\\nTotal parameters: {{total_params:,}}")
+print(f"Trainable parameters: {{trainable_params:,}}")
 
-    model = DynamicModel()
-    # model = DynamicModel(params["layers"]).to(device)
-    print(model)
-    t = Train(
-        model=model,
-        input="{self.params["input"]}",
-        loss="{self.params["loss"]}",
-        optimizer="{self.params["optimizer"]["kind"]}",
-        batch_size={self.params["batch_size"]},
-    )
+device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
+model = model.to(device)
+print(f"Model moved to: {{device}}")"""
 
-    RESULTS = t.train_test_log({self.params["epoch"]}, batch_size={self.params["batch_size"]})
-    print("Results:")
-    print("Average Training Loss: ", RESULTS["avg_train_loss"])
-    print("Average Testing Loss: ", RESULTS["avg_test_loss"])
-    print("Average Training Accuracy: ", RESULTS["avg_train_acc"])
-    print("Average Testing Accuracy: ", RESULTS["avg_test_acc"])
-"""
+    def _generate_training_cell(self):
+        """Generate training configuration and functions"""
+        dataset_name = self.params["input"]
+        if dataset_name == "pima":
+            return f"""# Training Configuration for PIMA (Tabular)
+import torch.optim as optim
+import torch.nn as nn
 
+epochs = {self.params["epoch"]}
+learning_rate = {self.params["optimizer"]["lr"]}
+batch_size = {self.params["batch_size"]}
+
+loss_function = nn.BCELoss()
+optimizer = optim.{self.params["optimizer"]["kind"]}(model.parameters(), lr=learning_rate)
+
+print("Training Configuration:")
+print(f"  Epochs: {{epochs}}")
+print(f"  Learning Rate: {{learning_rate}}")
+print(f"  Loss Function: BCE")
+print(f"  Optimizer: {self.params["optimizer"]["kind"]}")
+print(f"  Batch Size: {{batch_size}}")
+
+def train_epoch(model, train_loader, loss_fn, optimizer, device):
+    model.train()
+    total_loss = 0
+    correct = 0
+    total = 0
+    for batch_idx, (data, target) in enumerate(train_loader):
+        data, target = data.to(device), target.to(device)
+        optimizer.zero_grad()
+        output = model(data)
+        loss = loss_fn(output, target)
+        loss.backward()
+        optimizer.step()
+        total_loss += loss.item()
+        # For BCE, output is sigmoid, so threshold at 0.5
+        preds = (output > 0.5).float()
+        correct += (preds == target).sum().item()
+        total += target.size(0)
+    return total_loss / len(train_loader), 100. * correct / total
+
+def evaluate(model, test_loader, loss_fn, device):
+    model.eval()
+    total_loss = 0
+    correct = 0
+    total = 0
+    with torch.no_grad():
+        for data, target in test_loader:
+            data, target = data.to(device), target.to(device)
+            output = model(data)
+            loss = loss_fn(output, target)
+            total_loss += loss.item()
+            preds = (output > 0.5).float()
+            correct += (preds == target).sum().item()
+            total += target.size(0)
+    return total_loss / len(test_loader), 100. * correct / total"""
+        else:
+            return f"""# Training Configuration for {dataset_name} (Image)
+import torch.optim as optim
+import torch.nn as nn
+
+epochs = {self.params["epoch"]}
+learning_rate = {self.params["optimizer"]["lr"]}
+batch_size = {self.params["batch_size"]}
+
+loss_function = nn.CrossEntropyLoss()
+optimizer = optim.{self.params["optimizer"]["kind"]}(model.parameters(), lr=learning_rate)
+
+print("Training Configuration:")
+print(f"  Epochs: {{epochs}}")
+print(f"  Learning Rate: {{learning_rate}}")
+print(f"  Loss Function: CrossEntropy")
+print(f"  Optimizer: {self.params["optimizer"]["kind"]}")
+print(f"  Batch Size: {{batch_size}}")
+
+def train_epoch(model, train_loader, loss_fn, optimizer, device):
+    model.train()
+    total_loss = 0
+    correct = 0
+    total = 0
+    for batch_idx, (data, target) in enumerate(train_loader):
+        data, target = data.to(device), target.to(device)
+        optimizer.zero_grad()
+        output = model(data)
+        loss = loss_fn(output, target)
+        loss.backward()
+        optimizer.step()
+        total_loss += loss.item()
+        preds = output.argmax(dim=1, keepdim=True)
+        correct += preds.eq(target.view_as(preds)).sum().item()
+        total += target.size(0)
+    return total_loss / len(train_loader), 100. * correct / total
+
+def evaluate(model, test_loader, loss_fn, device):
+    model.eval()
+    total_loss = 0
+    correct = 0
+    total = 0
+    with torch.no_grad():
+        for data, target in test_loader:
+            data, target = data.to(device), target.to(device)
+            output = model(data)
+            loss = loss_fn(output, target)
+            total_loss += loss.item()
+            preds = output.argmax(dim=1, keepdim=True)
+            correct += preds.eq(target.view_as(preds)).sum().item()
+            total += target.size(0)
+    return total_loss / len(test_loader), 100. * correct / total"""
+
+    def _generate_training_loop_cell(self):
+        """Generate the main training loop"""
+        dataset_name = self.params["input"]
+        if dataset_name == "pima":
+            return f"""# Training Loop for PIMA (Tabular)
+import matplotlib.pyplot as plt
+
+train_losses = []
+train_accuracies = []
+test_losses = []
+test_accuracies = []
+
+print("Starting training...")
+print("=" * 50)
+
+for epoch in range(1, {self.params["epoch"]} + 1):
+    train_loss, train_acc = train_epoch(model, train_loader, loss_function, optimizer, device)
+    test_loss, test_acc = evaluate(model, test_loader, loss_function, device)
+    train_losses.append(train_loss)
+    train_accuracies.append(train_acc)
+    test_losses.append(test_loss)
+    test_accuracies.append(test_acc)
+    print(f'Epoch {{epoch:2d}}/{self.params["epoch"]}:')
+    print(f'  Train Loss: {{train_loss:.4f}}, Train Acc: {{train_acc:.2f}}%')
+    print(f'  Test Loss: {{test_loss:.4f}}, Test Acc: {{test_acc:.2f}}%')
+    print("-" * 50)
+
+print("Training completed!")
+
+final_train_acc = train_accuracies[-1]
+final_test_acc = test_accuracies[-1]
+overfitting = final_train_acc - final_test_acc
+
+print("\\nFinal Results:")
+print(f"  Final Training Accuracy: {{final_train_acc:.2f}}%")
+print(f"  Final Test Accuracy: {{final_test_acc:.2f}}%")
+print(f"  Overfitting gap: {{overfitting:.2f}}%")
+
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
+ax1.plot(range(1, {self.params["epoch"]} + 1), train_losses, 'b-', label='Training Loss', linewidth=2)
+ax1.plot(range(1, {self.params["epoch"]} + 1), test_losses, 'r-', label='Test Loss', linewidth=2)
+ax1.set_xlabel('Epoch')
+ax1.set_ylabel('Loss')
+ax1.set_title('Training and Test Loss')
+ax1.legend()
+ax1.grid(True, alpha=0.3)
+ax2.plot(range(1, {self.params["epoch"]} + 1), train_accuracies, 'b-', label='Training Accuracy', linewidth=2)
+ax2.plot(range(1, {self.params["epoch"]} + 1), test_accuracies, 'r-', label='Test Accuracy', linewidth=2)
+ax2.set_xlabel('Epoch')
+ax2.set_ylabel('Accuracy (%)')
+ax2.set_title('Training and Test Accuracy')
+ax2.legend()
+ax2.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+torch.save(model.state_dict(), 'trained_model.pth')
+print("\\nModel saved as 'trained_model.pth'")"""
+        else:
+            return f"""# Training Loop for {dataset_name} (Image)
+import matplotlib.pyplot as plt
+
+train_losses = []
+train_accuracies = []
+test_losses = []
+test_accuracies = []
+
+print("Starting training...")
+print("=" * 50)
+
+for epoch in range(1, {self.params["epoch"]} + 1):
+    train_loss, train_acc = train_epoch(model, train_loader, loss_function, optimizer, device)
+    test_loss, test_acc = evaluate(model, test_loader, loss_function, device)
+    train_losses.append(train_loss)
+    train_accuracies.append(train_acc)
+    test_losses.append(test_loss)
+    test_accuracies.append(test_acc)
+    print(f'Epoch {{epoch:2d}}/{self.params["epoch"]}:')
+    print(f'  Train Loss: {{train_loss:.4f}}, Train Acc: {{train_acc:.2f}}%')
+    print(f'  Test Loss: {{test_loss:.4f}}, Test Acc: {{test_acc:.2f}}%')
+    print("-" * 50)
+
+print("Training completed!")
+
+final_train_acc = train_accuracies[-1]
+final_test_acc = test_accuracies[-1]
+overfitting = final_train_acc - final_test_acc
+
+print("\\nFinal Results:")
+print(f"  Final Training Accuracy: {{final_train_acc:.2f}}%")
+print(f"  Final Test Accuracy: {{final_test_acc:.2f}}%")
+print(f"  Overfitting gap: {{overfitting:.2f}}%")
+
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
+ax1.plot(range(1, {self.params["epoch"]} + 1), train_losses, 'b-', label='Training Loss', linewidth=2)
+ax1.plot(range(1, {self.params["epoch"]} + 1), test_losses, 'r-', label='Test Loss', linewidth=2)
+ax1.set_xlabel('Epoch')
+ax1.set_ylabel('Loss')
+ax1.set_title('Training and Test Loss')
+ax1.legend()
+ax1.grid(True, alpha=0.3)
+ax2.plot(range(1, {self.params["epoch"]} + 1), train_accuracies, 'b-', label='Training Accuracy', linewidth=2)
+ax2.plot(range(1, {self.params["epoch"]} + 1), test_accuracies, 'r-', label='Test Accuracy', linewidth=2)
+ax2.set_xlabel('Epoch')
+ax2.set_ylabel('Accuracy (%)')
+ax2.set_title('Training and Test Accuracy')
+ax2.legend()
+ax2.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+torch.save(model.state_dict(), 'trained_model.pth')
+print("\\nModel saved as 'trained_model.pth'")"""
+
+    def generate_notebook(self):
+        """Generate a focused notebook for the user's specific architecture"""
+
+        # Cell 1: Title and Overview
+        title_cell = nbf.v4.new_markdown_cell(f"""# {self.params["input"].upper()} Neural Network Training
+
+## Architecture Overview
+This notebook implements a neural network for **{self.dataset_info["description"]}**
+
+### Configuration:
+- **Dataset**: {self.params["input"]}
+- **Architecture**: {len(self.params["layers"])} layers
+- **Loss Function**: {self.params["loss"]}
+- **Optimizer**: {self.params["optimizer"]["kind"]} (lr={self.params["optimizer"]["lr"]})
+- **Training**: {self.params["epoch"]} epochs, batch size {self.params["batch_size"]}
+
+### Layer Structure:
+""")
+
+        # Add layer details to markdown
+        for i, layer in enumerate(self.params["layers"]):
+            title_cell.source += f"- Layer {i + 1}: {layer['kind']}"
+            if "args" in layer:
+                title_cell.source += f" with args {layer['args']}"
+            title_cell.source += "\n"
+
+        # Cell 2: Install Dependencies
+        install_cell = nbf.v4.new_code_cell("""# Install required packages
+%pip install torch torchvision numpy scikit-learn matplotlib pandas""")
+
+        # Cell 3: Import Libraries
+        imports_cell = nbf.v4.new_code_cell("""# Import necessary libraries
+import torch
+import torch.nn as nn
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from torch.utils.data import DataLoader, TensorDataset
+from torchvision import datasets, transforms
+from sklearn.model_selection import train_test_split
+import warnings
+warnings.filterwarnings('ignore')
+
+print("Libraries imported successfully!")""")
+
+        # Cell 4: Dataset Setup (dynamically generated)
+        dataset_cell = nbf.v4.new_code_cell(self._generate_dataset_cell())
+
+        # Cell 5: Model Architecture (dynamically generated)
+        model_cell = nbf.v4.new_code_cell(self._generate_model_cell())
+
+        # Cell 6: Training Configuration (dynamically generated)
+        training_cell = nbf.v4.new_code_cell(self._generate_training_cell())
+
+        # Cell 7: Training Loop (dynamically generated)
+        training_loop_cell = nbf.v4.new_code_cell(self._generate_training_loop_cell())
+
+        # Create notebook
         nb = nbf.v4.new_notebook()
-        nb.cells.append(nbf.v4.new_code_cell(install_cell))
-        nb.cells.append(nbf.v4.new_code_cell(code_cell_1))
-        nb.cells.append(nbf.v4.new_code_cell(add_params))
-        nb.cells.append(nbf.v4.new_code_cell(code_cell_2))
-        nb.cells.append(nbf.v4.new_code_cell(code_cell_3))
-        nb.cells.append(nbf.v4.new_code_cell(code_cell_4))
-        nb.cells.append(nbf.v4.new_code_cell(code_cell_5))
-        nb.cells.append(nbf.v4.new_code_cell(code_cell_6))
-        nb.cells.append(nbf.v4.new_code_cell(code_cell_7))
+        nb.cells = [
+            title_cell,
+            install_cell,
+            imports_cell,
+            dataset_cell,
+            model_cell,
+            training_cell,
+            training_loop_cell,
+        ]
 
         # Write the notebook to a file
         with open("generated_notebook.ipynb", "w") as f:
             nbf.write(nb, f)
 
         print("Notebook generated as 'generated_notebook.ipynb'")
+        print(f"Dataset: {self.params['input']}")
+        print(f"Architecture: {len(self.params['layers'])} layers")
+        print(f"Training: {self.params['epoch']} epochs")
 
 
 if __name__ == "__main__":
+    # Example usage
+    # known issue: PIMA csv file is not provided in generated python notebook
+    # params = {
+    #     "input": "pima",
+    #     "layers": [
+    #         {"kind": "Linear", "args": (8, 12)},
+    #         {"kind": "ReLU"},
+    #         {"kind": "Linear", "args": (12, 8)},
+    #         {"kind": "ReLU"},
+    #         {"kind": "Linear", "args": (8, 1)},
+    #         {"kind": "Sigmoid"},
+    #     ],
+    #     "loss": "BCE",
+    #     "optimizer": {"kind": "Adam", "lr": 0.001},
+    #     "epoch": 3,
+    #     "batch_size": 10,
+    # }
+
     params = {
-        "input": "pima",
+        "input": "MNIST",
         "layers": [
-            {"kind": "Linear", "args": (8, 12)},
+            {
+                "kind": "Conv2D",
+                "args": (2, 1, 16, 3, 1, 0),
+            },  # dim, input, output, kernel size, stride, padding.
+            # dim is a fake arg we made up so we just ignore it in the actual api. same for maxpool layers.
             {"kind": "ReLU"},
-            {"kind": "Linear", "args": (12, 8)},
+            {"kind": "MaxPool2D", "args": (2, 2, 2, 0)},
+            {"kind": "Conv2D", "args": (2, 16, 32, 3, 1, 0)},
             {"kind": "ReLU"},
-            {"kind": "Linear", "args": (8, 1)},
-            {"kind": "Sigmoid"},
+            {"kind": "MaxPool2D", "args": (2, 2, 2, 0)},
+            {"kind": "Flatten", "args": [1, -1]},
+            {"kind": "Linear", "args": (800, 128)},  # supposed to be 32 * 7 * 7
+            {"kind": "ReLU"},
+            {"kind": "Linear", "args": (128, 10)},
         ],
-        "loss": "BCE",
+        "loss": "CrossEntropy",
         "optimizer": {"kind": "Adam", "lr": 0.001},
-        "epoch": 3,
-        "batch_size": 10,
+        "epoch": 2,
+        "batch_size": 64,
     }
 
     gen = Generate(params)
