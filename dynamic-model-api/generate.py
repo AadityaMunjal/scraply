@@ -89,8 +89,9 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, TensorDataset
 
-# Load PIMA dataset
-data = pd.read_csv("datasets/pima-indians-diabetes.csv")
+# Download and load PIMA dataset from URL
+url = "https://raw.githubusercontent.com/npradaschnor/Pima-Indians-Diabetes-Dataset/master/diabetes.csv"
+data = pd.read_csv(url)
 X = data.iloc[:, :-1].values  # All columns except last
 y = data.iloc[:, -1].values   # Last column (target)
 
@@ -114,7 +115,7 @@ test_dataset = TensorDataset(X_test_tensor, y_test_tensor)
 train_loader = DataLoader(train_dataset, batch_size={batch_size}, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size={batch_size}, shuffle=False)
 
-print(f"PIMA Dataset loaded:")
+print(f"PIMA Dataset loaded from URL:")
 print(f"  Training samples: {{len(train_dataset)}}")
 print(f"  Test samples: {{len(test_dataset)}}")
 print(f"  Input features: {{X_train.shape[1]}}")
@@ -519,46 +520,45 @@ print("Libraries imported successfully!")""")
 
 if __name__ == "__main__":
     # Example usage
-    # known issue: PIMA csv file is not provided in generated python notebook
-    # params = {
-    #     "input": "pima",
-    #     "layers": [
-    #         {"kind": "Linear", "args": (8, 12)},
-    #         {"kind": "ReLU"},
-    #         {"kind": "Linear", "args": (12, 8)},
-    #         {"kind": "ReLU"},
-    #         {"kind": "Linear", "args": (8, 1)},
-    #         {"kind": "Sigmoid"},
-    #     ],
-    #     "loss": "BCE",
-    #     "optimizer": {"kind": "Adam", "lr": 0.001},
-    #     "epoch": 3,
-    #     "batch_size": 10,
-    # }
-
     params = {
-        "input": "MNIST",
+        "input": "pima",
         "layers": [
-            {
-                "kind": "Conv2D",
-                "args": (2, 1, 16, 3, 1, 0),
-            },  # dim, input, output, kernel size, stride, padding.
-            # dim is a fake arg we made up so we just ignore it in the actual api. same for maxpool layers.
+            {"kind": "Linear", "args": (8, 12)},
             {"kind": "ReLU"},
-            {"kind": "MaxPool2D", "args": (2, 2, 2, 0)},
-            {"kind": "Conv2D", "args": (2, 16, 32, 3, 1, 0)},
+            {"kind": "Linear", "args": (12, 8)},
             {"kind": "ReLU"},
-            {"kind": "MaxPool2D", "args": (2, 2, 2, 0)},
-            {"kind": "Flatten", "args": [1, -1]},
-            {"kind": "Linear", "args": (800, 128)},  # supposed to be 32 * 7 * 7
-            {"kind": "ReLU"},
-            {"kind": "Linear", "args": (128, 10)},
+            {"kind": "Linear", "args": (8, 1)},
+            {"kind": "Sigmoid"},
         ],
-        "loss": "CrossEntropy",
+        "loss": "BCE",
         "optimizer": {"kind": "Adam", "lr": 0.001},
-        "epoch": 2,
-        "batch_size": 64,
+        "epoch": 3,
+        "batch_size": 10,
     }
+
+    # params = {
+    #     "input": "MNIST",
+    #     "layers": [
+    #         {
+    #             "kind": "Conv2D",
+    #             "args": (2, 1, 16, 3, 1, 0),
+    #         },  # dim, input, output, kernel size, stride, padding.
+    #         # dim is a fake arg we made up so we just ignore it in the actual api. same for maxpool layers.
+    #         {"kind": "ReLU"},
+    #         {"kind": "MaxPool2D", "args": (2, 2, 2, 0)},
+    #         {"kind": "Conv2D", "args": (2, 16, 32, 3, 1, 0)},
+    #         {"kind": "ReLU"},
+    #         {"kind": "MaxPool2D", "args": (2, 2, 2, 0)},
+    #         {"kind": "Flatten", "args": [1, -1]},
+    #         {"kind": "Linear", "args": (800, 128)},  # supposed to be 32 * 7 * 7
+    #         {"kind": "ReLU"},
+    #         {"kind": "Linear", "args": (128, 10)},
+    #     ],
+    #     "loss": "CrossEntropy",
+    #     "optimizer": {"kind": "Adam", "lr": 0.001},
+    #     "epoch": 2,
+    #     "batch_size": 64,
+    # }
 
     gen = Generate(params)
     gen.generate_notebook()
