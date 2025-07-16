@@ -16,15 +16,16 @@ The scraply server isn't deployed yet, therefore you need to run your own backen
 
 1. visit [scraply](https://scraply-prod.vercel.app) (server status shows offline)
 2. clone github repo `git clone https://github.com/the-AMA-team/scraply.git`
-3. go to the api directory `cd scraply/dynamic-model-api/`
-4. run server `python3 -m flask run`
+3. download python packages
+4. go to the api directory `cd scraply/dynamic-model-api/`
+5. run server `python3 -m flask run`
 
 ### Updates in Summer'25 Release:
 
 - 👾 explainability features
 - 👾 outputs tab with model insights
 
-### Updates Coming Soon:
+### Coming Soon:
 
 - 👾 ability to run in browser (using tf.js)
 - 👾 uploading custom datasets and data pre-processing
@@ -32,6 +33,6 @@ The scraply server isn't deployed yet, therefore you need to run your own backen
 
 ### Developed by the-AMA-team
 
-1. Alan 🧑‍🍳
-2. Mehek 🤓
-3. Adi 🤩
+Alan 🧑‍🍳: Cloud Ops
+Mehek 🤓: Backend/AI
+Adi 🤩: Frontend/UI
