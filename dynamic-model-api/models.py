@@ -129,28 +129,8 @@ class DynamicModel(nn.Module):
 
         return x
 
-    # # In evaluation:
-    # saver.save = True
-    # _ = model(input_data)  # this will save activations
-    # saver.save = False
-    # _ = model(input_data)  # this will skip saving
-
 
 class Train:
-    # in training.
-    # i want to not do anything with the feature maps. flag must be set to false
-
-    # during testing, i stil do not want to save the feature maps.
-
-    # then after training, i need to pick 3 random images from the 10 predicted classes and save the indicies.
-    # create folder for each class. save the images in the folder.
-    # create a dictionary for each class. save images and their peek map images in it like this: placeholder_img_b64 = base64.b64encode(b"_placeholdetext__" + bytes(str(i), 'utf-8')).decode('utf-8')
-    # then i need to get the 3 lowest class acurracies and get 3 incorrect predictions from each of the 3 lowest class acurracies. and save the indicies
-    # include true and predicted labels in the dictionary
-
-    # create a folder for the 3 lowest class acurracies. save the images in the folder.
-    # create a dictionary for the 3 lowest class acurracies. save images and their peek map images in it like this: placeholder_img_b64 = base64.b64encode(b"_placeholdetext__" + bytes(str(i), 'utf-8')).decode('utf-8').
-    # include true and predicted labels in the dictionary
 
     # each peek map MUST be a SEPERATE IMAGE. i DO NOT WANT TO SAVE THEM AS A SINGLE IMAGE.
     def __init__(self, model, input, loss, optimizer, batch_size):
@@ -321,25 +301,15 @@ class Train:
 
             print(f"\n3 lowest accuracy classes: {lowest_accuracy_classes}")
 
-            # # Get random predictions per class (3 per class)
             print("\nGetting random predictions per class...")
-            random_samples = self.get_random_predictions_per_class(
-                class_predictions, num_samples=3
-            )
+            random_samples = self.get_random_predictions_per_class(class_predictions, num_samples=3)
 
-            # now we have random_samples which is a dictionary of lists. each list contains (idx, true_label, pred_label)
-            # so basically these means that we now have our image indicies from the test set
-
-            # Get misclassified samples for lowest accuracy classes
             print("Getting misclassified samples for lowest accuracy classes...")
-            misclassified_samples = self.get_misclassified_samples(
-                lowest_accuracy_classes_info, num_samples=3
-            )
+            misclassified_samples = self.get_misclassified_samples(lowest_accuracy_classes_info, num_samples=3)
 
-            # now we have misclassified_samples which is a dictionary of lists. each list contains (idx, true_label, pred_label)
+            # now we have random_samples and misclassified_samples which are both a dictionary of lists. each list contains (idx, true_label, pred_label)
             # so basically these means that we now have our image indicies from the test set
 
-            # then generate a peek for each if model.isConv is true. --> I THINK I WILL DO THIS OUTSIDE OF THE TEST FUNCTION
 
         # returning test loss here :)
         avg_test_loss = test_loss / len(self.test_loader)
@@ -350,10 +320,7 @@ class Train:
         else:
             return avg_test_loss, avg_acc  # ORIGINAL OUTPUT
 
-    def get_random_predictions_per_class(
-        self, class_predictions, num_samples=3
-    ):  # BEWARE: THIS IS VIBE CODED
-        """Get random samples for each class (regardless of prediction correctness)"""
+    def get_random_predictions_per_class(self, class_predictions, num_samples=3):
         random_samples = {}
 
         for class_label in range(10):
@@ -368,10 +335,7 @@ class Train:
 
         return random_samples
 
-    def get_misclassified_samples(
-        self, class_predictions, num_samples=3
-    ):  # BEWARE: THIS IS VIBE CODED
-        """Get misclassified samples for each class"""
+    def get_misclassified_samples(self, class_predictions, num_samples=3): 
         misclassified_samples = {}
 
         for class_label in range(self.num_classes):  # self.num_classes might not work.
@@ -392,7 +356,6 @@ class Train:
 
     def process_image_samples(self, samples_dict, base_dir):
         """Process, save, and return images and peek maps for a given set of samples.
-
         Args:
             samples_dict (dict): {class_label: [(idx, true_label, pred_label), ...]}
             base_dir (str): Directory to save images and peek maps
@@ -502,37 +465,27 @@ class Train:
                     self.test(output_info=True)
                 )
 
-                # example of random_samples:
+                # example of random_samples / misclassied_samples:
                 # random_samples {0: [(9527, 0, 0), (7279, 0, 0), (3660, 0, 0)], 1: [(1939, 1, 1), (5831, 1, 1), ...
                 # (idx, true_label, pred_label) --> idx is the index of the image in the test set
-                # dictionary key is the class label
+                # dictionary key is the class true label
 
-                # example of misclassified_samples: # ALL ARE MISCLASSIFIED EXAMPLES
-                # misclassified_samples {2: [(9527, 2, 0), (7279, 2, 0), (3660, 2, 1)], 4: [(1939, 4, 6), (5831, 4, 9), ...
-
-                # Create directory for random samples if it doesn't exist
-                print("----------processing random samples-----------")
+                
                 if self.input != "pima":  # Only process images for non-pima datasets
+                    print("----------processing random samples-----------")
                     base_dir = "cnn_analysis_results"
                     os.makedirs(base_dir, exist_ok=True)
-                    RANDOM_SAMPLES_ENCODED = self.process_image_samples(
-                        random_samples, base_dir
-                    )
+                    RANDOM_SAMPLES_ENCODED = self.process_image_samples(random_samples, base_dir)
+                    
+                    print("--------processing misclassified samples-----------")
+                    base_dir = os.path.join("cnn_analysis_results", "lowest_accuracy_classes")
+                    os.makedirs(base_dir, exist_ok=True)
+                    MISCLASSIFIED_SAMPLES_ENCODED = self.process_image_samples(misclassified_samples, base_dir)
                 else:
                     print("Skipping image processing for pima dataset")
-
-                print("--------processing misclassified samples-----------")
-                if self.input != "pima":  # Only process images for non-pima datasets
-                    base_dir = os.path.join(
-                        "cnn_analysis_results", "lowest_accuracy_classes"
-                    )
-                    os.makedirs(base_dir, exist_ok=True)
-                    # Process misclassified samples grouped by true label (no reorganization)
-                    MISCLASSIFIED_SAMPLES_ENCODED = self.process_image_samples(
-                        misclassified_samples, base_dir
-                    )
-                else:
                     print("Skipping misclassified samples processing for pima dataset")
+
+                    
 
             print("LEGACY OUTPUT. do not mess with this lil bro")
             print(
@@ -577,18 +530,6 @@ class Train:
         else:
             # return ORIGINAL_OUTPUT, {}, {}  # Return empty dicts for non-image datasets
             return ORIGINAL_OUTPUT
-
-    def generate_peek_dict(self, random_samples, misclassified_samples):
-        print("hello")
-        # returns two dictionaries. one for random_sampples and one for misclassified_samples
-        # each dictionary contains keys of the class labels.
-        # the value is another dictonary that contains: true label, original image, [peek map image, peek map image, peek map image]
-        # the number of peek maps in the list is equal to the number of Conv layers in the model
-
-    def generate_image_dict(self, random_samples, misclassified_samples):
-        print("hello")
-        # does everything that generate peek dict except for any peek map related stuff
-        # this is the same as generate_peek_dict but without the peek map related stuff
 
     def compute_PEEK(self, feature_maps, h, w):
         """Compute PEEK map from feature maps"""
