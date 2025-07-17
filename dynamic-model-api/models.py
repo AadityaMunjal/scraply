@@ -79,9 +79,7 @@ class DynamicModel(nn.Module):
 
                 elif layer_type == "Flatten":
                     start_dim = 1
-                    end_dim = (
-                        -1
-                    )  # I AM FORCING 1,-1. CURRENT UI DOES NOT SUPPORT NEGATIVE DIMS. 6/28/25
+                    end_dim = -1  # I AM FORCING 1,-1. CURRENT UI DOES NOT SUPPORT NEGATIVE DIMS. 6/28/25
                     # start_dim, end_dim = layer_args
                     component = nn.Flatten(start_dim, end_dim)
 
@@ -165,7 +163,9 @@ class Train:
         self.device = (  # for GPU access --> works with CPU as well
             "cuda"
             if torch.cuda.is_available()
-            else "mps" if torch.backends.mps.is_available() else "cpu"
+            else "mps"
+            if torch.backends.mps.is_available()
+            else "cpu"
         )
         print(f"Using {self.device} device")
 
@@ -295,7 +295,6 @@ class Train:
                 list
             )  # Store (idx, true_label, pred_label) for each class
             # class_predictions is a dictionary of lists. each list contains (idx, true_label, pred_label)
-            # ex: class_predictions[class_label] = [(idx, true_label, pred_label), (idx, true_label, pred_label), (idx, true_label, pred_label)]
             # ex: class_predictions[class_label] = [(idx, true_label, pred_label), (idx, true_label, pred_label), (idx, true_label, pred_label)]
 
             for idx, (true_label, pred_label) in enumerate(
@@ -582,10 +581,7 @@ class Train:
                                 )
 
                                 # Base64 encode original image
-                                _, buffer = cv2.imencode(".png", image_np)
-                                img_b64 = base64.b64encode(buffer.tobytes()).decode(
-                                    "utf-8"
-                                )
+                                img_b64 = self.image_to_base64_png(image_np)
                                 image_data = {
                                     "original": img_b64,
                                     "peek_maps": [],
@@ -719,10 +715,7 @@ class Train:
                                 )
 
                                 # Base64 encode original image
-                                _, buffer = cv2.imencode(".png", image_np)
-                                img_b64 = base64.b64encode(buffer.tobytes()).decode(
-                                    "utf-8"
-                                )
+                                img_b64 = self.image_to_base64_png(image_np)
                                 image_data = {
                                     "original": img_b64,
                                     "peek_maps": [],
@@ -856,6 +849,11 @@ class Train:
         entropy_map = -np.sum(entr(positivized_maps), axis=-1)
         peek_map = cv2.resize(entropy_map, (w, h))
         return peek_map
+
+    def image_to_base64_png(self, image_np):
+        """Encode a numpy image as base64 PNG string."""
+        _, buffer = cv2.imencode(".png", image_np)
+        return base64.b64encode(buffer.tobytes()).decode("utf-8")
 
 
 if __name__ == "__main__":
