@@ -462,7 +462,7 @@ class Train:
                             _, buffer = cv2.imencode(".png", overlay)
                             peek_b64 = base64.b64encode(buffer.tobytes()).decode("utf-8")
                             image_data["peek_maps"].append({"layer": str(layer), "image": peek_b64})
-                            print(f"Saved original image and peek map for class {true_label}, sample {idx}")
+                            print(f"Saved original image and peek map for class {true_label}, sample {idx}, predicted {pred_label}")
                     else:
                         print(f"Saved original image for class {true_label}, sample {idx} (no convolutional layers)")
 
