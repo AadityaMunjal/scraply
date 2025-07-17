@@ -241,9 +241,7 @@ class Train:
             train_loss += loss.item()
 
             if self.input == "pima":
-                predicted = (
-                    pred > 0.5
-                ).float()  # apply threshold for binary classification
+                predicted = (pred > 0.5).float()  # apply threshold for binary classification
             else:
                 _, predicted = torch.max(pred, 1)  # for multi-class classification
             # Get the predicted class (index with max value)
@@ -310,22 +308,16 @@ class Train:
             class_accuracy = {}
             for class_label in range(self.num_classes):
                 if class_total[class_label] > 0:
-                    class_accuracy[class_label] = (
-                        class_correct[class_label] / class_total[class_label]
-                    )
+                    class_accuracy[class_label] = class_correct[class_label] / class_total[class_label]
                 else:
                     class_accuracy[class_label] = 0.0
 
             # get the 3 lowest class acurracies
             sorted_classes = sorted(class_accuracy.items(), key=lambda x: x[1])
-            lowest_accuracy_classes = [
-                class_label for class_label, accuracy in sorted_classes[:3]
-            ]
+            lowest_accuracy_classes = [class_label for class_label, accuracy in sorted_classes[:3]]
             lowest_accuracy_classes_info = {}
             for class_label in lowest_accuracy_classes:
-                lowest_accuracy_classes_info[class_label] = class_predictions[
-                    class_label
-                ]
+                lowest_accuracy_classes_info[class_label] = class_predictions[class_label]
 
             print(f"\n3 lowest accuracy classes: {lowest_accuracy_classes}")
 
@@ -392,103 +384,92 @@ class Train:
                 ]
 
                 if len(misclassified) >= num_samples:
-                    misclassified_samples[class_label] = random.sample(
-                        misclassified, num_samples
-                    )
+                    misclassified_samples[class_label] = random.sample(misclassified, num_samples)
                 else:
                     misclassified_samples[class_label] = misclassified
 
         return misclassified_samples
 
     def process_image_samples(self, samples_dict, base_dir):
-        """Process and save images and peek maps for a given set of samples.
+        """Process, save, and return images and peek maps for a given set of samples.
 
         Args:
-            samples_dict (dict): Dictionary containing samples in format {class_label: [(idx, true_label, pred_label), ...]}
-            base_dir (str): Base directory to save the images and peek maps
+            samples_dict (dict): {class_label: [(idx, true_label, pred_label), ...]}
+            base_dir (str): Directory to save images and peek maps
+        Returns:
+            dict: {class_label: [ {original, peek_maps, true_label, pred_label, idx}, ... ] }
         """
-        if self.input == "pima":  # Skip processing for non-image datasets
-            return
+        if self.input == "pima":
+            return {}
 
         os.makedirs(base_dir, exist_ok=True)
         print(f"Processing samples in directory: {base_dir}")
+        result = {}
 
         for class_label, samples in samples_dict.items():
             class_dir = os.path.join(base_dir, f"class_{class_label}")
             os.makedirs(class_dir, exist_ok=True)
+            result[class_label] = []
 
             for idx, true_label, pred_label in samples:
                 image, _ = self.test_loader.dataset[idx]
                 image = image.unsqueeze(0).to(self.device)
 
                 # Get image dimensions
-                if len(image.shape) == 4:  # B, C, H, W format
+                if len(image.shape) == 4:
                     _, _, h, w = image.shape
-                elif len(image.shape) == 3:  # C, H, W format
+                elif len(image.shape) == 3:
                     _, h, w = image.shape
-                else:  # H, W format
+                else:
                     h, w = image.shape
 
-                self.model.feature_save = True  # Enable feature map saving
+                self.model.feature_save = True
                 with torch.no_grad():
                     output = self.model(image)
 
-                    # Save original image
+                    # Save original image to disk
                     image_np = image[0, 0].cpu().numpy()
-                    image_np = (
-                        (image_np - image_np.min())
-                        * (255.0 / (image_np.max() - image_np.min()))
-                    ).astype(np.uint8)
-                    image_np = cv2.resize(
-                        image_np, (400, 400), interpolation=cv2.INTER_NEAREST
-                    )
-                    cv2.imwrite(
-                        os.path.join(class_dir, f"image_{idx}_original.png"), image_np
-                    )
+                    image_np = ((image_np - image_np.min())* (255.0 / (image_np.max() - image_np.min()))).astype(np.uint8)
+                    image_np = cv2.resize(image_np, (400, 400), interpolation=cv2.INTER_NEAREST)
+                    cv2.imwrite(os.path.join(class_dir, f"image_{idx}_original.png"), image_np)
+
+                    # Encode original image as base64
+                    img_b64 = self.image_to_base64_png(image_np)
+                    image_data = {
+                        "original": img_b64,
+                        "peek_maps": [],
+                        "true_label": int(true_label),
+                        "pred_label": int(pred_label),
+                        "idx": idx,
+                    }
 
                     if self.model.isConv:
-                        # Process feature maps for convolutional layers
                         feature_maps = self.model.feature_maps
                         for layer, fmap in feature_maps.items():
                             fmap = fmap.cpu().numpy()
-                            fmap = fmap[0]  # Remove batch dimension
-                            fmap = np.moveaxis(fmap, 0, -1)  # Rearrange channels
+                            fmap = fmap[0]
+                            fmap = np.moveaxis(fmap, 0, -1)
                             peek_map = self.compute_PEEK(fmap, h, w)
+                            peek_map_norm = (peek_map - peek_map.min()) / (peek_map.max() - peek_map.min())
+                            peek_map_norm = cv2.resize(peek_map_norm,(400, 400),interpolation=cv2.INTER_NEAREST,)
+                            heatmap = cv2.applyColorMap((peek_map_norm * 255).astype(np.uint8), cv2.COLORMAP_JET)
+                            overlay = cv2.addWeighted(cv2.cvtColor(image_np, cv2.COLOR_GRAY2BGR),0.3, heatmap, 0.7, 0)
 
-                            # Create peek map overlay
-                            peek_map_norm = (peek_map - peek_map.min()) / (
-                                peek_map.max() - peek_map.min()
-                            )
-                            peek_map_norm = cv2.resize(
-                                peek_map_norm,
-                                (400, 400),
-                                interpolation=cv2.INTER_NEAREST,
-                            )
-                            heatmap = cv2.applyColorMap(
-                                (peek_map_norm * 255).astype(np.uint8), cv2.COLORMAP_JET
-                            )
-                            overlay = cv2.addWeighted(
-                                cv2.cvtColor(image_np, cv2.COLOR_GRAY2BGR),
-                                0.3,
-                                heatmap,
-                                0.7,
-                                0,
-                            )
+                            # Save peek map overlay to disk
+                            cv2.imwrite(os.path.join(class_dir, f"image_{idx}_{layer}.png"),overlay,)
 
-                            cv2.imwrite(
-                                os.path.join(class_dir, f"image_{idx}_{layer}.png"),
-                                overlay,
-                            )
-                            print(
-                                f"Saved original image and peek map for class {true_label}, sample {idx}"
-                            )
+                            # Encode peek map overlay as base64
+                            _, buffer = cv2.imencode(".png", overlay)
+                            peek_b64 = base64.b64encode(buffer.tobytes()).decode("utf-8")
+                            image_data["peek_maps"].append({"layer": str(layer), "image": peek_b64})
+                            print(f"Saved original image and peek map for class {true_label}, sample {idx}")
                     else:
-                        print(
-                            f"Saved original image for class {true_label}, sample {idx} (no convolutional layers)"
-                        )
+                        print(f"Saved original image for class {true_label}, sample {idx} (no convolutional layers)")
 
-                self.model.feature_save = False  # Disable feature map saving
-                self.model.clear_feature_maps()  # Clear stored feature maps
+                self.model.feature_save = False
+                self.model.clear_feature_maps()
+                result[class_label].append(image_data)
+        return result
 
     def train_test_log(self, n_epochs, batch_size):
         # i think it would be a good idea to do the images stuff in here
@@ -532,258 +513,24 @@ class Train:
                 # Create directory for random samples if it doesn't exist
                 print("----------processing random samples-----------")
                 if self.input != "pima":  # Only process images for non-pima datasets
-                    # Process random samples
                     base_dir = "cnn_analysis_results"
                     os.makedirs(base_dir, exist_ok=True)
-
-                    # Dictionary to store base64 encoded images
-                    RANDOM_SAMPLES_ENCODED = {}
-
-                    for key in random_samples.keys():  # key is the class label
-                        class_dir = os.path.join(base_dir, f"class_{key}")
-                        os.makedirs(class_dir, exist_ok=True)
-                        RANDOM_SAMPLES_ENCODED[key] = []
-
-                        for idx, true_label, pred_label in random_samples[key]:
-                            image, _ = self.test_loader.dataset[idx]
-                            image = image.unsqueeze(0).to(self.device)
-
-                            # Get dimensions
-                            if len(image.shape) == 4:  # B, C, H, W format
-                                _, _, h, w = image.shape
-                            elif len(image.shape) == 3:  # C, H, W format
-                                _, h, w = image.shape
-                            else:  # H, W format
-                                h, w = image.shape
-
-                            self.model.feature_save = True
-                            with torch.no_grad():
-                                output = self.model(image)
-
-                                # Save original image
-                                image_np = image[0, 0].cpu().numpy()
-                                image_np = (
-                                    (image_np - image_np.min())
-                                    * (255.0 / (image_np.max() - image_np.min()))
-                                ).astype(np.uint8)
-                                image_np = cv2.resize(
-                                    image_np,
-                                    (400, 400),
-                                    interpolation=cv2.INTER_NEAREST,
-                                )
-
-                                # Save to disk
-                                cv2.imwrite(
-                                    os.path.join(
-                                        class_dir, f"image_{idx}_original.png"
-                                    ),
-                                    image_np,
-                                )
-
-                                # Base64 encode original image
-                                img_b64 = self.image_to_base64_png(image_np)
-                                image_data = {
-                                    "original": img_b64,
-                                    "peek_maps": [],
-                                    "true_label": int(true_label),
-                                    "pred_label": int(pred_label),
-                                    "idx": idx,
-                                }
-
-                                if self.model.isConv:
-                                    # Process feature maps
-                                    feature_maps = self.model.feature_maps
-                                    for layer, fmap in feature_maps.items():
-                                        fmap = fmap.cpu().numpy()
-                                        fmap = fmap[0]  # Remove batch dimension
-                                        fmap = np.moveaxis(
-                                            fmap, 0, -1
-                                        )  # Rearrange channels
-                                        peek_map = self.compute_PEEK(fmap, h, w)
-
-                                        # Create peek map overlay
-                                        peek_map_norm = (peek_map - peek_map.min()) / (
-                                            peek_map.max() - peek_map.min()
-                                        )
-                                        peek_map_norm = cv2.resize(
-                                            peek_map_norm,
-                                            (400, 400),
-                                            interpolation=cv2.INTER_NEAREST,
-                                        )
-                                        heatmap = cv2.applyColorMap(
-                                            (peek_map_norm * 255).astype(np.uint8),
-                                            cv2.COLORMAP_JET,
-                                        )
-                                        overlay = cv2.addWeighted(
-                                            cv2.cvtColor(image_np, cv2.COLOR_GRAY2BGR),
-                                            0.3,
-                                            heatmap,
-                                            0.7,
-                                            0,
-                                        )
-
-                                        # Save to disk
-                                        cv2.imwrite(
-                                            os.path.join(
-                                                class_dir, f"image_{idx}_{layer}.png"
-                                            ),
-                                            overlay,
-                                        )
-
-                                        # Base64 encode peek map
-                                        _, buffer = cv2.imencode(".png", overlay)
-                                        peek_b64 = base64.b64encode(
-                                            buffer.tobytes()
-                                        ).decode("utf-8")
-                                        image_data["peek_maps"].append(
-                                            {"layer": str(layer), "image": peek_b64}
-                                        )
-
-                                        print(
-                                            f"Saved original image and peek map for class {true_label}, sample {idx}"
-                                        )
-
-                                RANDOM_SAMPLES_ENCODED[key].append(image_data)
-
-                                self.model.feature_save = False
-                                self.model.clear_feature_maps()
+                    RANDOM_SAMPLES_ENCODED = self.process_image_samples(
+                        random_samples, base_dir
+                    )
                 else:
                     print("Skipping image processing for pima dataset")
 
                 print("--------processing misclassified samples-----------")
                 if self.input != "pima":  # Only process images for non-pima datasets
-                    # Process misclassified samples
                     base_dir = os.path.join(
                         "cnn_analysis_results", "lowest_accuracy_classes"
                     )
                     os.makedirs(base_dir, exist_ok=True)
-
-                    # Dictionary to store base64 encoded misclassified images
-                    MISCLASSIFIED_SAMPLES_ENCODED = {}
-
-                    # Reorganize misclassified samples by predicted label
-                    pred_label_samples = {}
-                    for true_class, samples in misclassified_samples.items():
-                        for idx, true_label, pred_label in samples:
-                            if pred_label not in pred_label_samples:
-                                pred_label_samples[pred_label] = []
-                            pred_label_samples[pred_label].append(
-                                (idx, true_label, pred_label)
-                            )
-
-                    # Now process samples grouped by predicted label
-                    for pred_label, samples in pred_label_samples.items():
-                        class_dir = os.path.join(base_dir, f"misclass_to_{pred_label}")
-                        os.makedirs(class_dir, exist_ok=True)
-                        MISCLASSIFIED_SAMPLES_ENCODED[pred_label] = []
-
-                        for idx, true_label, pred_label in samples:
-                            image, _ = self.test_loader.dataset[idx]
-                            image = image.unsqueeze(0).to(self.device)
-
-                            # Get dimensions
-                            if len(image.shape) == 4:  # B, C, H, W format
-                                _, _, h, w = image.shape
-                            elif len(image.shape) == 3:  # C, H, W format
-                                _, h, w = image.shape
-                            else:  # H, W format
-                                h, w = image.shape
-
-                            self.model.feature_save = True
-                            with torch.no_grad():
-                                output = self.model(image)
-
-                                # Save original image
-                                image_np = image[0, 0].cpu().numpy()
-                                image_np = (
-                                    (image_np - image_np.min())
-                                    * (255.0 / (image_np.max() - image_np.min()))
-                                ).astype(np.uint8)
-                                image_np = cv2.resize(
-                                    image_np,
-                                    (400, 400),
-                                    interpolation=cv2.INTER_NEAREST,
-                                )
-
-                                # Save to disk
-                                cv2.imwrite(
-                                    os.path.join(
-                                        class_dir,
-                                        f"true_{true_label}_pred_{pred_label}_idx_{idx}_original.png",
-                                    ),
-                                    image_np,
-                                )
-
-                                # Base64 encode original image
-                                img_b64 = self.image_to_base64_png(image_np)
-                                image_data = {
-                                    "original": img_b64,
-                                    "peek_maps": [],
-                                    "true_label": int(true_label),
-                                    "pred_label": int(pred_label),
-                                    "idx": idx,
-                                }
-
-                                if self.model.isConv:
-                                    # Process feature maps
-                                    feature_maps = self.model.feature_maps
-                                    for layer, fmap in feature_maps.items():
-                                        fmap = fmap.cpu().numpy()
-                                        fmap = fmap[0]  # Remove batch dimension
-                                        fmap = np.moveaxis(
-                                            fmap, 0, -1
-                                        )  # Rearrange channels
-                                        peek_map = self.compute_PEEK(fmap, h, w)
-
-                                        # Create peek map overlay
-                                        peek_map_norm = (peek_map - peek_map.min()) / (
-                                            peek_map.max() - peek_map.min()
-                                        )
-                                        peek_map_norm = cv2.resize(
-                                            peek_map_norm,
-                                            (400, 400),
-                                            interpolation=cv2.INTER_NEAREST,
-                                        )
-                                        heatmap = cv2.applyColorMap(
-                                            (peek_map_norm * 255).astype(np.uint8),
-                                            cv2.COLORMAP_JET,
-                                        )
-                                        overlay = cv2.addWeighted(
-                                            cv2.cvtColor(image_np, cv2.COLOR_GRAY2BGR),
-                                            0.3,
-                                            heatmap,
-                                            0.7,
-                                            0,
-                                        )
-
-                                        # Save to disk
-                                        cv2.imwrite(
-                                            os.path.join(
-                                                class_dir,
-                                                f"true_{true_label}_pred_{pred_label}_idx_{idx}_{layer}.png",
-                                            ),
-                                            overlay,
-                                        )
-
-                                        # Base64 encode peek map
-                                        _, buffer = cv2.imencode(".png", overlay)
-                                        peek_b64 = base64.b64encode(
-                                            buffer.tobytes()
-                                        ).decode("utf-8")
-                                        image_data["peek_maps"].append(
-                                            {"layer": str(layer), "image": peek_b64}
-                                        )
-
-                                        print(
-                                            f"Saved original image and peek map for misclassified sample (true: {true_label}, pred: {pred_label})"
-                                        )
-
-                                MISCLASSIFIED_SAMPLES_ENCODED[pred_label].append(
-                                    image_data
-                                )
-
-                                self.model.feature_save = False
-                                self.model.clear_feature_maps()
+                    # Process misclassified samples grouped by true label (no reorganization)
+                    MISCLASSIFIED_SAMPLES_ENCODED = self.process_image_samples(
+                        misclassified_samples, base_dir
+                    )
                 else:
                     print("Skipping misclassified samples processing for pima dataset")
 
