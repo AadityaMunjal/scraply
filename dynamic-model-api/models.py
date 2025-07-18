@@ -32,6 +32,15 @@ from transformer_models import (
     Inference,
 )
 
+# pau code recommendations:
+# - use enums instead of 'conv1d', 'conv2d', etc
+# - make code more readable through function names etc instead of commenting it like crazy
+# - maybe make the image dictionary a class and have a serialize function to send in json or send in binary encoding method
+# - more functions; someone should be able to get the jist of what is happening without having to get into the weeds of it too much
+# - doc strings for functions
+# - use a logging library instead of print statements (important for deployment)
+# - watch videos on denesting code yippee
+
 
 class ConditionalActivationSaver:
     def __init__(self, model):
