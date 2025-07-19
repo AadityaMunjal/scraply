@@ -123,7 +123,6 @@ def train():
         )
 
         print("slay... model initialized successfully!")
-        # RESULTS, ENCODED_IMAGES, ENCODED_MISCLASSIFIED = t.train_test_log(n_epochs, batch_size)
         RESULTS = t.train_test_log(n_epochs, batch_size)
 
         # ENCODED_IMAGES and ENCODED_MISCLASSIFIED may be empty dictionaries if the input is not an image.
@@ -133,15 +132,7 @@ def train():
         print("Error:", e)
         RESULTS = {"error": str(e)}
 
-    # return {
-    #     "RESULTS": RESULTS,
-    #     "ENCODED IMAGES": ENCODED_IMAGES,
-    #     "ENCODED MISCLASSIFIED": ENCODED_MISCLASSIFIED,
-    # }  # training loss
-
-    return {
-        "RESULTS": RESULTS,
-    }
+    return RESULTS
 
 
 @app.post("/transformertrain")  # MODEL IS MOVED TO DEVICE INSIDE OF TRAIN FUNCTION
