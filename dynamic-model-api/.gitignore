@@ -2,3 +2,4 @@
 /data
 **/__pycache__
 /cnn_analysis_results
+/random_cnn_tests

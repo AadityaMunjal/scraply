@@ -649,6 +649,9 @@ class Train:
         confusion_matrix_data = []
         overall_metrics = {}
 
+        RANDOM_SAMPLES_ENCODED = {}
+        MISCLASSIFIED_SAMPLES_ENCODED = {}
+
         for t in range(n_epochs):
             print(f"Epoch {t + 1}/{n_epochs}...")
 
@@ -724,12 +727,6 @@ class Train:
 
         print("Done!")
         # torch.cuda.empty_cache()
-        # {
-        #     precision: [],
-        #     recall: [],
-        #     f1_score: [],
-        #     accuracy: []
-        # }
 
         # Change the losses arrays such that for each index it is {x: index, y: value}
         train_losses = [{"x": i, "y": v} for i, v in enumerate(train_losses)]
@@ -749,17 +746,19 @@ class Train:
         CONFUSION_MATRIX = confusion_matrix_data
         OVERALL_METRICS = overall_metrics
 
-        if self.input != "pima":
-            # Return three separate dictionaries
-            # return ORIGINAL_OUTPUT, RANDOM_SAMPLES_ENCODED, MISCLASSIFIED_SAMPLES_ENCODED
-            # return ORIGINAL_OUTPUT, PER_CLASS_METRICS, CONFUSION_MATRIX, RANDOM_SAMPLES_ENCODED, MISCLASSIFIED_SAMPLES_ENCODED
-            # return ORIGINAL_OUTPUT, PER_CLASS_METRICS, CONFUSION_MATRIX, OVERALL_METRICS, RANDOM_SAMPLES_ENCODED, MISCLASSIFIED_SAMPLES_ENCODED
-            return ORIGINAL_OUTPUT, PER_CLASS_METRICS, CONFUSION_MATRIX, OVERALL_METRICS
-        else:
-            # return ORIGINAL_OUTPUT, {}, {}  # Return empty dicts for non-image datasets
-            # return ORIGINAL_OUTPUT, PER_CLASS_METRICS, CONFUSION_MATRIX, {}, {}
-            # return ORIGINAL_OUTPUT, PER_CLASS_METRICS, CONFUSION_MATRIX, OVERALL_METRICS, {}, {},
-            return ORIGINAL_OUTPUT, PER_CLASS_METRICS, CONFUSION_MATRIX, OVERALL_METRICS
+        RESULTS = {
+            "training": ORIGINAL_OUTPUT,
+            "outputs_class": PER_CLASS_METRICS,
+            "outputs_overall": OVERALL_METRICS,
+            "confusion_matrix": CONFUSION_MATRIX,
+            "random_samples": RANDOM_SAMPLES_ENCODED,
+            "top_misclassified": MISCLASSIFIED_SAMPLES_ENCODED,
+        }
+
+        # RANDOM_SAMPLES_ENCODED and MISCLASSIED_SAMPLES_ENCODED are empty if dataset is 'pima'
+
+        return RESULTS
+    
 
     def compute_PEEK(self, feature_maps, h, w):
         """Compute PEEK map from feature maps"""
@@ -812,96 +811,34 @@ if __name__ == "__main__":
         batch_size=batch_size,
     )
 
-    RESULTS, PER_CLASS_METRICS, CONFUSION_MATRIX, OVERALL_METRICS = t.train_test_log(
-        n_epochs, batch_size
-    )
+    RESULTS = t.train_test_log(n_epochs, batch_size)
 
-    print("Original Results:", RESULTS)
-    print("Per-class Metrics:", PER_CLASS_METRICS)
-    print("Confusion Matrix:", CONFUSION_MATRIX)
-    print("Overall Metrics:", OVERALL_METRICS)
+    print("Original Results:", RESULTS["training"])
+    print("Per-class Metrics:", RESULTS["outputs_class"])
+    print("Overall Metrics:", RESULTS["outputs_overall"])
+    print("Confusion Matrix:", RESULTS["confusion_matrix"])
+    print("Random samples: ", RESULTS["random_samples"])
+    print("Top Misclassified: ", RESULTS["top_misclassified"])
 
-    print("mnist cnn test")
-
-    data = {
-        "input": "MNIST",
-        "layers": [
-            {
-                "kind": "Conv2D",
-                "args": (2, 1, 16, 3, 1, 0),
-            },  # dim, input, output, kernel size, stride, padding.
-            # dim is a fake arg we made up so we just ignore it in the actual api. same for maxpool layers.
-            {"kind": "ReLU"},
-            {"kind": "MaxPool2D", "args": (2, 2, 2, 0)},
-            {"kind": "Conv2D", "args": (2, 16, 32, 3, 1, 0)},
-            {"kind": "ReLU"},
-            {"kind": "MaxPool2D", "args": (2, 2, 2, 0)},
-            {"kind": "Flatten", "args": [1, -1]},
-            {"kind": "Linear", "args": (800, 128)},  # supposed to be 32 * 7 * 7
-            {"kind": "ReLU"},
-            {"kind": "Linear", "args": (128, 10)},
-        ],
-        "loss": "CrossEntropy",
-        "optimizer": {"kind": "Adam", "lr": 0.001},
-        "epoch": 2,
-        "batch_size": 64,
-    }
-
-    inp = data["input"]
-    layers = data["layers"]
-    loss = data["loss"]
-    optimizer = data["optimizer"]
-    n_epochs = data["epoch"]
-    batch_size = data["batch_size"]
-
-    RESULTS = {}
-
-    model = DynamicModel(layers)
-
-    t = Train(
-        model=model,
-        input=inp,
-        loss=loss,
-        optimizer=optimizer,
-        batch_size=batch_size,
-    )
-
-    RESULTS, PER_CLASS_METRICS, CONFUSION_MATRIX, OVERALL_METRICS = t.train_test_log(
-        n_epochs, batch_size
-    )
-
-    print("Original Results:", RESULTS)
-    print("Per-class Metrics:", PER_CLASS_METRICS)
-    print("Confusion Matrix:", CONFUSION_MATRIX)
-    print("Overall Metrics:", OVERALL_METRICS)
-
-    # print("cifar10 cnn test")
+    # print("mnist cnn test")
 
     # data = {
-    #     "input": "CIFAR10",
+    #     "input": "MNIST",
     #     "layers": [
     #         {
     #             "kind": "Conv2D",
-    #             "args": (2, 3, 16, 3, 1, 1),
-    #         },  # For CIFAR10: input channels=3 (RGB), output=16, kernel=3x3, stride=1, padding=1
+    #             "args": (2, 1, 16, 3, 1, 0),
+    #         },  # dim, input, output, kernel size, stride, padding.
+    #         # dim is a fake arg we made up so we just ignore it in the actual api. same for maxpool layers.
     #         {"kind": "ReLU"},
-    #         {
-    #             "kind": "MaxPool2D",
-    #             "args": (2, 2, 2, 0),
-    #         },  # kernel=2, stride=2, padding=0
-    #         {
-    #             "kind": "Conv2D",
-    #             "args": (2, 16, 32, 3, 1, 1),
-    #         },  # input=16, output=32, kernel=3x3, stride=1, padding=1
+    #         {"kind": "MaxPool2D", "args": (2, 2, 2, 0)},
+    #         {"kind": "Conv2D", "args": (2, 16, 32, 3, 1, 0)},
     #         {"kind": "ReLU"},
     #         {"kind": "MaxPool2D", "args": (2, 2, 2, 0)},
     #         {"kind": "Flatten", "args": [1, -1]},
-    #         {
-    #             "kind": "Linear",
-    #             "args": (8 * 8 * 32, 128),
-    #         },  # 32 channels, 8x8 after pooling
+    #         {"kind": "Linear", "args": (800, 128)},  # supposed to be 32 * 7 * 7
     #         {"kind": "ReLU"},
-    #         {"kind": "Linear", "args": (128, 10)},  # 10 classes for CIFAR10
+    #         {"kind": "Linear", "args": (128, 10)},
     #     ],
     #     "loss": "CrossEntropy",
     #     "optimizer": {"kind": "Adam", "lr": 0.001},
@@ -916,8 +853,6 @@ if __name__ == "__main__":
     # n_epochs = data["epoch"]
     # batch_size = data["batch_size"]
 
-    # RESULTS = {}
-
     # model = DynamicModel(layers)
 
     # t = Train(
@@ -928,11 +863,73 @@ if __name__ == "__main__":
     #     batch_size=batch_size,
     # )
 
-    # RESULTS, PER_CLASS_METRICS, CONFUSION_MATRIX, OVERALL_METRICS = t.train_test_log(
-    #     n_epochs, batch_size
-    # )
+    # RESULTS = t.train_test_log(n_epochs, batch_size)
 
-    # print("Original Results:", RESULTS)
-    # print("Per-class Metrics:", PER_CLASS_METRICS)
-    # print("Confusion Matrix:", CONFUSION_MATRIX)
-    # print("Overall Metrics:", OVERALL_METRICS)
+    # print("Original Results:", RESULTS["training"])
+    # print("Per-class Metrics:", RESULTS["outputs_class"])
+    # print("Overall Metrics:", RESULTS["outputs_overall"])
+    # print("Confusion Matrix:", RESULTS["confusion_matrix"])
+    # # print('Random samples: ', RESULTS['random_samples'])
+    # print('Top Misclassified: ', RESULTS['top_misclassified'])
+
+    print("cifar10 cnn test")
+
+    data = {
+        "input": "CIFAR10",
+        "layers": [
+            {
+                "kind": "Conv2D",
+                "args": (2, 3, 16, 3, 1, 1),
+            },  # For CIFAR10: input channels=3 (RGB), output=16, kernel=3x3, stride=1, padding=1
+            {"kind": "ReLU"},
+            {
+                "kind": "MaxPool2D",
+                "args": (2, 2, 2, 0),
+            },  # kernel=2, stride=2, padding=0
+            {
+                "kind": "Conv2D",
+                "args": (2, 16, 32, 3, 1, 1),
+            },  # input=16, output=32, kernel=3x3, stride=1, padding=1
+            {"kind": "ReLU"},
+            {"kind": "MaxPool2D", "args": (2, 2, 2, 0)},
+            {"kind": "Flatten", "args": [1, -1]},
+            {
+                "kind": "Linear",
+                "args": (8 * 8 * 32, 128),
+            },  # 32 channels, 8x8 after pooling
+            {"kind": "ReLU"},
+            {"kind": "Linear", "args": (128, 10)},  # 10 classes for CIFAR10
+        ],
+        "loss": "CrossEntropy",
+        "optimizer": {"kind": "Adam", "lr": 0.001},
+        "epoch": 2,
+        "batch_size": 64,
+    }
+
+    inp = data["input"]
+    layers = data["layers"]
+    loss = data["loss"]
+    optimizer = data["optimizer"]
+    n_epochs = data["epoch"]
+    batch_size = data["batch_size"]
+
+    model = DynamicModel(layers)
+
+    t = Train(
+        model=model,
+        input=inp,
+        loss=loss,
+        optimizer=optimizer,
+        batch_size=batch_size,
+    )
+
+    RESULTS = t.train_test_log(
+        n_epochs, batch_size
+    )
+
+    print("Original Results:", RESULTS['training'])
+    print("Per-class Metrics:", RESULTS['outputs_class'])
+    print("Overall Metrics:", RESULTS['outputs_overall'])
+    print("Confusion Matrix:", RESULTS['confusion_matrix'])
+    # print('Random samples: ', RESULTS['random_samples'])
+    # print('Top Misclassified: ', RESULTS['top_misclassified'])
