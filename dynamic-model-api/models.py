@@ -6,6 +6,11 @@ from torchvision.transforms import ToTensor
 from torch.utils.data import DataLoader, TensorDataset
 import torch.nn.functional as F
 from sklearn.model_selection import train_test_split  # --> pip install scikit-learn
+from sklearn.metrics import (
+    confusion_matrix,
+    classification_report,
+    precision_recall_fscore_support,
+)
 import math
 from collections import Counter, defaultdict
 import cv2  # --> pip install opencv-python
@@ -140,7 +145,6 @@ class DynamicModel(nn.Module):
 
 
 class Train:
-
     # each peek map MUST be a SEPERATE IMAGE. i DO NOT WANT TO SAVE THEM AS A SINGLE IMAGE.
     def __init__(self, model, input, loss, optimizer, batch_size):
         self.input = input
@@ -230,7 +234,9 @@ class Train:
             train_loss += loss.item()
 
             if self.input == "pima":
-                predicted = (pred > 0.5).float()  # apply threshold for binary classification
+                predicted = (
+                    pred > 0.5
+                ).float()  # apply threshold for binary classification
             else:
                 _, predicted = torch.max(pred, 1)  # for multi-class classification
             # Get the predicted class (index with max value)
@@ -269,10 +275,20 @@ class Train:
                     correct += (predicted == y).sum().item()  # for accuracy
 
                 total += y.size(0)  # Count total predictions
-                if output_info and self.input != "pima":
-                    all_predictions.extend(predicted.cpu().numpy().tolist())
-                    all_labels.extend(y.cpu().numpy().tolist())
-                    all_indices.extend([idx * y.size(0) + i for i in range(y.size(0))])
+
+                # Collect all predictions and labels for metrics calculation (for all datasets)
+                all_predictions.extend(predicted.cpu().numpy().tolist())
+                all_labels.extend(y.cpu().numpy().tolist())
+                all_indices.extend([idx * y.size(0) + i for i in range(y.size(0))])
+
+        # Calculate metrics for all datasets
+        per_class_metrics = self.calculate_per_class_metrics(
+            all_labels, all_predictions
+        )
+        confusion_matrix_data = self.calculate_confusion_matrix(
+            all_labels, all_predictions
+        )
+        overall_metrics = self.calculate_overall_metrics(all_labels, all_predictions)
 
         if output_info and self.input != "pima":
             # Calculate per-class accuracy
@@ -297,37 +313,60 @@ class Train:
             class_accuracy = {}
             for class_label in range(self.num_classes):
                 if class_total[class_label] > 0:
-                    class_accuracy[class_label] = class_correct[class_label] / class_total[class_label]
+                    class_accuracy[class_label] = (
+                        class_correct[class_label] / class_total[class_label]
+                    )
                 else:
                     class_accuracy[class_label] = 0.0
 
             # get the 3 lowest class acurracies
             sorted_classes = sorted(class_accuracy.items(), key=lambda x: x[1])
-            lowest_accuracy_classes = [class_label for class_label, accuracy in sorted_classes[:3]]
+            lowest_accuracy_classes = [
+                class_label for class_label, accuracy in sorted_classes[:3]
+            ]
             lowest_accuracy_classes_info = {}
             for class_label in lowest_accuracy_classes:
-                lowest_accuracy_classes_info[class_label] = class_predictions[class_label]
+                lowest_accuracy_classes_info[class_label] = class_predictions[
+                    class_label
+                ]
 
             print(f"\n3 lowest accuracy classes: {lowest_accuracy_classes}")
 
             print("\nGetting random predictions per class...")
-            random_samples = self.get_random_predictions_per_class(class_predictions, num_samples=3)
+            random_samples = self.get_random_predictions_per_class(
+                class_predictions, num_samples=3
+            )
 
             print("Getting misclassified samples for lowest accuracy classes...")
-            misclassified_samples = self.get_misclassified_samples(lowest_accuracy_classes_info, num_samples=3)
+            misclassified_samples = self.get_misclassified_samples(
+                lowest_accuracy_classes_info, num_samples=3
+            )
 
             # now we have random_samples and misclassified_samples which are both a dictionary of lists. each list contains (idx, true_label, pred_label)
             # so basically these means that we now have our image indicies from the test set
-
 
         # returning test loss here :)
         avg_test_loss = test_loss / len(self.test_loader)
         avg_acc = 100 * correct / total
 
         if output_info and self.input != "pima":
-            return avg_test_loss, avg_acc, random_samples, misclassified_samples
+            return (
+                avg_test_loss,
+                avg_acc,
+                random_samples,
+                misclassified_samples,
+                per_class_metrics,
+                confusion_matrix_data,
+                overall_metrics,
+            )
         else:
-            return avg_test_loss, avg_acc  # ORIGINAL OUTPUT
+            return (
+                avg_test_loss,
+                avg_acc,
+                per_class_metrics,
+                confusion_matrix_data,
+                overall_metrics,
+            )  # ORIGINAL OUTPUT
 
     def get_random_predictions_per_class(self, class_predictions, num_samples=3):
         random_samples = {}
@@ -344,7 +383,7 @@ class Train:
 
         return random_samples
 
-    def get_misclassified_samples(self, class_predictions, num_samples=3): 
+    def get_misclassified_samples(self, class_predictions, num_samples=3):
         misclassified_samples = {}
 
         for class_label in range(self.num_classes):  # self.num_classes might not work.
@@ -357,11 +396,105 @@ class Train:
                 ]
 
                 if len(misclassified) >= num_samples:
-                    misclassified_samples[class_label] = random.sample(misclassified, num_samples)
+                    misclassified_samples[class_label] = random.sample(
+                        misclassified, num_samples
+                    )
                 else:
                     misclassified_samples[class_label] = misclassified
 
         return misclassified_samples
+
+    def calculate_per_class_metrics(self, all_labels, all_predictions):
+        """Calculate per-class metrics: recall, precision, F1 score, and accuracy"""
+        if len(all_labels) == 0 or len(all_predictions) == 0:
+            return {}
+
+        # Convert to numpy arrays if they aren't already
+        labels = np.array(all_labels)
+        predictions = np.array(all_predictions)
+
+        # Calculate precision, recall, and F1 score for each class
+        precision, recall, f1, support = precision_recall_fscore_support(
+            labels, predictions, average=None, zero_division="warn"
+        )
+
+        # Calculate per-class accuracy
+        class_accuracy = {}
+        for class_label in range(self.num_classes):
+            class_mask = labels == class_label
+            if np.sum(class_mask) > 0:
+                class_accuracy[class_label] = np.sum(
+                    (predictions == labels) & class_mask
+                ) / np.sum(class_mask)
+            else:
+                class_accuracy[class_label] = 0.0
+
+        # Create the metrics dictionary
+        per_class_metrics = {}
+
+        # Handle case where precision, recall, f1 might be scalars for binary classification
+        # Convert to arrays if they're scalars
+        if np.isscalar(precision):
+            precision = np.array([precision])
+        if np.isscalar(recall):
+            recall = np.array([recall])
+        if np.isscalar(f1):
+            f1 = np.array([f1])
+        if np.isscalar(support):
+            support = np.array([support])
+
+        for class_label in range(self.num_classes):
+            per_class_metrics[class_label] = {
+                "precision": float(precision[class_label]),
+                "recall": float(recall[class_label]),
+                "f1_score": float(f1[class_label]),
+                "accuracy": float(class_accuracy[class_label]),
+                "support": int(support[class_label]),
+            }
+
+        return per_class_metrics
+
+    def calculate_confusion_matrix(self, all_labels, all_predictions):
+        """Calculate confusion matrix"""
+        if len(all_labels) == 0 or len(all_predictions) == 0:
+            return []
+
+        # Convert to numpy arrays if they aren't already
+        labels = np.array(all_labels)
+        predictions = np.array(all_predictions)
+
+        # Calculate confusion matrix
+        cm = confusion_matrix(labels, predictions)
+
+        # Convert to list format for JSON serialization
+        return cm.tolist()
+
+    def calculate_overall_metrics(self, all_labels, all_predictions):
+        """Calculate overall precision, recall, and F1 score for the entire test dataset"""
+        if len(all_labels) == 0 or len(all_predictions) == 0:
+            return {}
+
+        # Convert to numpy arrays if they aren't already
+        labels = np.array(all_labels)
+        predictions = np.array(all_predictions)
+
+        # Calculate overall precision, recall, and F1 score
+        precision, recall, f1, _ = precision_recall_fscore_support(
+            labels, predictions, average="weighted", zero_division="warn"
+        )
+
+        # Calculate overall accuracy
+        overall_accuracy = np.sum(predictions == labels) / len(labels)
+
+        # Create the overall metrics dictionary
+        overall_metrics = {
+            "precision": float(precision),
+            "recall": float(recall),
+            "f1_score": float(f1),
+            "accuracy": float(overall_accuracy),
+        }
+
+        return overall_metrics
 
     def process_image_samples(self, samples_dict, base_dir):
         """Process, save, and return images and peek maps for a given set of samples.
@@ -401,9 +534,16 @@ class Train:
 
                     # Save original image to disk
                     image_np = image[0, 0].cpu().numpy()
-                    image_np = ((image_np - image_np.min())* (255.0 / (image_np.max() - image_np.min()))).astype(np.uint8)
-                    image_np = cv2.resize(image_np, (400, 400), interpolation=cv2.INTER_NEAREST)
-                    cv2.imwrite(os.path.join(class_dir, f"image_{idx}_original.png"), image_np)
+                    image_np = (
+                        (image_np - image_np.min())
+                        * (255.0 / (image_np.max() - image_np.min()))
+                    ).astype(np.uint8)
+                    image_np = cv2.resize(
+                        image_np, (400, 400), interpolation=cv2.INTER_NEAREST
+                    )
+                    cv2.imwrite(
+                        os.path.join(class_dir, f"image_{idx}_original.png"), image_np
+                    )
 
                     # Encode original image as base64
                     img_b64 = self.image_to_base64_png(image_np)
@@ -422,21 +562,46 @@ class Train:
                             fmap = fmap[0]
                             fmap = np.moveaxis(fmap, 0, -1)
                             peek_map = self.compute_PEEK(fmap, h, w)
-                            peek_map_norm = (peek_map - peek_map.min()) / (peek_map.max() - peek_map.min())
-                            peek_map_norm = cv2.resize(peek_map_norm,(400, 400),interpolation=cv2.INTER_NEAREST,)
-                            heatmap = cv2.applyColorMap((peek_map_norm * 255).astype(np.uint8), cv2.COLORMAP_JET)
-                            overlay = cv2.addWeighted(cv2.cvtColor(image_np, cv2.COLOR_GRAY2BGR),0.3, heatmap, 0.7, 0)
+                            peek_map_norm = (peek_map - peek_map.min()) / (
+                                peek_map.max() - peek_map.min()
+                            )
+                            peek_map_norm = cv2.resize(
+                                peek_map_norm,
+                                (400, 400),
+                                interpolation=cv2.INTER_NEAREST,
+                            )
+                            heatmap = cv2.applyColorMap(
+                                (peek_map_norm * 255).astype(np.uint8), cv2.COLORMAP_JET
+                            )
+                            overlay = cv2.addWeighted(
+                                cv2.cvtColor(image_np, cv2.COLOR_GRAY2BGR),
+                                0.3,
+                                heatmap,
+                                0.7,
+                                0,
+                            )
 
                             # Save peek map overlay to disk
-                            cv2.imwrite(os.path.join(class_dir, f"image_{idx}_{layer}.png"),overlay,)
+                            cv2.imwrite(
+                                os.path.join(class_dir, f"image_{idx}_{layer}.png"),
+                                overlay,
+                            )
 
                             # Encode peek map overlay as base64
                             _, buffer = cv2.imencode(".png", overlay)
-                            peek_b64 = base64.b64encode(buffer.tobytes()).decode("utf-8")
-                            image_data["peek_maps"].append({"layer": str(layer), "image": peek_b64})
-                            print(f"Saved original image and peek map for class {true_label}, sample {idx}, predicted {pred_label}")
+                            peek_b64 = base64.b64encode(buffer.tobytes()).decode(
+                                "utf-8"
+                            )
+                            image_data["peek_maps"].append(
+                                {"layer": str(layer), "image": peek_b64}
+                            )
+                            print(
+                                f"Saved original image and peek map for class {true_label}, sample {idx}, predicted {pred_label}"
+                            )
                     else:
-                        print(f"Saved original image for class {true_label}, sample {idx} (no convolutional layers)")
+                        print(
+                            f"Saved original image for class {true_label}, sample {idx} (no convolutional layers)"
+                        )
 
                 self.model.feature_save = False
                 self.model.clear_feature_maps()
@@ -458,6 +623,10 @@ class Train:
         train_accs = []
         test_losses = []
         test_accs = []
+        per_class_metrics = {}
+        confusion_matrix_data = []
+        overall_metrics = {}
+
         for t in range(n_epochs):
             print(f"Epoch {t + 1}/{n_epochs}...")
 
@@ -468,33 +637,48 @@ class Train:
             )
 
             if t != n_epochs - 1 or self.input == "pima":
-                avg_test_loss, test_avg_acc = self.test(output_info=False)
+                (
+                    avg_test_loss,
+                    test_avg_acc,
+                    per_class_metrics,
+                    confusion_matrix_data,
+                    overall_metrics,
+                ) = self.test(output_info=False)
             else:
-                avg_test_loss, test_avg_acc, random_samples, misclassified_samples = (
-                    self.test(output_info=True)
-                )
+                (
+                    avg_test_loss,
+                    test_avg_acc,
+                    random_samples,
+                    misclassified_samples,
+                    per_class_metrics,
+                    confusion_matrix_data,
+                    overall_metrics,
+                ) = self.test(output_info=True)
 
                 # example of random_samples / misclassied_samples:
                 # random_samples {0: [(9527, 0, 0), (7279, 0, 0), (3660, 0, 0)], 1: [(1939, 1, 1), (5831, 1, 1), ...
                 # (idx, true_label, pred_label) --> idx is the index of the image in the test set
                 # dictionary key is the class true label
 
-                
                 if self.input != "pima":  # Only process images for non-pima datasets
                     print("----------processing random samples-----------")
                     base_dir = "cnn_analysis_results"
                     os.makedirs(base_dir, exist_ok=True)
-                    RANDOM_SAMPLES_ENCODED = self.process_image_samples(random_samples, base_dir)
-                    
+                    RANDOM_SAMPLES_ENCODED = self.process_image_samples(
+                        random_samples, base_dir
+                    )
+
                     print("--------processing misclassified samples-----------")
-                    base_dir = os.path.join("cnn_analysis_results", "lowest_accuracy_classes")
+                    base_dir = os.path.join(
+                        "cnn_analysis_results", "lowest_accuracy_classes"
+                    )
                     os.makedirs(base_dir, exist_ok=True)
-                    MISCLASSIFIED_SAMPLES_ENCODED = self.process_image_samples(misclassified_samples, base_dir)
+                    MISCLASSIFIED_SAMPLES_ENCODED = self.process_image_samples(
+                        misclassified_samples, base_dir
+                    )
                 else:
                     print("Skipping image processing for pima dataset")
                     print("Skipping misclassified samples processing for pima dataset")
-
-                    
 
             print("LEGACY OUTPUT. do not mess with this lil bro")
             print(
@@ -532,13 +716,22 @@ class Train:
             "avg_test_acc": avg_test_acc,
         }
 
+        # Create separate dictionaries for metrics
+        PER_CLASS_METRICS = per_class_metrics
+        CONFUSION_MATRIX = confusion_matrix_data
+        OVERALL_METRICS = overall_metrics
+
         if self.input != "pima":
             # Return three separate dictionaries
             # return ORIGINAL_OUTPUT, RANDOM_SAMPLES_ENCODED, MISCLASSIFIED_SAMPLES_ENCODED
-            return ORIGINAL_OUTPUT
+            # return ORIGINAL_OUTPUT, PER_CLASS_METRICS, CONFUSION_MATRIX, RANDOM_SAMPLES_ENCODED, MISCLASSIFIED_SAMPLES_ENCODED
+            # return ORIGINAL_OUTPUT, PER_CLASS_METRICS, CONFUSION_MATRIX, OVERALL_METRICS, RANDOM_SAMPLES_ENCODED, MISCLASSIFIED_SAMPLES_ENCODED
+            return ORIGINAL_OUTPUT, PER_CLASS_METRICS, CONFUSION_MATRIX, OVERALL_METRICS
         else:
             # return ORIGINAL_OUTPUT, {}, {}  # Return empty dicts for non-image datasets
-            return ORIGINAL_OUTPUT
+            # return ORIGINAL_OUTPUT, PER_CLASS_METRICS, CONFUSION_MATRIX, {}, {}
+            # return ORIGINAL_OUTPUT, PER_CLASS_METRICS, CONFUSION_MATRIX, OVERALL_METRICS, {}, {},
+            return ORIGINAL_OUTPUT, PER_CLASS_METRICS, CONFUSION_MATRIX, OVERALL_METRICS
 
     def compute_PEEK(self, feature_maps, h, w):
         """Compute PEEK map from feature maps"""
@@ -591,29 +784,96 @@ if __name__ == "__main__":
         batch_size=batch_size,
     )
 
-    RESULTS = t.train_test_log(n_epochs, batch_size)
+    RESULTS, PER_CLASS_METRICS, CONFUSION_MATRIX, OVERALL_METRICS = t.train_test_log(
+        n_epochs, batch_size
+    )
 
-    print(RESULTS)
+    print("Original Results:", RESULTS)
+    print("Per-class Metrics:", PER_CLASS_METRICS)
+    print("Confusion Matrix:", CONFUSION_MATRIX)
+    print("Overall Metrics:", OVERALL_METRICS)
 
-    print("mnist cnn test")
+    # print("mnist cnn test")
+
+    # data = {
+    #     "input": "MNIST",
+    #     "layers": [
+    #         {
+    #             "kind": "Conv2D",
+    #             "args": (2, 1, 16, 3, 1, 0),
+    #         },  # dim, input, output, kernel size, stride, padding.
+    #         # dim is a fake arg we made up so we just ignore it in the actual api. same for maxpool layers.
+    #         {"kind": "ReLU"},
+    #         {"kind": "MaxPool2D", "args": (2, 2, 2, 0)},
+    #         {"kind": "Conv2D", "args": (2, 16, 32, 3, 1, 0)},
+    #         {"kind": "ReLU"},
+    #         {"kind": "MaxPool2D", "args": (2, 2, 2, 0)},
+    #         {"kind": "Flatten", "args": [1, -1]},
+    #         {"kind": "Linear", "args": (800, 128)},  # supposed to be 32 * 7 * 7
+    #         {"kind": "ReLU"},
+    #         {"kind": "Linear", "args": (128, 10)},
+    #     ],
+    #     "loss": "CrossEntropy",
+    #     "optimizer": {"kind": "Adam", "lr": 0.001},
+    #     "epoch": 2,
+    #     "batch_size": 64,
+    # }
+
+    # inp = data["input"]
+    # layers = data["layers"]
+    # loss = data["loss"]
+    # optimizer = data["optimizer"]
+    # n_epochs = data["epoch"]
+    # batch_size = data["batch_size"]
+
+    # RESULTS = {}
+
+    # model = DynamicModel(layers)
+
+    # t = Train(
+    #     model=model,
+    #     input=inp,
+    #     loss=loss,
+    #     optimizer=optimizer,
+    #     batch_size=batch_size,
+    # )
+
+    # RESULTS, PER_CLASS_METRICS, CONFUSION_MATRIX, OVERALL_METRICS = t.train_test_log(
+    #     n_epochs, batch_size
+    # )
+
+    # print("Original Results:", RESULTS)
+    # print("Per-class Metrics:", PER_CLASS_METRICS)
+    # print("Confusion Matrix:", CONFUSION_MATRIX)
+    # print("Overall Metrics:", OVERALL_METRICS)
+
+    print("cifar10 cnn test")
 
     data = {
-        "input": "MNIST",
+        "input": "CIFAR10",
         "layers": [
             {
                 "kind": "Conv2D",
-                "args": (2, 1, 16, 3, 1, 0),
-            },  # dim, input, output, kernel size, stride, padding.
-            # dim is a fake arg we made up so we just ignore it in the actual api. same for maxpool layers.
+                "args": (2, 3, 16, 3, 1, 1),
+            },  # For CIFAR10: input channels=3 (RGB), output=16, kernel=3x3, stride=1, padding=1
             {"kind": "ReLU"},
-            {"kind": "MaxPool2D", "args": (2, 2, 2, 0)},
-            {"kind": "Conv2D", "args": (2, 16, 32, 3, 1, 0)},
+            {
+                "kind": "MaxPool2D",
+                "args": (2, 2, 2, 0),
+            },  # kernel=2, stride=2, padding=0
+            {
+                "kind": "Conv2D",
+                "args": (2, 16, 32, 3, 1, 1),
+            },  # input=16, output=32, kernel=3x3, stride=1, padding=1
             {"kind": "ReLU"},
             {"kind": "MaxPool2D", "args": (2, 2, 2, 0)},
             {"kind": "Flatten", "args": [1, -1]},
-            {"kind": "Linear", "args": (800, 128)},  # supposed to be 32 * 7 * 7
+            {
+                "kind": "Linear",
+                "args": (8 * 8 * 32, 128),
+            },  # 32 channels, 8x8 after pooling
             {"kind": "ReLU"},
-            {"kind": "Linear", "args": (128, 10)},
+            {"kind": "Linear", "args": (128, 10)},  # 10 classes for CIFAR10
         ],
         "loss": "CrossEntropy",
         "optimizer": {"kind": "Adam", "lr": 0.001},
@@ -640,4 +900,11 @@ if __name__ == "__main__":
         batch_size=batch_size,
     )
 
-    RESULTS = t.train_test_log(n_epochs, batch_size)
+    RESULTS, PER_CLASS_METRICS, CONFUSION_MATRIX, OVERALL_METRICS = t.train_test_log(
+        n_epochs, batch_size
+    )
+
+    print("Original Results:", RESULTS)
+    print("Per-class Metrics:", PER_CLASS_METRICS)
+    print("Confusion Matrix:", CONFUSION_MATRIX)
+    print("Overall Metrics:", OVERALL_METRICS)
