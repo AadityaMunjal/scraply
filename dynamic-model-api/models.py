@@ -522,28 +522,47 @@ class Train:
 
                 # Get image dimensions
                 if len(image.shape) == 4:
-                    _, _, h, w = image.shape
+                    _, c, h, w = image.shape
                 elif len(image.shape) == 3:
-                    _, h, w = image.shape
+                    c, h, w = image.shape
                 else:
                     h, w = image.shape
+                    c = 1
 
                 self.model.feature_save = True
                 with torch.no_grad():
                     output = self.model(image)
 
-                    # Save original image to disk
-                    image_np = image[0, 0].cpu().numpy()
-                    image_np = (
-                        (image_np - image_np.min())
-                        * (255.0 / (image_np.max() - image_np.min()))
-                    ).astype(np.uint8)
-                    image_np = cv2.resize(
-                        image_np, (400, 400), interpolation=cv2.INTER_NEAREST
-                    )
-                    cv2.imwrite(
-                        os.path.join(class_dir, f"image_{idx}_original.png"), image_np
-                    )
+                    # Save original image to disk (handle grayscale and RGB)
+                    image_np = image[0].cpu().numpy()
+                    if image_np.shape[0] == 1:
+                        # Grayscale: (1, H, W) -> (H, W)
+                        image_np = image_np[0]
+                        image_np = (
+                            (image_np - image_np.min())
+                            * (255.0 / (image_np.max() - image_np.min()))
+                        ).astype(np.uint8)
+                        image_np = cv2.resize(
+                            image_np, (400, 400), interpolation=cv2.INTER_NEAREST
+                        )
+                        cv2.imwrite(
+                            os.path.join(class_dir, f"image_{idx}_original.png"),
+                            image_np,
+                        )
+                    else:
+                        # RGB: (3, H, W) -> (H, W, 3)
+                        image_np = np.transpose(image_np, (1, 2, 0))
+                        image_np = (
+                            (image_np - image_np.min())
+                            * (255.0 / (image_np.max() - image_np.min()))
+                        ).astype(np.uint8)
+                        image_np = cv2.resize(
+                            image_np, (400, 400), interpolation=cv2.INTER_NEAREST
+                        )
+                        cv2.imwrite(
+                            os.path.join(class_dir, f"image_{idx}_original.png"),
+                            cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR),
+                        )
 
                     # Encode original image as base64
                     img_b64 = self.image_to_base64_png(image_np)
@@ -573,13 +592,24 @@ class Train:
                             heatmap = cv2.applyColorMap(
                                 (peek_map_norm * 255).astype(np.uint8), cv2.COLORMAP_JET
                             )
-                            overlay = cv2.addWeighted(
-                                cv2.cvtColor(image_np, cv2.COLOR_GRAY2BGR),
-                                0.3,
-                                heatmap,
-                                0.7,
-                                0,
-                            )
+                            if c == 1:
+                                overlay = cv2.addWeighted(
+                                    cv2.cvtColor(image_np, cv2.COLOR_GRAY2BGR),
+                                    0.3,
+                                    heatmap,
+                                    0.7,
+                                    0,
+                                )
+                            else:
+                                overlay = cv2.addWeighted(
+                                    image_np
+                                    if image_np.shape[2] == 3
+                                    else cv2.cvtColor(image_np, cv2.COLOR_GRAY2BGR),
+                                    0.3,
+                                    heatmap,
+                                    0.7,
+                                    0,
+                                )
 
                             # Save peek map overlay to disk
                             cv2.imwrite(
