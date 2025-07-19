@@ -7,6 +7,7 @@ const ClassificationOutput = () => {
   const [selectedSection, setSelectedSection] = useState<
     "confusion" | "random_samples" | "top_misclassified"
   >("confusion");
+  const [expandedImage, setExpandedImage] = useState<string | null>(null);
 
   const { currentOutput } = useTrainingStore();
 
@@ -142,13 +143,19 @@ const ClassificationOutput = () => {
 
   const imageClassificationOutput = (
     imageClassificationOutput: ClassificationImageOutput,
+    imageId: string,
+    showPeekMaps: boolean = false,
+    onClick?: () => void,
   ) => {
     return (
       <div className="flex flex-col items-center space-y-3">
         <img
           src={`data:image/png;base64,${imageClassificationOutput.original}`}
           alt={`Sample ${imageClassificationOutput.idx}`}
-          className="h-20 w-20 rounded border border-zinc-600 bg-zinc-700"
+          className={`h-20 w-20 rounded border border-zinc-600 bg-zinc-700 ${
+            onClick ? "cursor-pointer transition-all hover:border-zinc-400" : ""
+          }`}
+          onClick={onClick}
         />
         <div className="space-y-1 text-center">
           <div className="text-sm">
@@ -156,18 +163,27 @@ const ClassificationOutput = () => {
               Sample #{imageClassificationOutput.idx}
             </span>
           </div>
-          {imageClassificationOutput.peek_maps.map((peek_map, i) => (
-            <div key={i} className="text-sm">
-              <span className="text-zinc-400">
-                Peek Map {i + 1}: {peek_map.layer}
-              </span>
-              <img
-                src={`data:image/png;base64,${peek_map.image}`}
-                alt={`Peek Map ${i + 1}`}
-                className="h-20 w-20 rounded border border-zinc-600 bg-zinc-700"
-              />
+          {showPeekMaps && (
+            <div className="mt-2 space-y-2">
+              <div className="text-center text-xs text-zinc-400">
+                Peek Maps:
+              </div>
+              <div className="flex flex-wrap justify-center gap-2">
+                {imageClassificationOutput.peek_maps.map((peek_map, i) => (
+                  <div key={i} className="flex flex-col items-center space-y-1">
+                    <img
+                      src={`data:image/png;base64,${peek_map.image}`}
+                      alt={`Peek Map ${i + 1}`}
+                      className="h-16 w-16 rounded border border-zinc-600 bg-zinc-700"
+                    />
+                    <div className="text-xs text-zinc-500">
+                      {peek_map.layer}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          ))}
+          )}
         </div>
       </div>
     );
@@ -176,10 +192,17 @@ const ClassificationOutput = () => {
   const renderRandomSamples = () => {
     const { random_samples } = currentOutput;
 
+    const handleImageClick = (imageId: string) => {
+      setExpandedImage(expandedImage === imageId ? null : imageId);
+    };
+
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h3 className="text-xl font-medium text-white">Random Samples</h3>
+          <div className="text-sm text-zinc-400">
+            Click images to view peek maps
+          </div>
         </div>
 
         <div className="space-y-4">
@@ -190,11 +213,21 @@ const ClassificationOutput = () => {
               </h4>
 
               <div className="flex flex-wrap gap-4">
-                {examples.map((example) => (
-                  <div key={example.idx}>
-                    {imageClassificationOutput(example)}
-                  </div>
-                ))}
+                {examples.map((example) => {
+                  const imageId = `random-${classKey}-${example.idx}`;
+                  const isExpanded = expandedImage === imageId;
+
+                  return (
+                    <div key={example.idx}>
+                      {imageClassificationOutput(
+                        example,
+                        imageId,
+                        isExpanded,
+                        () => handleImageClick(imageId),
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ))}
@@ -206,12 +239,19 @@ const ClassificationOutput = () => {
   const renderTopMisclassified = () => {
     const { top_misclassified } = currentOutput;
 
+    const handleImageClick = (imageId: string) => {
+      setExpandedImage(expandedImage === imageId ? null : imageId);
+    };
+
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h3 className="text-xl font-medium text-white">
             Most Commonly Misclassified
           </h3>
+          <div className="text-sm text-zinc-400">
+            Click images to view peek maps
+          </div>
         </div>
 
         <div className="space-y-4">
@@ -222,11 +262,21 @@ const ClassificationOutput = () => {
               </h4>
 
               <div className="flex flex-wrap gap-4">
-                {examples.map((example) => (
-                  <div key={example.idx}>
-                    {imageClassificationOutput(example)}
-                  </div>
-                ))}
+                {examples.map((example) => {
+                  const imageId = `misclassified-${classKey}-${example.idx}`;
+                  const isExpanded = expandedImage === imageId;
+
+                  return (
+                    <div key={example.idx}>
+                      {imageClassificationOutput(
+                        example,
+                        imageId,
+                        isExpanded,
+                        () => handleImageClick(imageId),
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ))}
