@@ -38,6 +38,7 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
     openHistoryItemIdx,
     setIsTraining,
     addTrainingResult,
+    setCurrentOutput,
     setOpenHistoryItem,
     clearHistory,
   } = useTrainingStore();
@@ -59,15 +60,16 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
       posthog.capture("train_started", { config });
 
       const data = await startTrainingMutation.mutateAsync(config);
-      const results = data.RESULTS;
+      const { training, ...outputs } = data;
+      setCurrentOutput(outputs);
 
       addTrainingResult({
-        avg_train_loss: results.avg_train_loss,
-        avg_train_acc: results.avg_train_acc,
-        avg_test_loss: results.avg_test_loss,
-        avg_test_acc: results.avg_test_acc,
-        train_losses: results.train_losses,
-        test_losses: results.test_losses,
+        avg_train_loss: training.avg_train_loss,
+        avg_train_acc: training.avg_train_acc,
+        avg_test_loss: training.avg_test_loss,
+        avg_test_acc: training.avg_test_acc,
+        train_losses: training.train_losses,
+        test_losses: training.test_losses,
         trainingConfig: config,
       });
     } catch (error) {

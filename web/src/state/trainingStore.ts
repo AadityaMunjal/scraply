@@ -1,6 +1,11 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
-import { TrainingResult, LossFunction, OptimizerType } from "~/types/index";
+import {
+  TrainingResult,
+  LossFunction,
+  OptimizerType,
+  OutputsResult,
+} from "~/types/index";
 import { DEFAULT_TRAINING_CONFIG } from "~/util/trainingConfig";
 
 interface TrainingConfigState {
@@ -29,6 +34,10 @@ interface TrainingConfigState {
   setOpenHistoryItem: (idx: number | null) => void;
   clearHistory: () => void;
   resetConfig: () => void;
+
+  // Output
+  currentOutput: OutputsResult | null;
+  setCurrentOutput: (output: OutputsResult) => void;
 }
 
 const defaultConfig = DEFAULT_TRAINING_CONFIG;
@@ -110,6 +119,14 @@ export const useTrainingStore = create<TrainingConfigState>()(
         Object.assign(state, defaultConfig);
         state.trainingHistory = [];
         state.openHistoryItemIdx = null;
+      });
+    },
+
+    // Output
+    currentOutput: null,
+    setCurrentOutput: (output: OutputsResult) => {
+      set((state) => {
+        state.currentOutput = output;
       });
     },
   })),
