@@ -35,5 +35,7 @@ The scraply server isn't deployed yet, therefore you need to run your own backen
 ### Developed by the-AMA-team
 
 Alan 🧑‍🍳: Cloud Ops
+
 Mehek 🤓: Backend/AI
+
 Adi 🤩: Frontend/UI
