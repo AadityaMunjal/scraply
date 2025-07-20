@@ -266,3 +266,6 @@ def transformertest():
         RESULTS = {"error": str(e)}
 
     return RESULTS
+
+if __name__ == "__main__":
+    app.run(debug=True)
