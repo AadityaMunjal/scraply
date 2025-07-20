@@ -488,24 +488,27 @@ class Train:
 
         return overall_metrics
 
-    def process_image_samples(self, samples_dict, base_dir):
+    def process_image_samples(self, samples_dict, base_dir, dev_testing=False):
         """Process, save, and return images and peek maps for a given set of samples.
         Args:
             samples_dict (dict): {class_label: [(idx, true_label, pred_label), ...]}
             base_dir (str): Directory to save images and peek maps
+            dev_testing (bool): If True, actually save images to disk. Default False.
         Returns:
             dict: {class_label: [ {original, peek_maps, true_label, pred_label, idx}, ... ] }
         """
         if self.input == "pima":
             return {}
 
-        os.makedirs(base_dir, exist_ok=True)
-        print(f"Processing samples in directory: {base_dir}")
+        if dev_testing:
+            os.makedirs(base_dir, exist_ok=True)
+            print(f"Processing samples in directory: {base_dir}")
         result = {}
 
         for class_label, samples in samples_dict.items():
             class_dir = os.path.join(base_dir, f"class_{class_label}")
-            os.makedirs(class_dir, exist_ok=True)
+            if dev_testing:
+                os.makedirs(class_dir, exist_ok=True)
             result[class_label] = []
 
             for idx, true_label, pred_label in samples:
@@ -534,13 +537,14 @@ class Train:
                             (image_np - image_np.min())
                             * (255.0 / (image_np.max() - image_np.min()))
                         ).astype(np.uint8)
-                        image_np = cv2.resize(
+                        image_np_resized = cv2.resize(
                             image_np, (400, 400), interpolation=cv2.INTER_NEAREST
                         )
-                        cv2.imwrite(
-                            os.path.join(class_dir, f"image_{idx}_original.png"),
-                            image_np,
-                        )
+                        if dev_testing:
+                            cv2.imwrite(
+                                os.path.join(class_dir, f"image_{idx}_original.png"),
+                                image_np_resized,
+                            )
                     else:
                         # RGB: (3, H, W) -> (H, W, 3)
                         image_np = np.transpose(image_np, (1, 2, 0))
@@ -548,16 +552,17 @@ class Train:
                             (image_np - image_np.min())
                             * (255.0 / (image_np.max() - image_np.min()))
                         ).astype(np.uint8)
-                        image_np = cv2.resize(
+                        image_np_resized = cv2.resize(
                             image_np, (400, 400), interpolation=cv2.INTER_NEAREST
                         )
-                        cv2.imwrite(
-                            os.path.join(class_dir, f"image_{idx}_original.png"),
-                            cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR),
-                        )
+                        if dev_testing:
+                            cv2.imwrite(
+                                os.path.join(class_dir, f"image_{idx}_original.png"),
+                                cv2.cvtColor(image_np_resized, cv2.COLOR_RGB2BGR),
+                            )
 
                     # Encode original image as base64
-                    img_b64 = self.image_to_base64_png(image_np)
+                    img_b64 = self.image_to_base64_png(image_np_resized)
                     image_data = {
                         "original": img_b64,
                         "peek_maps": [],
@@ -576,17 +581,18 @@ class Train:
                             peek_map_norm = (peek_map - peek_map.min()) / (
                                 peek_map.max() - peek_map.min()
                             )
-                            peek_map_norm = cv2.resize(
+                            peek_map_norm_resized = cv2.resize(
                                 peek_map_norm,
                                 (400, 400),
                                 interpolation=cv2.INTER_NEAREST,
                             )
                             heatmap = cv2.applyColorMap(
-                                (peek_map_norm * 255).astype(np.uint8), cv2.COLORMAP_JET
+                                (peek_map_norm_resized * 255).astype(np.uint8),
+                                cv2.COLORMAP_JET,
                             )
                             if c == 1:
                                 overlay = cv2.addWeighted(
-                                    cv2.cvtColor(image_np, cv2.COLOR_GRAY2BGR),
+                                    cv2.cvtColor(image_np_resized, cv2.COLOR_GRAY2BGR),
                                     0.3,
                                     heatmap,
                                     0.7,
@@ -594,9 +600,11 @@ class Train:
                                 )
                             else:
                                 overlay = cv2.addWeighted(
-                                    image_np
-                                    if image_np.shape[2] == 3
-                                    else cv2.cvtColor(image_np, cv2.COLOR_GRAY2BGR),
+                                    image_np_resized
+                                    if image_np_resized.shape[2] == 3
+                                    else cv2.cvtColor(
+                                        image_np_resized, cv2.COLOR_GRAY2BGR
+                                    ),
                                     0.3,
                                     heatmap,
                                     0.7,
@@ -604,10 +612,11 @@ class Train:
                                 )
 
                             # Save peek map overlay to disk
-                            cv2.imwrite(
-                                os.path.join(class_dir, f"image_{idx}_{layer}.png"),
-                                overlay,
-                            )
+                            if dev_testing:
+                                cv2.imwrite(
+                                    os.path.join(class_dir, f"image_{idx}_{layer}.png"),
+                                    overlay,
+                                )
 
                             # Encode peek map overlay as base64
                             _, buffer = cv2.imencode(".png", overlay)
@@ -617,20 +626,22 @@ class Train:
                             image_data["peek_maps"].append(
                                 {"layer": str(layer), "image": peek_b64}
                             )
-                            print(
-                                f"Saved original image and peek map for class {true_label}, sample {idx}, predicted {pred_label}"
-                            )
+                            if dev_testing:
+                                print(
+                                    f"Saved original image and peek map for class {true_label}, sample {idx}, predicted {pred_label}"
+                                )
                     else:
-                        print(
-                            f"Saved original image for class {true_label}, sample {idx} (no convolutional layers)"
-                        )
+                        if dev_testing:
+                            print(
+                                f"Saved original image for class {true_label}, sample {idx} (no convolutional layers)"
+                            )
 
                 self.model.feature_save = False
                 self.model.clear_feature_maps()
                 result[class_label].append(image_data)
         return result
 
-    def train_test_log(self, n_epochs, batch_size):
+    def train_test_log(self, n_epochs, batch_size, dev_testing=False):
         # i think it would be a good idea to do the images stuff in here
         # # this needs to be a stream
         # # DUMMY EXAMPLE:
@@ -688,27 +699,26 @@ class Train:
                 if self.input != "pima":  # Only process images for non-pima datasets
                     print("----------processing random samples-----------")
                     base_dir = "cnn_analysis_results"
-                    os.makedirs(base_dir, exist_ok=True)
+                    if dev_testing:
+                        os.makedirs(base_dir, exist_ok=True)
                     RANDOM_SAMPLES_ENCODED = self.process_image_samples(
-                        random_samples, base_dir
+                        random_samples, base_dir, dev_testing=dev_testing
                     )
 
                     print("--------processing misclassified samples-----------")
                     base_dir = os.path.join(
                         "cnn_analysis_results", "lowest_accuracy_classes"
                     )
-                    os.makedirs(base_dir, exist_ok=True)
+                    if dev_testing:
+                        os.makedirs(base_dir, exist_ok=True)
                     MISCLASSIFIED_SAMPLES_ENCODED = self.process_image_samples(
-                        misclassified_samples, base_dir
+                        misclassified_samples, base_dir, dev_testing=dev_testing
                     )
                 else:
                     print("Skipping image processing for pima dataset")
                     print("Skipping misclassified samples processing for pima dataset")
 
-            print("LEGACY OUTPUT. do not mess with this lil bro")
-            print(
-                f"Test Loss: {avg_test_loss:.4f}, Test Accuracy: {test_avg_acc:.2f}%\n"
-            )
+            print(f"Test Loss: {avg_test_loss:.4f}, Test Accuracy: {test_avg_acc:.2f}%\n")
 
             # Store losses
             train_losses.append(float(avg_train_loss))
@@ -758,7 +768,6 @@ class Train:
         # RANDOM_SAMPLES_ENCODED and MISCLASSIED_SAMPLES_ENCODED are empty if dataset is 'pima'
 
         return RESULTS
-    
 
     def compute_PEEK(self, feature_maps, h, w):
         """Compute PEEK map from feature maps"""
@@ -775,6 +784,7 @@ class Train:
 
 if __name__ == "__main__":
     # example data
+    dev_testing = True  # Set to True to enable image saving for development testing
     print("pima linear layer test")
     data = {
         "input": "pima",
@@ -811,7 +821,8 @@ if __name__ == "__main__":
         batch_size=batch_size,
     )
 
-    RESULTS = t.train_test_log(n_epochs, batch_size)
+    # Pass dev_testing to process_image_samples via train_test_log if needed
+    RESULTS = t.train_test_log(n_epochs, batch_size, dev_testing=dev_testing)
 
     print("Original Results:", RESULTS["training"])
     print("Per-class Metrics:", RESULTS["outputs_class"])
@@ -863,7 +874,8 @@ if __name__ == "__main__":
     #     batch_size=batch_size,
     # )
 
-    # RESULTS = t.train_test_log(n_epochs, batch_size)
+    # Pass dev_testing to process_image_samples via train_test_log if needed
+    # RESULTS = t.train_test_log(n_epochs, batch_size, dev_testing=dev_testing)
 
     # print("Original Results:", RESULTS["training"])
     # print("Per-class Metrics:", RESULTS["outputs_class"])
@@ -923,13 +935,12 @@ if __name__ == "__main__":
         batch_size=batch_size,
     )
 
-    RESULTS = t.train_test_log(
-        n_epochs, batch_size
-    )
+    # Pass dev_testing to process_image_samples via train_test_log if needed
+    RESULTS = t.train_test_log(n_epochs, batch_size, dev_testing=dev_testing)
 
-    print("Original Results:", RESULTS['training'])
-    print("Per-class Metrics:", RESULTS['outputs_class'])
-    print("Overall Metrics:", RESULTS['outputs_overall'])
-    print("Confusion Matrix:", RESULTS['confusion_matrix'])
+    print("Original Results:", RESULTS["training"])
+    print("Per-class Metrics:", RESULTS["outputs_class"])
+    print("Overall Metrics:", RESULTS["outputs_overall"])
+    print("Confusion Matrix:", RESULTS["confusion_matrix"])
     # print('Random samples: ', RESULTS['random_samples'])
     # print('Top Misclassified: ', RESULTS['top_misclassified'])
