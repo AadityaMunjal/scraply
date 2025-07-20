@@ -1,5 +1,6 @@
 "use client";
 import { CgSpinnerTwoAlt as SpinnerIcon } from "react-icons/cg";
+import { HiTrash } from "react-icons/hi2";
 import { getConfig } from "~/util/board.util";
 import { useStartTraining } from "~/hooks/useApi";
 import { useBoardStore } from "~/state/boardStore";
@@ -80,11 +81,18 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
     }
   };
 
+  const isTrainingInProgress = isTraining || startTrainingMutation.isPending;
+
   return (
-    <>
-      <div className="mx-auto flex h-full items-center justify-center p-4">
-        <div className="mx-10 w-1/3 self-start rounded-lg p-1 px-2 py-1 text-sm">
-          <div>
+    <div className="h-full p-6">
+      <div className="mx-auto grid h-full max-w-7xl grid-cols-1 gap-8 lg:grid-cols-2">
+        {/* Training Configuration Section */}
+        <div className="space-y-6">
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <h2 className="mb-6 text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+              Training Configuration
+            </h2>
+
             <SharedTrainingConfig
               loss={loss}
               optimizer={optimizer}
@@ -110,72 +118,112 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
             />
 
             {/* Train Button */}
-            <div
-              className={`m-2 ${isTraining && "mt-8"} flex justify-center transition-transform duration-300`}
-            >
+            <div className="mt-6 border-t border-zinc-200 pt-6 dark:border-zinc-700">
               <button
-                disabled={isTraining || startTrainingMutation.isPending}
-                className={`rounded-2xl px-6 py-2 text-lg ring-indigo-500 transition-colors duration-300 ease-in-out ${
-                  isTraining || startTrainingMutation.isPending
-                    ? "bg-zinc-700 px-9 ring-2 ring-zinc-600"
-                    : "bg-zinc-700 hover:bg-indigo-600 active:bg-indigo-500"
+                disabled={isTrainingInProgress}
+                className={`w-full rounded-xl px-6 py-3 text-base font-medium transition-all duration-200 ${
+                  isTrainingInProgress
+                    ? "cursor-not-allowed bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-600"
+                    : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm hover:from-blue-700 hover:to-indigo-700 hover:shadow-md active:scale-[0.99]"
                 }`}
                 onClick={handleTrain}
               >
-                {isTraining || startTrainingMutation.isPending ? (
-                  <div className="flex items-center">
-                    <div className="flex">
-                      <SpinnerIcon className="my-auto mr-2 h-5 animate-spin" />
-                      <div>Training...</div>
-                    </div>
+                {isTrainingInProgress ? (
+                  <div className="flex items-center justify-center space-x-3">
+                    <SpinnerIcon className="h-5 w-5 animate-spin" />
+                    <span>Training Model...</span>
                   </div>
                 ) : (
-                  "Train"
+                  <span>Start Training</span>
                 )}
               </button>
             </div>
+          </div>
 
-            {/* Error Display */}
-            {startTrainingMutation.error && (
-              <div className="mx-2 rounded-lg border border-red-600 bg-red-900/20 p-3 text-sm text-red-300">
-                Training failed: {String(startTrainingMutation.error)}
+          {/* Error Display */}
+          {startTrainingMutation.error && (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950">
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-red-100 dark:bg-red-900">
+                    <span className="text-sm text-red-600 dark:text-red-400">
+                      !
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-red-800 dark:text-red-200">
+                    Training Failed
+                  </h3>
+                  <p className="mt-1 text-sm text-red-700 dark:text-red-300">
+                    {String(startTrainingMutation.error)}
+                  </p>
+                </div>
               </div>
-            )}
-          </div>
-        </div>
-        <div className="mx-10 mt-0 h-1/2 w-1/3 self-start rounded-xl">
-          <div className="flex items-center justify-between">
-            <div className="text-2xl text-zinc-700">History</div>
-            {trainingHistory.length > 0 && (
-              <button
-                onClick={clearHistory}
-                className="rounded-lg bg-zinc-700 px-3 py-1 text-sm text-white hover:bg-zinc-600"
-              >
-                Clear All
-              </button>
-            )}
-          </div>
-          {trainingHistory.length !== 0 ? (
-            trainingHistory.map((trainingRes, idx) => {
-              return (
-                <HistoryItem
-                  key={idx}
-                  idx={trainingHistory.length - idx}
-                  trainingRes={trainingRes}
-                  nextTrainingRes={trainingHistory[idx + 1]}
-                  openHistoryItemIdx={openHistoryItemIdx}
-                  setOpenHistoryItemIdx={setOpenHistoryItem}
-                />
-              );
-            })
-          ) : (
-            <div className="my-2 rounded-xl bg-zinc-800 p-4 text-center text-zinc-400">
-              No training history yet. Start training to see results!
             </div>
           )}
         </div>
+
+        {/* Training History Section */}
+        <div className="space-y-6">
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+                Training History
+              </h2>
+              {trainingHistory.length > 0 && (
+                <button
+                  onClick={clearHistory}
+                  className="group flex items-center space-x-2 rounded-lg bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                >
+                  <HiTrash className="h-4 w-4" />
+                  <span>Clear All</span>
+                </button>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              {trainingHistory.length > 0 ? (
+                trainingHistory.map((trainingRes, idx) => (
+                  <HistoryItem
+                    key={idx}
+                    idx={trainingHistory.length - idx}
+                    trainingRes={trainingRes}
+                    nextTrainingRes={trainingHistory[idx + 1]}
+                    openHistoryItemIdx={openHistoryItemIdx}
+                    setOpenHistoryItemIdx={setOpenHistoryItem}
+                  />
+                ))
+              ) : (
+                <div className="rounded-xl bg-zinc-50 p-8 text-center dark:bg-zinc-800">
+                  <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-200 dark:bg-zinc-700">
+                    <svg
+                      className="h-6 w-6 text-zinc-500 dark:text-zinc-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="mb-2 text-lg font-medium text-zinc-900 dark:text-zinc-100">
+                    No Training History
+                  </h3>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                    Start training your model to see results and metrics here.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
-    </>
+    </div>
   );
 };
 
