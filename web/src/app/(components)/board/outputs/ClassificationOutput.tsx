@@ -404,7 +404,6 @@ const ClassificationOutput = () => {
   return (
     <div className="h-full bg-zinc-900 p-6">
       <div className="mx-auto max-w-7xl space-y-8">
-        {/* Modern Tab Navigation */}
         <div className="flex space-x-2 rounded-xl bg-zinc-800/50 p-2 backdrop-blur-sm">
           {[
             { key: "confusion", label: "Confusion Matrix" },
