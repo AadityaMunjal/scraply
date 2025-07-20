@@ -169,8 +169,26 @@ const ClassificationOutput = () => {
                   className="h-32 w-32 bg-zinc-700 transition-transform"
                 />
               </div>
-              <div className="rounded-full bg-zinc-700 px-3 py-1 text-sm font-medium text-zinc-300">
-                #{imageClassificationOutput.idx}
+              <div className="space-y-2 text-center">
+                <div className="rounded-full bg-zinc-700 px-3 py-1 text-sm font-medium text-zinc-300">
+                  #{imageClassificationOutput.idx}
+                </div>
+                <div className="space-y-1">
+                  <div className="text-xs text-zinc-400">
+                    True:{" "}
+                    <span className="font-semibold text-zinc-300">
+                      {imageClassificationOutput.true_label}
+                    </span>
+                  </div>
+                  <div
+                    className={`text-xs ${imageClassificationOutput.true_label === imageClassificationOutput.pred_label ? "text-emerald-400" : "text-red-400"}`}
+                  >
+                    Pred:{" "}
+                    <span className="font-semibold">
+                      {imageClassificationOutput.pred_label}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -213,8 +231,26 @@ const ClassificationOutput = () => {
               className="h-24 w-24 bg-zinc-700 transition-transform"
             />
           </div>
-          <div className="rounded-full bg-zinc-600/50 px-3 py-1 text-sm font-medium text-zinc-300">
-            #{imageClassificationOutput.idx}
+          <div className="space-y-2 text-center">
+            <div className="rounded-full bg-zinc-600/50 px-3 py-1 text-sm font-medium text-zinc-300">
+              #{imageClassificationOutput.idx}
+            </div>
+            <div className="space-y-1">
+              <div className="text-xs text-zinc-400">
+                T:{" "}
+                <span className="font-semibold text-zinc-300">
+                  {imageClassificationOutput.true_label}
+                </span>
+              </div>
+              <div
+                className={`text-xs ${imageClassificationOutput.true_label === imageClassificationOutput.pred_label ? "text-emerald-400" : "text-red-400"}`}
+              >
+                P:{" "}
+                <span className="font-semibold">
+                  {imageClassificationOutput.pred_label}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       );

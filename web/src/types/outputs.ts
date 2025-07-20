@@ -25,6 +25,8 @@ export interface ClassificationImageOutput {
   idx: number;
   original: string;
   peek_maps: PeekMap[];
+  pred_label: number;
+  true_label: number;
 }
 
 export interface RandomSamples {
