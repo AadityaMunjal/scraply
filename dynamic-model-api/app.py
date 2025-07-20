@@ -268,4 +268,4 @@ def transformertest():
     return RESULTS
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    app.run(debug=True, host="0.0.0.0", port=5000) # allows Flask to listen on all network interfaces so that Docker can forward traffic to it
