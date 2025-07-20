@@ -19,5 +19,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of your app
 COPY . .
 
+# Expose the port Flask runs on
+EXPOSE 5000
+
 # Run your app
 CMD ["python", "app.py"]
+
+# command to run in terminal:
+# docker build -t dynamic-model-api .
+# docker run -p 5000:5000 dynamic-model-api
