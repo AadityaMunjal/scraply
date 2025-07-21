@@ -28,3 +28,4 @@ CMD ["python", "app.py"]
 # command to run in terminal:
 # docker build -t dynamic-model-api .
 # docker run -p 5000:5000 dynamic-model-api
+# 'Werkzeug web server is not designed to run in production'
