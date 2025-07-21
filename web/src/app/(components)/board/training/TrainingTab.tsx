@@ -11,7 +11,8 @@ import { DEFAULT_TRAINING_CONFIG } from "~/util/trainingConfig";
 import SharedTrainingConfig from "./SharedTrainingConfig";
 import HistoryItem from "./HistoryItem";
 import posthog from "posthog-js";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { Config } from "~/types/index";
 
 interface TrainingTabProps {
   selectedDataset: string;
@@ -20,6 +21,9 @@ interface TrainingTabProps {
 const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
   const { canvasBlocks } = useBoardStore();
   const startTrainingMutation = useStartTraining();
+
+  // Store the training config that was used when training started
+  const trainingConfigRef = useRef<Config | null>(null);
 
   // Socket for live training
   const {
@@ -109,7 +113,7 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
 
   // Handle training completion
   useEffect(() => {
-    if (trainingCompleted?.final_results) {
+    if (trainingCompleted?.final_results && trainingConfigRef.current) {
       const { training, ...outputs } = trainingCompleted.final_results;
       setCurrentOutput(outputs);
 
@@ -120,21 +124,16 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
         avg_test_acc: training.avg_test_acc,
         train_losses: training.train_losses,
         test_losses: training.test_losses,
-        trainingConfig: getConfig(
-          selectedDataset,
-          canvasBlocks,
-          loss,
-          optimizer,
-          learningRate,
-          epochs,
-          batchSize,
-        ),
+        trainingConfig: trainingConfigRef.current,
       });
 
       // Reset live training state
       setCurrentProgress(null);
       setIsLiveTraining(false);
       setIsTraining(false); // Reset the main training state
+
+      // Clear the stored config after using it
+      trainingConfigRef.current = null;
     }
   }, [
     trainingCompleted,
@@ -143,13 +142,7 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
     setCurrentProgress,
     setIsLiveTraining,
     setIsTraining,
-    selectedDataset,
-    canvasBlocks,
-    loss,
-    optimizer,
-    learningRate,
-    epochs,
-    batchSize,
+    trainingConfigRef,
   ]);
 
   const handleTrain = async () => {
@@ -166,6 +159,8 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
         epochs,
         batchSize,
       );
+
+      trainingConfigRef.current = config; // Store the config
 
       posthog.capture("train_started", { config });
 
