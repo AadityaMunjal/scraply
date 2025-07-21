@@ -8,6 +8,18 @@ import {
 } from "~/types/index";
 import { DEFAULT_TRAINING_CONFIG } from "~/util/trainingConfig";
 
+interface TrainingProgress {
+  epoch: number;
+  total_epochs: number;
+  progress: number;
+  train_loss: number;
+  train_accuracy: number;
+  test_loss: number;
+  test_accuracy: number;
+  train_losses: { x: number; y: number }[];
+  test_losses: { x: number; y: number }[];
+}
+
 interface TrainingConfigState {
   // Configuration
   loss: LossFunction;
@@ -20,6 +32,10 @@ interface TrainingConfigState {
   isTraining: boolean;
   trainingHistory: TrainingResult[];
   openHistoryItemIdx: number | null;
+
+  // Live training progress
+  currentProgress: TrainingProgress | null;
+  isLiveTraining: boolean;
 
   // Configuration actions
   setLoss: (loss: LossFunction) => void;
@@ -34,6 +50,10 @@ interface TrainingConfigState {
   setOpenHistoryItem: (idx: number | null) => void;
   clearHistory: () => void;
   resetConfig: () => void;
+
+  // Live training actions
+  setCurrentProgress: (progress: TrainingProgress | null) => void;
+  setIsLiveTraining: (isLive: boolean) => void;
 
   // Output
   currentOutput: OutputsResult | null;
@@ -50,6 +70,10 @@ export const useTrainingStore = create<TrainingConfigState>()(
     isTraining: false,
     trainingHistory: [],
     openHistoryItemIdx: null,
+
+    // Initial live training state
+    currentProgress: null,
+    isLiveTraining: false,
 
     // Config actions
     setLoss: (loss: LossFunction) => {
@@ -119,6 +143,21 @@ export const useTrainingStore = create<TrainingConfigState>()(
         Object.assign(state, defaultConfig);
         state.trainingHistory = [];
         state.openHistoryItemIdx = null;
+        state.currentProgress = null;
+        state.isLiveTraining = false;
+      });
+    },
+
+    // Live training actions
+    setCurrentProgress: (progress: TrainingProgress | null) => {
+      set((state) => {
+        state.currentProgress = progress;
+      });
+    },
+
+    setIsLiveTraining: (isLive: boolean) => {
+      set((state) => {
+        state.isLiveTraining = isLive;
       });
     },
 

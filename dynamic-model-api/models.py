@@ -93,7 +93,9 @@ class DynamicModel(nn.Module):
 
                 elif layer_type == "Flatten":
                     start_dim = 1
-                    end_dim = -1  # I AM FORCING 1,-1. CURRENT UI DOES NOT SUPPORT NEGATIVE DIMS. 6/28/25
+                    end_dim = (
+                        -1
+                    )  # I AM FORCING 1,-1. CURRENT UI DOES NOT SUPPORT NEGATIVE DIMS. 6/28/25
                     # start_dim, end_dim = layer_args
                     component = nn.Flatten(start_dim, end_dim)
 
@@ -156,9 +158,7 @@ class Train:
         self.device = (  # for GPU access --> works with CPU as well
             "cuda"
             if torch.cuda.is_available()
-            else "mps"
-            if torch.backends.mps.is_available()
-            else "cpu"
+            else "mps" if torch.backends.mps.is_available() else "cpu"
         )
         print(f"Using {self.device} device")
 
@@ -600,10 +600,12 @@ class Train:
                                 )
                             else:
                                 overlay = cv2.addWeighted(
-                                    image_np_resized
-                                    if image_np_resized.shape[2] == 3
-                                    else cv2.cvtColor(
-                                        image_np_resized, cv2.COLOR_GRAY2BGR
+                                    (
+                                        image_np_resized
+                                        if image_np_resized.shape[2] == 3
+                                        else cv2.cvtColor(
+                                            image_np_resized, cv2.COLOR_GRAY2BGR
+                                        )
                                     ),
                                     0.3,
                                     heatmap,
@@ -718,7 +720,9 @@ class Train:
                     print("Skipping image processing for pima dataset")
                     print("Skipping misclassified samples processing for pima dataset")
 
-            print(f"Test Loss: {avg_test_loss:.4f}, Test Accuracy: {test_avg_acc:.2f}%\n")
+            print(
+                f"Test Loss: {avg_test_loss:.4f}, Test Accuracy: {test_avg_acc:.2f}%\n"
+            )
 
             # Store losses
             train_losses.append(float(avg_train_loss))
@@ -766,6 +770,141 @@ class Train:
         }
 
         # RANDOM_SAMPLES_ENCODED and MISCLASSIED_SAMPLES_ENCODED are empty if dataset is 'pima'
+
+        return RESULTS
+
+    def train_test_log_stream(self, n_epochs, batch_size, socketio):
+        train_losses = []
+        train_accs = []
+        test_losses = []
+        test_accs = []
+        per_class_metrics = {}
+        confusion_matrix_data = []
+        overall_metrics = {}
+
+        RANDOM_SAMPLES_ENCODED = {}
+        MISCLASSIFIED_SAMPLES_ENCODED = {}
+
+        socketio.emit(
+            "training_started", {"total_epochs": n_epochs, "dataset": self.input}
+        )
+
+        for t in range(n_epochs):
+            print(f"Epoch {t + 1}/{n_epochs}...")
+
+            socketio.emit("epoch_started", {"epoch": t + 1, "total_epochs": n_epochs})
+
+            avg_train_loss, train_avg_acc = self.train(n_epochs, batch_size)
+
+            print(
+                f"Train Loss: {avg_train_loss:.4f}, Train Accuracy: {train_avg_acc:.2f}%\n"
+            )
+
+            if t != n_epochs - 1 or self.input == "pima":
+                test_result = self.test(output_info=False)
+                (
+                    avg_test_loss,
+                    test_avg_acc,
+                    per_class_metrics,
+                    confusion_matrix_data,
+                    overall_metrics,
+                ) = test_result
+            else:
+                test_result = self.test(output_info=True)
+                if len(test_result) == 7:  # Non-pima dataset with output_info=True
+                    (
+                        avg_test_loss,
+                        test_avg_acc,
+                        random_samples,
+                        misclassified_samples,
+                        per_class_metrics,
+                        confusion_matrix_data,
+                        overall_metrics,
+                    ) = test_result
+
+                    # Process samples if available
+                    if self.input != "pima":
+                        RANDOM_SAMPLES_ENCODED = self.process_image_samples(
+                            random_samples, "cnn_analysis_results", dev_testing=False
+                        )
+                        MISCLASSIFIED_SAMPLES_ENCODED = self.process_image_samples(
+                            misclassified_samples,
+                            "cnn_analysis_results/lowest_accuracy_classes",
+                            dev_testing=False,
+                        )
+                else:  # Fallback for 5-value return
+                    (
+                        avg_test_loss,
+                        test_avg_acc,
+                        per_class_metrics,
+                        confusion_matrix_data,
+                        overall_metrics,
+                    ) = test_result
+
+            print(
+                f"Test Loss: {avg_test_loss:.4f}, Test Accuracy: {test_avg_acc:.2f}%\n"
+            )
+
+            train_losses.append(avg_train_loss)
+            train_accs.append(train_avg_acc)
+            test_losses.append(avg_test_loss)
+            test_accs.append(test_avg_acc)
+
+            # Emit epoch progress
+            socketio.emit(
+                "epoch_completed",
+                {
+                    "epoch": t + 1,
+                    "total_epochs": n_epochs,
+                    "progress": ((t + 1) / n_epochs) * 100,
+                    "train_loss": avg_train_loss,
+                    "train_accuracy": train_avg_acc,
+                    "test_loss": avg_test_loss,
+                    "test_accuracy": test_avg_acc,
+                    "train_losses": [
+                        {"x": i, "y": v} for i, v in enumerate(train_losses)
+                    ],
+                    "test_losses": [
+                        {"x": i, "y": v} for i, v in enumerate(test_losses)
+                    ],
+                },
+            )
+
+        # Calculate final averages
+        avg_train_acc = sum(train_accs) / len(train_accs)
+        avg_test_acc = sum(test_accs) / len(test_accs)
+        avg_train_loss = sum(train_losses) / len(train_losses)
+        avg_test_loss = sum(test_losses) / len(test_losses)
+
+        print("Done!")
+
+        # Format losses for final result
+        train_losses = [{"x": i, "y": v} for i, v in enumerate(train_losses)]
+        test_losses = [{"x": i, "y": v} for i, v in enumerate(test_losses)]
+
+        ORIGINAL_OUTPUT = {
+            "train_losses": train_losses,
+            "test_losses": test_losses,
+            "avg_train_loss": avg_train_loss,
+            "avg_test_loss": avg_test_loss,
+            "avg_train_acc": avg_train_acc,
+            "avg_test_acc": avg_test_acc,
+        }
+
+        RESULTS = {
+            "training": ORIGINAL_OUTPUT,
+            "outputs_class": per_class_metrics,
+            "outputs_overall": overall_metrics,
+            "confusion_matrix": confusion_matrix_data,
+            "random_samples": RANDOM_SAMPLES_ENCODED,
+            "top_misclassified": MISCLASSIFIED_SAMPLES_ENCODED,
+        }
+
+        # Emit training completion
+        socketio.emit(
+            "training_completed",
+            {"final_results": RESULTS, "message": "Training completed successfully!"},
+        )
 
         return RESULTS
 

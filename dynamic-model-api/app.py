@@ -1,4 +1,5 @@
 from flask import Flask, request, send_file
+from flask_socketio import SocketIO, emit
 from models import (
     DynamicModel,
     Train,
@@ -26,7 +27,8 @@ from collections import Counter
 
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=["http://localhost:3000"])
+socketio = SocketIO(app, cors_allowed_origins="http://localhost:3000")
 
 # # for potential train & streaming:
 
@@ -267,5 +269,56 @@ def transformertest():
 
     return RESULTS
 
+
+@socketio.on("connect")
+def handle_connect():
+    print("Client connected")
+    emit("connected", {"message": "Connected to training server"})
+
+
+@socketio.on("disconnect")
+def handle_disconnect():
+    print("Client disconnected")
+
+
+@app.post("/train-stream")
+def train_stream():
+    """Streaming training endpoint that emits progress via WebSocket"""
+    data = request.get_json()
+    print("Received streaming training request:", data)
+
+    inp = data["input"]
+    layers = data["layers"]
+    loss = data["loss"]
+    optimizer = data["optimizer"]
+    n_epochs = data["epoch"]
+    batch_size = data["batch_size"]
+
+    try:
+        model = DynamicModel(layers)
+        t = Train(
+            model=model,
+            input=inp,
+            loss=loss,
+            optimizer=optimizer,
+            batch_size=batch_size,
+        )
+
+        print("Model initialized successfully! Starting streaming training...")
+
+        # Start streaming training with WebSocket emissions
+        results = t.train_test_log_stream(n_epochs, batch_size, socketio)
+
+        return {
+            "status": "training_started",
+            "message": "Training progress will be streamed via WebSocket",
+        }
+
+    except Exception as e:
+        print("Error:", e)
+        socketio.emit("training_error", {"error": str(e)})
+        return {"error": str(e)}, 500
+
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    socketio.run(app, debug=True, host="0.0.0.0", port=5000)
