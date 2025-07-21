@@ -3,6 +3,7 @@ import { CgSpinnerTwoAlt as SpinnerIcon } from "react-icons/cg";
 import { HiTrash } from "react-icons/hi2";
 import { getConfig } from "~/util/board.util";
 import { useStartTraining } from "~/hooks/useApi";
+import { useSocket } from "~/hooks/useSocket";
 import { useBoardStore } from "~/state/boardStore";
 import { useTrainingStore } from "~/state/trainingStore";
 import { DEFAULT_TRAINING_CONFIG } from "~/util/trainingConfig";
@@ -10,6 +11,7 @@ import { DEFAULT_TRAINING_CONFIG } from "~/util/trainingConfig";
 import SharedTrainingConfig from "./SharedTrainingConfig";
 import HistoryItem from "./HistoryItem";
 import posthog from "posthog-js";
+import { useEffect } from "react";
 
 interface TrainingTabProps {
   selectedDataset: string;
@@ -18,6 +20,17 @@ interface TrainingTabProps {
 const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
   const { canvasBlocks } = useBoardStore();
   const startTrainingMutation = useStartTraining();
+
+  // Socket for live training
+  const {
+    isConnected,
+    trainingProgress,
+    isTrainingActive,
+    trainingCompleted,
+    trainingError,
+    startTraining: startSocketTraining,
+    resetTraining,
+  } = useSocket();
 
   const {
     // Configuration
@@ -42,10 +55,81 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
     setCurrentOutput,
     setOpenHistoryItem,
     clearHistory,
+
+    // Live training state
+    currentProgress,
+    isLiveTraining,
+    setCurrentProgress,
+    setIsLiveTraining,
   } = useTrainingStore();
+
+  // Handle live training progress updates
+  useEffect(() => {
+    if (trainingProgress) {
+      setCurrentProgress(trainingProgress);
+    }
+  }, [trainingProgress, setCurrentProgress]);
+
+  useEffect(() => {
+    setIsLiveTraining(isTrainingActive);
+  }, [isTrainingActive, setIsLiveTraining]);
+
+  // Handle training errors
+  useEffect(() => {
+    if (trainingError) {
+      setIsTraining(false);
+      setIsLiveTraining(false);
+    }
+  }, [trainingError, setIsTraining, setIsLiveTraining]);
+
+  // Handle training completion
+  useEffect(() => {
+    if (trainingCompleted?.final_results) {
+      const { training, ...outputs } = trainingCompleted.final_results;
+      setCurrentOutput(outputs);
+
+      addTrainingResult({
+        avg_train_loss: training.avg_train_loss,
+        avg_train_acc: training.avg_train_acc,
+        avg_test_loss: training.avg_test_loss,
+        avg_test_acc: training.avg_test_acc,
+        train_losses: training.train_losses,
+        test_losses: training.test_losses,
+        trainingConfig: getConfig(
+          selectedDataset,
+          canvasBlocks,
+          loss,
+          optimizer,
+          learningRate,
+          epochs,
+          batchSize,
+        ),
+      });
+
+      // Reset live training state
+      setCurrentProgress(null);
+      setIsLiveTraining(false);
+      setIsTraining(false); // Reset the main training state
+    }
+  }, [
+    trainingCompleted,
+    setCurrentOutput,
+    addTrainingResult,
+    setCurrentProgress,
+    setIsLiveTraining,
+    setIsTraining,
+    selectedDataset,
+    canvasBlocks,
+    loss,
+    optimizer,
+    learningRate,
+    epochs,
+    batchSize,
+  ]);
 
   const handleTrain = async () => {
     setIsTraining(true);
+    resetTraining(); // Reset any previous socket training state
 
     try {
       const config = getConfig(
@@ -60,28 +144,17 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
 
       posthog.capture("train_started", { config });
 
-      const data = await startTrainingMutation.mutateAsync(config);
-      const { training, ...outputs } = data;
-      setCurrentOutput(outputs);
-
-      addTrainingResult({
-        avg_train_loss: training.avg_train_loss,
-        avg_train_acc: training.avg_train_acc,
-        avg_test_loss: training.avg_test_loss,
-        avg_test_acc: training.avg_test_acc,
-        train_losses: training.train_losses,
-        test_losses: training.test_losses,
-        trainingConfig: config,
-      });
+      // Use socket-based live training
+      await startSocketTraining(config);
     } catch (error) {
       console.error("Training failed:", error);
       posthog.captureException(error);
-    } finally {
       setIsTraining(false);
     }
   };
 
-  const isTrainingInProgress = isTraining || startTrainingMutation.isPending;
+  const isTrainingInProgress =
+    isTraining || startTrainingMutation.isPending || isLiveTraining;
 
   return (
     <div className="h-full p-6">
@@ -138,10 +211,22 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                 )}
               </button>
             </div>
+
+            {/* Connection Status */}
+            {!isConnected && (
+              <div className="mt-6 rounded-xl border border-yellow-800 bg-yellow-950/50 p-4">
+                <div className="flex items-center space-x-2">
+                  <div className="h-2 w-2 rounded-full bg-yellow-500"></div>
+                  <span className="text-sm text-yellow-200">
+                    Connecting to training server...
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Error Display */}
-          {startTrainingMutation.error && (
+          {(startTrainingMutation.error || trainingError) && (
             <div className="rounded-xl border border-red-800 bg-red-950 p-4">
               <div className="flex items-start space-x-3">
                 <div className="flex-shrink-0">
@@ -154,7 +239,28 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                     Training Failed
                   </h3>
                   <p className="mt-1 text-sm text-red-300">
-                    {String(startTrainingMutation.error)}
+                    {trainingError || String(startTrainingMutation.error)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Training Completed Status */}
+          {trainingCompleted && !isLiveTraining && (
+            <div className="rounded-xl border border-green-800 bg-green-950 p-4">
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-green-900">
+                    <span className="text-sm text-green-400">✓</span>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-green-200">
+                    Training Completed
+                  </h3>
+                  <p className="mt-1 text-sm text-green-300">
+                    {trainingCompleted.message}
                   </p>
                 </div>
               </div>
@@ -181,42 +287,166 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
             </div>
 
             <div className="space-y-4">
-              {trainingHistory.length > 0 ? (
-                trainingHistory.map((trainingRes, idx) => (
-                  <HistoryItem
-                    key={idx}
-                    idx={trainingHistory.length - idx}
-                    trainingRes={trainingRes}
-                    nextTrainingRes={trainingHistory[idx + 1]}
-                    openHistoryItemIdx={openHistoryItemIdx}
-                    setOpenHistoryItemIdx={setOpenHistoryItem}
-                  />
-                ))
-              ) : (
-                <div className="rounded-xl bg-zinc-800 p-8 text-center">
-                  <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-700">
-                    <svg
-                      className="h-6 w-6 text-zinc-400"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                      />
-                    </svg>
+              {/* Live Training Progress */}
+              {isLiveTraining && (
+                <div className="rounded-xl border border-blue-800 bg-blue-950/50 p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-2">
+                        <SpinnerIcon className="h-4 w-4 animate-spin text-blue-400" />
+                        <span className="text-sm font-medium text-blue-200">
+                          Training in Progress
+                        </span>
+                      </div>
+                    </div>
+                    {currentProgress && (
+                      <span className="text-xs text-blue-300">
+                        Epoch {currentProgress.epoch} of{" "}
+                        {currentProgress.total_epochs}
+                      </span>
+                    )}
                   </div>
-                  <h3 className="mb-2 text-lg font-medium text-zinc-100">
-                    No Training History
-                  </h3>
-                  <p className="text-sm text-zinc-400">
-                    Start training your model to see results and metrics here.
-                  </p>
+
+                  {currentProgress && (
+                    <>
+                      {/* Overall Progress Bar */}
+                      <div className="mt-3 h-2 w-full rounded-full bg-blue-900">
+                        <div
+                          className="h-2 rounded-full bg-blue-500 transition-all duration-300"
+                          style={{ width: `${currentProgress.progress}%` }}
+                        ></div>
+                      </div>
+                      <div className="mt-1 text-center">
+                        <span className="text-xs text-blue-300">
+                          {currentProgress.progress.toFixed(1)}% Complete
+                        </span>
+                      </div>
+
+                      {/* Metrics with Progress Bars */}
+                      <div className="mt-4 space-y-3">
+                        {/* Train Accuracy */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-blue-300">
+                              Train Accuracy
+                            </span>
+                            <span className="text-base font-medium text-blue-100">
+                              {Math.round(currentProgress.train_accuracy)}%
+                            </span>
+                          </div>
+                          <div className="h-2 overflow-hidden rounded-full bg-blue-900/60">
+                            <div
+                              className="h-full rounded-full bg-blue-500 transition-all duration-300"
+                              style={{
+                                width: `${Math.min(100, Math.max(0, currentProgress.train_accuracy))}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Test Accuracy */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-blue-300">
+                              Test Accuracy
+                            </span>
+                            <span className="text-base font-medium text-blue-100">
+                              {Math.round(currentProgress.test_accuracy)}%
+                            </span>
+                          </div>
+                          <div className="h-2 overflow-hidden rounded-full bg-blue-900/60">
+                            <div
+                              className="h-full rounded-full bg-blue-400 transition-all duration-300"
+                              style={{
+                                width: `${Math.min(100, Math.max(0, currentProgress.test_accuracy))}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Train Loss (inverted for progress bar) */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-blue-300">
+                              Train Loss
+                            </span>
+                            <span className="font-mono text-xs text-blue-200">
+                              {currentProgress.train_loss.toFixed(4)}
+                            </span>
+                          </div>
+                          <div className="h-2 overflow-hidden rounded-full bg-blue-900/60">
+                            <div
+                              className="h-full rounded-full bg-blue-600 transition-all duration-300"
+                              style={{
+                                width: `${Math.max(10, 100 - currentProgress.train_loss * 20)}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Test Loss (inverted for progress bar) */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-blue-300">
+                              Test Loss
+                            </span>
+                            <span className="font-mono text-xs text-blue-200">
+                              {currentProgress.test_loss.toFixed(4)}
+                            </span>
+                          </div>
+                          <div className="h-2 overflow-hidden rounded-full bg-blue-900/60">
+                            <div
+                              className="h-full rounded-full bg-blue-600 transition-all duration-300"
+                              style={{
+                                width: `${Math.max(10, 100 - currentProgress.test_loss * 20)}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
+
+              {/* Completed Training History */}
+              {trainingHistory.length > 0
+                ? trainingHistory.map((trainingRes, idx) => (
+                    <HistoryItem
+                      key={idx}
+                      idx={trainingHistory.length - idx}
+                      trainingRes={trainingRes}
+                      nextTrainingRes={trainingHistory[idx + 1]}
+                      openHistoryItemIdx={openHistoryItemIdx}
+                      setOpenHistoryItemIdx={setOpenHistoryItem}
+                    />
+                  ))
+                : !isLiveTraining && (
+                    <div className="rounded-xl bg-zinc-800 p-8 text-center">
+                      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-700">
+                        <svg
+                          className="h-6 w-6 text-zinc-400"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                          />
+                        </svg>
+                      </div>
+                      <h3 className="mb-2 text-lg font-medium text-zinc-100">
+                        No Training History
+                      </h3>
+                      <p className="text-sm text-zinc-400">
+                        Start training your model to see results and metrics
+                        here.
+                      </p>
+                    </div>
+                  )}
             </div>
           </div>
         </div>
