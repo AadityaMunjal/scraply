@@ -231,18 +231,6 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                 )}
               </button>
             </div>
-
-            {/* Connection Status */}
-            {!isConnected && (
-              <div className="mt-6 rounded-xl border border-yellow-800 bg-yellow-950/50 p-4">
-                <div className="flex items-center space-x-2">
-                  <div className="h-2 w-2 rounded-full bg-yellow-500"></div>
-                  <span className="text-sm text-yellow-200">
-                    Connecting to training server...
-                  </span>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Error Display */}
@@ -260,27 +248,6 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                   </h3>
                   <p className="mt-1 text-sm text-red-300">
                     {trainingError || String(startTrainingMutation.error)}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Training Completed Status */}
-          {trainingCompleted && !isLiveTraining && (
-            <div className="rounded-xl border border-green-800 bg-green-950 p-4">
-              <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-green-900">
-                    <span className="text-sm text-green-400">✓</span>
-                  </div>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-green-200">
-                    Training Completed
-                  </h3>
-                  <p className="mt-1 text-sm text-green-300">
-                    {trainingCompleted.message}
                   </p>
                 </div>
               </div>
