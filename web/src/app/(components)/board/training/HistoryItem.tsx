@@ -1,5 +1,4 @@
 import { TrainingResult, TrainingResultFormat } from "~/types/index";
-import ToggleBlock from "../../ToggleBlock";
 import { ResponsiveLine } from "@nivo/line";
 import { downloadFile, getConfig } from "~/util/board.util";
 
@@ -28,74 +27,198 @@ const HistoryItem: React.FC<HistoryItemProps> = ({
     }
   };
 
+  const isOpen = openHistoryItemIdx === idx;
+
   return (
-    <div className="my-3 rounded-xl bg-zinc-800/90 shadow-lg ring-1 ring-zinc-700/50 backdrop-blur-sm transition-all duration-200 hover:bg-zinc-800 hover:ring-zinc-600/50">
-      <ToggleBlock
-        title={
-          <div className="px-2 pt-2 text-lg font-medium text-zinc-200">
-            Training Run {idx}
+    <div className="group my-4 overflow-hidden rounded-2xl border border-slate-700/50 bg-zinc-900 shadow-xl backdrop-blur-sm transition-all duration-300 hover:shadow-2xl">
+      {/* Header */}
+      <div className="px-6 pb-2 pt-5">
+        <button
+          onClick={() =>
+            setOpenHistoryItemIdx(idx === openHistoryItemIdx ? null : idx)
+          }
+          className="w-full text-left"
+        >
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-bold text-slate-100">
+              Training Run {idx}
+            </h3>
+            <svg
+              className={`h-5 w-5 text-slate-400 transition-transform duration-200 ${
+                isOpen ? "rotate-180" : ""
+              }`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
           </div>
-        }
-        preBody={
-          <div className="space-y-3 p-2">
-            {Object.keys(TrainingResultFormat).map((key) => {
-              const value = trainingRes[key as keyof TrainingResult];
-              const format =
-                TrainingResultFormat[key as keyof typeof TrainingResultFormat];
-              const percentage = Math.round(Number(value));
+        </button>
+      </div>
 
-              return (
-                <div key={key} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-zinc-400">{format.key}</span>
-                    <div className="flex items-center gap-3">
-                      <span className="text-base font-medium text-zinc-200">
-                        {percentage}%
-                      </span>
-                      {format.positiveTemperament !== undefined &&
-                        nextTrainingRes && (
-                          <div className="min-w-[50px] text-right">
-                            {getDiffUI(
-                              Number(value) -
-                                Number(
-                                  nextTrainingRes[key as keyof TrainingResult],
-                                ),
-                            )}
-                          </div>
-                        )}
-                    </div>
+      {/* Summary Metrics */}
+      <div className="px-6 pb-4">
+        <div className="space-y-4">
+          {/* Train Accuracy */}
+          <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm transition-all duration-200">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-sm font-medium text-slate-300">
+                Train Accuracy
+              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-xl font-bold text-slate-100">
+                  {Math.round(trainingRes.avg_train_acc)}%
+                </span>
+                {nextTrainingRes && (
+                  <div className="min-w-[60px] text-right">
+                    {getDiffUI(
+                      trainingRes.avg_train_acc - nextTrainingRes.avg_train_acc,
+                    )}
                   </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-700/60">
-                      <div
-                        className={`h-full rounded-full transition-all duration-300 ${
-                          format.positiveTemperament
-                            ? "bg-zinc-500"
-                            : "bg-zinc-400"
-                        }`}
-                        style={{
-                          width: `${Math.min(100, Math.max(0, percentage))}%`,
-                        }}
-                      />
-                    </div>
-                    {format.positiveTemperament !== undefined &&
-                      nextTrainingRes && (
-                        <div className="min-w-[50px]">
-                          {/* Spacer for diff alignment */}
-                        </div>
-                      )}
-                  </div>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-slate-700/50 shadow-inner">
+                <div
+                  className="h-full rounded-full bg-emerald-500 shadow-sm transition-all duration-500"
+                  style={{
+                    width: `${Math.min(100, Math.max(0, trainingRes.avg_train_acc))}%`,
+                  }}
+                />
+              </div>
+              {nextTrainingRes && (
+                <div className="min-w-[60px]">
+                  {/* Spacer for diff alignment */}
                 </div>
-              );
-            })}
+              )}
+            </div>
           </div>
-        }
-        isOpen={openHistoryItemIdx === idx}
-        setIsOpen={() =>
-          setOpenHistoryItemIdx(idx === openHistoryItemIdx ? null : idx)
-        }
-      >
+
+          {/* Test Accuracy */}
+          <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm transition-all duration-200">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-sm font-medium text-slate-300">
+                Test Accuracy
+              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-xl font-bold text-slate-100">
+                  {Math.round(trainingRes.avg_test_acc)}%
+                </span>
+                {nextTrainingRes && (
+                  <div className="min-w-[60px] text-right">
+                    {getDiffUI(
+                      trainingRes.avg_test_acc - nextTrainingRes.avg_test_acc,
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-slate-700/50 shadow-inner">
+                <div
+                  className="h-full rounded-full bg-cyan-500 shadow-sm transition-all duration-500"
+                  style={{
+                    width: `${Math.min(100, Math.max(0, trainingRes.avg_test_acc))}%`,
+                  }}
+                />
+              </div>
+              {nextTrainingRes && (
+                <div className="min-w-[60px]">
+                  {/* Spacer for diff alignment */}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Train Loss */}
+          <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm transition-all duration-200">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-sm font-medium text-slate-300">
+                Train Loss
+              </span>
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-lg font-semibold text-slate-100">
+                  {trainingRes.avg_train_loss.toFixed(4)}
+                </span>
+                {nextTrainingRes && (
+                  <div className="min-w-[60px] text-right">
+                    {getDiffUI(
+                      -(
+                        trainingRes.avg_train_loss -
+                        nextTrainingRes.avg_train_loss
+                      ) * 100,
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-slate-700/50 shadow-inner">
+                <div
+                  className="h-full rounded-full bg-amber-500 shadow-sm transition-all duration-500"
+                  style={{
+                    width: `${Math.max(10, 100 - trainingRes.avg_train_loss * 20)}%`,
+                  }}
+                />
+              </div>
+              {nextTrainingRes && (
+                <div className="min-w-[60px]">
+                  {/* Spacer for diff alignment */}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Test Loss */}
+          <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm transition-all duration-200">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-sm font-medium text-slate-300">
+                Test Loss
+              </span>
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-lg font-semibold text-slate-100">
+                  {trainingRes.avg_test_loss.toFixed(4)}
+                </span>
+                {nextTrainingRes && (
+                  <div className="min-w-[60px] text-right">
+                    {getDiffUI(
+                      -(
+                        trainingRes.avg_test_loss -
+                        nextTrainingRes.avg_test_loss
+                      ) * 100,
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-slate-700/50 shadow-inner">
+                <div
+                  className="h-full rounded-full bg-rose-500 shadow-sm transition-all duration-500"
+                  style={{
+                    width: `${Math.max(10, 100 - trainingRes.avg_test_loss * 20)}%`,
+                  }}
+                />
+              </div>
+              {nextTrainingRes && (
+                <div className="min-w-[60px]">
+                  {/* Spacer for diff alignment */}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Collapsible Details */}
+      {isOpen && (
         <div className="space-y-5 p-4">
           {/* Loss Graph Section */}
           <div>
@@ -265,7 +388,7 @@ const HistoryItem: React.FC<HistoryItemProps> = ({
             </button>
           </div>
         </div>
-      </ToggleBlock>
+      )}
     </div>
   );
 };

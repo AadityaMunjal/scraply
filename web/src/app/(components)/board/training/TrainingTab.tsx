@@ -30,6 +30,7 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
     trainingError,
     startTraining: startSocketTraining,
     resetTraining,
+    checkTrainingStatus,
   } = useSocket();
 
   const {
@@ -70,9 +71,33 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
     }
   }, [trainingProgress, setCurrentProgress]);
 
+  // Check training status when component mounts or connection is reestablished
   useEffect(() => {
-    setIsLiveTraining(isTrainingActive);
-  }, [isTrainingActive, setIsLiveTraining]);
+    if (isConnected) {
+      // Small delay to ensure socket is fully ready
+      const timer = setTimeout(() => {
+        checkTrainingStatus();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isConnected, checkTrainingStatus]);
+
+  // Only update live training state when socket actually changes state
+  // Don't override stored state on initial mount
+  useEffect(() => {
+    // If socket reports training is active, definitely set it
+    if (isTrainingActive) {
+      setIsLiveTraining(true);
+    }
+    // Only set to false if we were previously live training and socket explicitly says not active
+    else if (isLiveTraining && !isTrainingActive && isConnected) {
+      // Wait a moment to ensure this isn't just a reconnection
+      const timer = setTimeout(() => {
+        setIsLiveTraining(false);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [isTrainingActive, isLiveTraining, isConnected, setIsLiveTraining]);
 
   // Handle training errors
   useEffect(() => {
@@ -197,7 +222,7 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                 className={`w-full rounded-xl px-6 py-3 text-base font-medium transition-all duration-200 ${
                   isTrainingInProgress
                     ? "cursor-not-allowed bg-zinc-800 text-zinc-600"
-                    : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm hover:from-blue-700 hover:to-indigo-700 hover:shadow-md active:scale-[0.99]"
+                    : "bg-blue-600 text-white shadow-sm hover:bg-blue-700 hover:shadow-md active:scale-[0.99]"
                 }`}
                 onClick={handleTrain}
               >
@@ -289,123 +314,135 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
             <div className="space-y-4">
               {/* Live Training Progress */}
               {isLiveTraining && (
-                <div className="rounded-xl border border-blue-800 bg-blue-950/50 p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="flex items-center space-x-2">
-                        <SpinnerIcon className="h-4 w-4 animate-spin text-blue-400" />
-                        <span className="text-sm font-medium text-blue-200">
-                          Training in Progress
-                        </span>
+                <div className="group relative overflow-hidden rounded-2xl border border-blue-500/20 bg-zinc-800 p-6 shadow-xl backdrop-blur-sm transition-all duration-300 hover:border-blue-400/30 hover:shadow-2xl">
+                  <div className="relative z-10">
+                    <div className="mb-5 flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="relative">
+                          <div className="absolute inset-0 animate-pulse rounded-full bg-blue-400/20" />
+                          <SpinnerIcon className="relative h-5 w-5 animate-spin text-blue-400" />
+                        </div>
+                        <div>
+                          <span className="text-base font-semibold text-blue-100">
+                            Training in Progress
+                          </span>
+                          {currentProgress && (
+                            <div className="mt-0.5 text-xs font-medium text-blue-300/80">
+                              Epoch {currentProgress.epoch} of{" "}
+                              {currentProgress.total_epochs}
+                            </div>
+                          )}
+                        </div>
                       </div>
+                      {currentProgress && (
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-blue-100">
+                            {currentProgress.progress.toFixed(1)}%
+                          </div>
+                          <div className="text-xs text-blue-300/70">
+                            Complete
+                          </div>
+                        </div>
+                      )}
                     </div>
+
                     {currentProgress && (
-                      <span className="text-xs text-blue-300">
-                        Epoch {currentProgress.epoch} of{" "}
-                        {currentProgress.total_epochs}
-                      </span>
+                      <>
+                        {/* Overall Progress Bar */}
+                        <div className="mb-6">
+                          <div className="h-3 w-full overflow-hidden rounded-full bg-blue-950/50 shadow-inner">
+                            <div
+                              className="h-full rounded-full bg-blue-500 shadow-sm transition-all duration-500 ease-out"
+                              style={{ width: `${currentProgress.progress}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Metrics Stack */}
+                        <div className="space-y-4">
+                          {/* Train Accuracy */}
+                          <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+                            <div className="mb-3 flex items-center justify-between">
+                              <span className="text-sm font-medium text-blue-200/90">
+                                Train Accuracy
+                              </span>
+                              <span className="text-xl font-bold text-blue-100">
+                                {Math.round(currentProgress.train_accuracy)}%
+                              </span>
+                            </div>
+                            <div className="h-2.5 overflow-hidden rounded-full bg-blue-900/40 shadow-inner">
+                              <div
+                                className="h-full rounded-full bg-emerald-500 shadow-sm transition-all duration-500"
+                                style={{
+                                  width: `${Math.min(100, Math.max(0, currentProgress.train_accuracy))}%`,
+                                }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Test Accuracy */}
+                          <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+                            <div className="mb-3 flex items-center justify-between">
+                              <span className="text-sm font-medium text-blue-200/90">
+                                Test Accuracy
+                              </span>
+                              <span className="text-xl font-bold text-blue-100">
+                                {Math.round(currentProgress.test_accuracy)}%
+                              </span>
+                            </div>
+                            <div className="h-2.5 overflow-hidden rounded-full bg-blue-900/40 shadow-inner">
+                              <div
+                                className="h-full rounded-full bg-cyan-500 shadow-sm transition-all duration-500"
+                                style={{
+                                  width: `${Math.min(100, Math.max(0, currentProgress.test_accuracy))}%`,
+                                }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Train Loss */}
+                          <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+                            <div className="mb-3 flex items-center justify-between">
+                              <span className="text-sm font-medium text-blue-200/90">
+                                Train Loss
+                              </span>
+                              <span className="font-mono text-lg font-semibold text-blue-100">
+                                {currentProgress.train_loss.toFixed(4)}
+                              </span>
+                            </div>
+                            <div className="h-2.5 overflow-hidden rounded-full bg-blue-900/40 shadow-inner">
+                              <div
+                                className="h-full rounded-full bg-amber-500 shadow-sm transition-all duration-500"
+                                style={{
+                                  width: `${Math.max(10, 100 - currentProgress.train_loss * 20)}%`,
+                                }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Test Loss */}
+                          <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+                            <div className="mb-3 flex items-center justify-between">
+                              <span className="text-sm font-medium text-blue-200/90">
+                                Test Loss
+                              </span>
+                              <span className="font-mono text-lg font-semibold text-blue-100">
+                                {currentProgress.test_loss.toFixed(4)}
+                              </span>
+                            </div>
+                            <div className="h-2.5 overflow-hidden rounded-full bg-blue-900/40 shadow-inner">
+                              <div
+                                className="h-full rounded-full bg-rose-500 shadow-sm transition-all duration-500"
+                                style={{
+                                  width: `${Math.max(10, 100 - currentProgress.test_loss * 20)}%`,
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </>
                     )}
                   </div>
-
-                  {currentProgress && (
-                    <>
-                      {/* Overall Progress Bar */}
-                      <div className="mt-3 h-2 w-full rounded-full bg-blue-900">
-                        <div
-                          className="h-2 rounded-full bg-blue-500 transition-all duration-300"
-                          style={{ width: `${currentProgress.progress}%` }}
-                        ></div>
-                      </div>
-                      <div className="mt-1 text-center">
-                        <span className="text-xs text-blue-300">
-                          {currentProgress.progress.toFixed(1)}% Complete
-                        </span>
-                      </div>
-
-                      {/* Metrics with Progress Bars */}
-                      <div className="mt-4 space-y-3">
-                        {/* Train Accuracy */}
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-blue-300">
-                              Train Accuracy
-                            </span>
-                            <span className="text-base font-medium text-blue-100">
-                              {Math.round(currentProgress.train_accuracy)}%
-                            </span>
-                          </div>
-                          <div className="h-2 overflow-hidden rounded-full bg-blue-900/60">
-                            <div
-                              className="h-full rounded-full bg-blue-500 transition-all duration-300"
-                              style={{
-                                width: `${Math.min(100, Math.max(0, currentProgress.train_accuracy))}%`,
-                              }}
-                            />
-                          </div>
-                        </div>
-
-                        {/* Test Accuracy */}
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-blue-300">
-                              Test Accuracy
-                            </span>
-                            <span className="text-base font-medium text-blue-100">
-                              {Math.round(currentProgress.test_accuracy)}%
-                            </span>
-                          </div>
-                          <div className="h-2 overflow-hidden rounded-full bg-blue-900/60">
-                            <div
-                              className="h-full rounded-full bg-blue-400 transition-all duration-300"
-                              style={{
-                                width: `${Math.min(100, Math.max(0, currentProgress.test_accuracy))}%`,
-                              }}
-                            />
-                          </div>
-                        </div>
-
-                        {/* Train Loss (inverted for progress bar) */}
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-blue-300">
-                              Train Loss
-                            </span>
-                            <span className="font-mono text-xs text-blue-200">
-                              {currentProgress.train_loss.toFixed(4)}
-                            </span>
-                          </div>
-                          <div className="h-2 overflow-hidden rounded-full bg-blue-900/60">
-                            <div
-                              className="h-full rounded-full bg-blue-600 transition-all duration-300"
-                              style={{
-                                width: `${Math.max(10, 100 - currentProgress.train_loss * 20)}%`,
-                              }}
-                            />
-                          </div>
-                        </div>
-
-                        {/* Test Loss (inverted for progress bar) */}
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-blue-300">
-                              Test Loss
-                            </span>
-                            <span className="font-mono text-xs text-blue-200">
-                              {currentProgress.test_loss.toFixed(4)}
-                            </span>
-                          </div>
-                          <div className="h-2 overflow-hidden rounded-full bg-blue-900/60">
-                            <div
-                              className="h-full rounded-full bg-blue-600 transition-all duration-300"
-                              style={{
-                                width: `${Math.max(10, 100 - currentProgress.test_loss * 20)}%`,
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  )}
                 </div>
               )}
 

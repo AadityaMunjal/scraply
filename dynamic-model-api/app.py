@@ -281,6 +281,20 @@ def handle_disconnect():
     print("Client disconnected")
 
 
+active_training = {"is_training": False, "current_progress": None}
+
+
+@socketio.on("check_training_status")
+def handle_check_training_status():
+    emit(
+        "training_status",
+        {
+            "is_training": active_training["is_training"],
+            "current_progress": active_training["current_progress"],
+        },
+    )
+
+
 @app.post("/train-stream")
 def train_stream():
     """Streaming training endpoint that emits progress via WebSocket"""
@@ -295,6 +309,9 @@ def train_stream():
     batch_size = data["batch_size"]
 
     try:
+        active_training["is_training"] = True
+        active_training["current_progress"] = None
+
         model = DynamicModel(layers)
         t = Train(
             model=model,
@@ -307,7 +324,13 @@ def train_stream():
         print("Model initialized successfully! Starting streaming training...")
 
         # Start streaming training with WebSocket emissions
-        results = t.train_test_log_stream(n_epochs, batch_size, socketio)
+        results = t.train_test_log_stream(
+            n_epochs, batch_size, socketio, active_training
+        )
+
+        # Mark training as complete
+        active_training["is_training"] = False
+        active_training["current_progress"] = None
 
         return {
             "status": "training_started",
@@ -316,6 +339,9 @@ def train_stream():
 
     except Exception as e:
         print("Error:", e)
+        # Reset training state on error
+        active_training["is_training"] = False
+        active_training["current_progress"] = None
         socketio.emit("training_error", {"error": str(e)})
         return {"error": str(e)}, 500
 

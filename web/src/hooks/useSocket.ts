@@ -27,6 +27,7 @@ interface UseSocketReturn {
   trainingError: string | null;
   startTraining: (config: any) => void;
   resetTraining: () => void;
+  checkTrainingStatus: () => void;
 }
 
 export const useSocket = (): UseSocketReturn => {
@@ -55,6 +56,9 @@ export const useSocket = (): UseSocketReturn => {
     newSocket.on("connect", () => {
       console.log("Connected to training server");
       setIsConnected(true);
+
+      // Check if there's an ongoing training session
+      newSocket.emit("check_training_status");
     });
 
     newSocket.on("disconnect", () => {
@@ -93,6 +97,19 @@ export const useSocket = (): UseSocketReturn => {
       setIsTrainingActive(false);
     });
 
+    // Handle training status check response
+    newSocket.on("training_status", (data: any) => {
+      console.log("Training status:", data);
+      if (data.is_training) {
+        setIsTrainingActive(true);
+        if (data.current_progress) {
+          setTrainingProgress(data.current_progress);
+        }
+      } else {
+        setIsTrainingActive(false);
+      }
+    });
+
     return () => {
       newSocket.close();
     };
@@ -129,6 +146,12 @@ export const useSocket = (): UseSocketReturn => {
     setIsTrainingActive(false);
   };
 
+  const checkTrainingStatus = () => {
+    if (socketRef.current?.connected) {
+      socketRef.current.emit("check_training_status");
+    }
+  };
+
   return {
     socket,
     isConnected,
@@ -138,5 +161,6 @@ export const useSocket = (): UseSocketReturn => {
     trainingError,
     startTraining,
     resetTraining,
+    checkTrainingStatus,
   };
 };

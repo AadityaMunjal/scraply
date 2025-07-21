@@ -773,7 +773,9 @@ class Train:
 
         return RESULTS
 
-    def train_test_log_stream(self, n_epochs, batch_size, socketio):
+    def train_test_log_stream(
+        self, n_epochs, batch_size, socketio, active_training=None
+    ):
         train_losses = []
         train_accs = []
         test_losses = []
@@ -850,25 +852,25 @@ class Train:
             test_losses.append(avg_test_loss)
             test_accs.append(test_avg_acc)
 
+            # Prepare progress data
+            progress_data = {
+                "epoch": t + 1,
+                "total_epochs": n_epochs,
+                "progress": ((t + 1) / n_epochs) * 100,
+                "train_loss": avg_train_loss,
+                "train_accuracy": train_avg_acc,
+                "test_loss": avg_test_loss,
+                "test_accuracy": test_avg_acc,
+                "train_losses": [{"x": i, "y": v} for i, v in enumerate(train_losses)],
+                "test_losses": [{"x": i, "y": v} for i, v in enumerate(test_losses)],
+            }
+
+            # Update active training state
+            if active_training is not None:
+                active_training["current_progress"] = progress_data
+
             # Emit epoch progress
-            socketio.emit(
-                "epoch_completed",
-                {
-                    "epoch": t + 1,
-                    "total_epochs": n_epochs,
-                    "progress": ((t + 1) / n_epochs) * 100,
-                    "train_loss": avg_train_loss,
-                    "train_accuracy": train_avg_acc,
-                    "test_loss": avg_test_loss,
-                    "test_accuracy": test_avg_acc,
-                    "train_losses": [
-                        {"x": i, "y": v} for i, v in enumerate(train_losses)
-                    ],
-                    "test_losses": [
-                        {"x": i, "y": v} for i, v in enumerate(test_losses)
-                    ],
-                },
-            )
+            socketio.emit("epoch_completed", progress_data)
 
         # Calculate final averages
         avg_train_acc = sum(train_accs) / len(train_accs)
