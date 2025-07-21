@@ -1,6 +1,7 @@
 "use client";
 import { CgSpinnerTwoAlt as SpinnerIcon } from "react-icons/cg";
 import { HiTrash } from "react-icons/hi2";
+import { ResponsiveLine } from "@nivo/line";
 import { getConfig } from "~/util/board.util";
 import { useStartTraining } from "~/hooks/useApi";
 import { useSocket } from "~/hooks/useSocket";
@@ -319,6 +320,158 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                             />
                           </div>
                         </div>
+
+                        {/* Live Loss Graph */}
+                        {currentProgress.train_losses &&
+                          currentProgress.train_losses.length > 0 && (
+                            <div className="mb-6 rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+                              <h4 className="mb-3 text-sm font-medium text-blue-200/90">
+                                Training Loss Progress
+                              </h4>
+                              <div className="h-48 rounded-lg bg-blue-950/30 p-2">
+                                <ResponsiveLine
+                                  data={[
+                                    {
+                                      id: "train_loss",
+                                      data: currentProgress.train_losses,
+                                    },
+                                  ]}
+                                  margin={{
+                                    top: 10,
+                                    right: 20,
+                                    bottom: 30,
+                                    left: 40,
+                                  }}
+                                  enableGridX={false}
+                                  enableGridY={true}
+                                  gridYValues={3}
+                                  xScale={{ type: "point" }}
+                                  yScale={{
+                                    type: "linear",
+                                    min: 0,
+                                    max: "auto",
+                                    stacked: false,
+                                    reverse: false,
+                                  }}
+                                  colors={["#10b981"]}
+                                  theme={{
+                                    background: "transparent",
+                                    text: {
+                                      fontSize: 10,
+                                      fill: "#93c5fd",
+                                      outlineWidth: 0,
+                                      outlineColor: "transparent",
+                                    },
+                                    tooltip: {
+                                      container: {
+                                        background: "#1e3a8a",
+                                        color: "#dbeafe",
+                                        fontSize: 11,
+                                        borderRadius: "6px",
+                                        boxShadow:
+                                          "0 4px 6px -1px rgba(0, 0, 0, 0.3)",
+                                        border: "1px solid #3b82f6",
+                                      },
+                                    },
+                                    axis: {
+                                      domain: {
+                                        line: {
+                                          stroke: "#3b82f6",
+                                          strokeWidth: 1,
+                                        },
+                                      },
+                                      legend: {
+                                        text: {
+                                          fontSize: 10,
+                                          fill: "#dbeafe",
+                                        },
+                                      },
+                                      ticks: {
+                                        line: {
+                                          stroke: "#3b82f6",
+                                          strokeWidth: 1,
+                                        },
+                                        text: {
+                                          fontSize: 9,
+                                          fill: "#93c5fd",
+                                        },
+                                      },
+                                    },
+                                    grid: {
+                                      line: {
+                                        stroke: "#3b82f6",
+                                        strokeWidth: 1,
+                                        strokeOpacity: 0.2,
+                                      },
+                                    },
+                                    crosshair: {
+                                      line: {
+                                        stroke: "#93c5fd",
+                                        strokeWidth: 1,
+                                        strokeOpacity: 0.75,
+                                      },
+                                    },
+                                  }}
+                                  axisTop={null}
+                                  axisRight={null}
+                                  axisBottom={{
+                                    tickSize: 3,
+                                    tickPadding: 3,
+                                    tickRotation: 0,
+                                    legend: "Epoch",
+                                    legendOffset: 25,
+                                    legendPosition: "middle",
+                                    tickValues:
+                                      currentProgress.train_losses.length > 15
+                                        ? Array.from(
+                                            {
+                                              length: Math.min(
+                                                8,
+                                                currentProgress.train_losses
+                                                  .length,
+                                              ),
+                                            },
+                                            (_, i) =>
+                                              Math.floor(
+                                                (i *
+                                                  (currentProgress.train_losses
+                                                    .length -
+                                                    1)) /
+                                                  (Math.min(
+                                                    8,
+                                                    currentProgress.train_losses
+                                                      .length,
+                                                  ) -
+                                                    1),
+                                              ),
+                                          )
+                                        : undefined,
+                                  }}
+                                  axisLeft={{
+                                    tickSize: 3,
+                                    tickPadding: 3,
+                                    tickRotation: 0,
+                                    legend: "Loss",
+                                    legendOffset: -35,
+                                    legendPosition: "middle",
+                                  }}
+                                  pointSize={3}
+                                  pointColor="#10b981"
+                                  pointBorderWidth={1}
+                                  pointBorderColor="#ffffff"
+                                  pointLabelYOffset={-12}
+                                  useMesh={true}
+                                  curve="monotoneX"
+                                  lineWidth={2}
+                                  enableArea={true}
+                                  areaOpacity={0.15}
+                                  legends={[]}
+                                  animate={true}
+                                  motionConfig="gentle"
+                                />
+                              </div>
+                            </div>
+                          )}
 
                         {/* Metrics Stack */}
                         <div className="space-y-4">
