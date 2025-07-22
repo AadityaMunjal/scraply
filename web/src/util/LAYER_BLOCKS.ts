@@ -4,7 +4,7 @@ export const LAYER_BLOCKS: LayersToolbarMap = [
   {
     id: "linear",
     label: "Linear",
-    color: "#00B359",
+    color: "#CD6155", // darker coral
     activationFunction: "ReLU" as ActivationFunction,
     params: {
       inputNeurons: 8,
@@ -14,7 +14,7 @@ export const LAYER_BLOCKS: LayersToolbarMap = [
   {
     id: "conv",
     label: "Conv",
-    color: "#E6A000",
+    color: "#DC7633", // darker orange
     activationFunction: "ReLU" as ActivationFunction,
     params: {
       inputNeurons: 8,
@@ -28,7 +28,7 @@ export const LAYER_BLOCKS: LayersToolbarMap = [
   {
     id: "rnn",
     label: "RNN",
-    color: "#E67300",
+    color: "#B7950B", // golden yellow
     activationFunction: "ReLU" as ActivationFunction,
     params: {
       inputNeurons: 8,
@@ -40,7 +40,7 @@ export const LAYER_BLOCKS: LayersToolbarMap = [
   {
     id: "gru",
     label: "GRU",
-    color: "#E63900",
+    color: "#229954", // darker green
     activationFunction: "ReLU" as ActivationFunction,
     params: {
       inputNeurons: 8,
@@ -52,7 +52,7 @@ export const LAYER_BLOCKS: LayersToolbarMap = [
   {
     id: "flatten",
     label: "Flatten",
-    color: "#E6007A",
+    color: "#138D75", // darker teal
     inputNeurons: 8,
     startDimension: 1,
     endDimension: -1,
@@ -60,7 +60,7 @@ export const LAYER_BLOCKS: LayersToolbarMap = [
   {
     id: "maxpool",
     label: "MaxPool",
-    color: "#0099CC",
+    color: "#2874A6", // darker blue
     params: {
       dimension: 2,
       kernelSize: 3,
@@ -71,7 +71,7 @@ export const LAYER_BLOCKS: LayersToolbarMap = [
   {
     id: "dropout",
     label: "Dropout",
-    color: "#B266FF",
+    color: "#7D3C98", // darker purple
     params: {
       dropout: 0.25,
     },

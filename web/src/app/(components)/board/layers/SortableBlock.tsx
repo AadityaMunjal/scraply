@@ -26,7 +26,7 @@ const SortableBlock = ({ id, label, color }: SortableBlockProps) => {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
-    minWidth: "40%",
+    minWidth: "50%",
   };
 
   const block = canvasBlocks.find((block: UILayer) => block.id === id);
