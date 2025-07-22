@@ -73,14 +73,14 @@ const DroppableCanvas = ({}: DroppableCanvasProps) => {
         ))}
       </SortableContext>
 
-      <div className="overlayblock-div mt-2 min-w-[40%]">
+      <div className="overlayblock-div mt-3 min-w-[50%]">
         <div className="group relative flex items-center gap-2">
           <div
             ref={setEmptySkeletonRef}
-            className={`flex-1 cursor-pointer rounded-xl border-2 border-dashed p-4 text-gray-400 shadow-lg ring-1 backdrop-blur-sm transition-all duration-300 ${
+            className={`flex-1 rounded-xl border-2 border-dashed p-4 text-zinc-400 shadow-lg backdrop-blur-sm transition-all duration-300 ${
               isOverEmptySkeleton
-                ? "border-blue-400 bg-blue-900/30 text-blue-300 shadow-blue-400/20 ring-blue-400/50"
-                : "border-gray-500 bg-zinc-800/50 ring-gray-500/20 hover:shadow-xl hover:ring-gray-400/30"
+                ? "border-blue-400 bg-blue-900/30 text-blue-300 shadow-blue-400/20"
+                : "border-zinc-700 bg-zinc-900 hover:shadow-xl"
             }`}
           >
             <div className="flex items-center justify-center">

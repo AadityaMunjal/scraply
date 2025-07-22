@@ -56,14 +56,14 @@ const OtherParamsInputs = ({
           return (
             <div
               key={paramKey}
-              className="flex items-center justify-between gap-2"
+              className="flex items-center justify-between gap-3"
             >
-              <label className="min-w-fit text-xs font-medium text-white/80">
+              <label className="min-w-fit text-sm font-medium text-zinc-300">
                 {config.label}
               </label>
               <input
                 type="number"
-                className="h-6 w-12 rounded-md border-0 bg-white/90 text-center text-xs text-slate-900 shadow-sm outline-none backdrop-blur-sm transition-all duration-200 focus:ring-2 focus:ring-white/50"
+                className="h-8 w-14 rounded-md border border-zinc-700 bg-zinc-800 text-center text-sm text-zinc-100 shadow-sm outline-none transition-all duration-200 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400"
                 value={paramValue}
                 min={config.min}
                 step={config.step || 1}
@@ -123,23 +123,27 @@ const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
   return (
     <div className="group relative flex items-center gap-2">
       <div
-        className="flex-1 cursor-grab rounded-xl p-4 text-white shadow-lg ring-1 ring-white/10 backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:ring-white/20"
+        className="w-full min-w-80 flex-1 cursor-grab rounded-lg border-l-4 bg-zinc-900 p-5 text-white shadow-xl transition-all duration-100 hover:bg-zinc-800/30 hover:shadow-2xl"
         style={{
-          background: `linear-gradient(135deg, ${color}CC 0%, ${color}E6 100%)`,
+          borderLeftColor: color,
+          boxShadow: `0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), 4px 0 20px -4px ${color}30`,
         }}
       >
         {/* Header with layer name and neuron inputs */}
-        <div className="mb-3 flex items-start justify-between">
+        <div className="mb-4 flex items-start justify-between">
           <div className="flex flex-col">
-            <h3 className="text-base font-semibold tracking-wide">{label}</h3>
+            <h3 className="text-lg font-bold tracking-tight text-zinc-100">
+              {label}
+            </h3>
           </div>
 
           {hasNeurons(block) && (
-            <div className="flex gap-1.5">
-              <div className="flex flex-col items-center gap-0.5">
-                <label className="text-xs font-medium text-white/70">In</label>
+            <div className="flex gap-3">
+              <div className="flex flex-col items-center gap-1">
+                <label className="text-xs font-medium text-zinc-400">In</label>
                 <input
-                  className="h-7 w-10 rounded-md border-0 bg-white/90 text-center text-xs text-slate-900 shadow-sm outline-none backdrop-blur-sm transition-all duration-200 focus:ring-2 focus:ring-white/50"
+                  className="h-8 w-12 rounded-md border border-zinc-700 bg-zinc-800 text-center text-sm text-zinc-100 shadow-sm outline-none transition-all duration-200 focus:border-zinc-500 focus:ring-1"
+                  style={{ "--accent-color": color } as React.CSSProperties}
                   type="number"
                   value={block.params.inputNeurons}
                   onChange={(e) => {
@@ -148,10 +152,11 @@ const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
                   }}
                 />
               </div>
-              <div className="flex flex-col items-center gap-0.5">
-                <label className="text-xs font-medium text-white/70">Out</label>
+              <div className="flex flex-col items-center gap-1">
+                <label className="text-xs font-medium text-zinc-400">Out</label>
                 <input
-                  className="h-7 w-10 rounded-md border-0 bg-white/90 text-center text-xs text-slate-900 shadow-sm outline-none backdrop-blur-sm transition-all duration-200 focus:ring-2 focus:ring-white/50"
+                  className="h-8 w-12 rounded-md border border-zinc-700 bg-zinc-800 text-center text-sm text-zinc-100 shadow-sm outline-none transition-all duration-200 focus:border-zinc-500 focus:ring-1"
+                  style={{ "--accent-color": color } as React.CSSProperties}
                   type="number"
                   value={block.params.outputNeurons}
                   onChange={(e) => {
@@ -180,11 +185,11 @@ const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
         {/* Activation function dropdown */}
         {hasActivationFunction(block) && (
           <div className="relative">
-            <label className="mb-1 block text-xs font-medium text-white/70">
+            <label className="mb-2 block text-sm font-medium text-zinc-300">
               Activation
             </label>
             <select
-              className="w-full cursor-pointer rounded-md border-0 bg-white/90 px-3 py-2 text-xs text-slate-900 shadow-sm outline-none backdrop-blur-sm transition-all duration-200 focus:ring-2 focus:ring-white/50"
+              className="w-full cursor-pointer rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 shadow-sm outline-none transition-all duration-200 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400"
               value={block.activationFunction as string}
               onChange={(e) => {
                 const newActivationFunction = e.target.value;
@@ -210,7 +215,7 @@ const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
           e.stopPropagation();
           removeBlock(id);
         }}
-        className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-400/60 text-xs text-white opacity-0 transition-all duration-200 hover:bg-gray-500/80 group-hover:opacity-100"
+        className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-700 text-zinc-400 opacity-0 shadow-lg transition-all duration-200 hover:bg-red-500 hover:text-zinc-200 group-hover:opacity-100"
         title="Remove layer"
       >
         <CrossIcon className="h-4 w-4" />
