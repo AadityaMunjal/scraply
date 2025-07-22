@@ -29,6 +29,7 @@ The heat maps shown when initializing a CNN are generated from a method called P
 Check out the paper [here](https://doi.org/10.2514/6.2024-2766)!
 
 Here are some cool PEEK maps from the CIFAR10 image dataset
+
 <img width="1061" height="792" alt="image" src="https://github.com/user-attachments/assets/d8665169-5657-4e45-b122-6a2dcbb3a3a0" />
 
 ### Coming Soon:
