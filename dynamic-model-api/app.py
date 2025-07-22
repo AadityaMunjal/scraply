@@ -27,8 +27,11 @@ from collections import Counter
 
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:3000"])
-socketio = SocketIO(app, cors_allowed_origins="http://localhost:3000")
+CORS(app, origins=["http://localhost:3000", "https://scraply-prod.vercel.app"])
+socketio = SocketIO(
+    app,
+    cors_allowed_origins=["http://localhost:3000", "https://scraply-prod.vercel.app"],
+)
 
 # # for potential train & streaming:
 
