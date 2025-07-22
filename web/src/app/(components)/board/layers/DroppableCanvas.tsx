@@ -5,10 +5,12 @@ import {
   SortableContext,
 } from "@dnd-kit/sortable";
 import { MdAdd as PlusIcon } from "react-icons/md";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import SortableBlock from "./SortableBlock";
 import { useBoardStore } from "~/state/boardStore";
 import { UILayer } from "~/types/index";
+import PyTorchMiniMap from "./PyTorchMiniMap";
+import { MdCode, MdClose } from "react-icons/md";
 
 interface DroppableCanvasProps {}
 
@@ -16,6 +18,7 @@ const DroppableCanvas = ({}: DroppableCanvasProps) => {
   const { canvasBlocks } = useBoardStore();
   const canvasElementRef = useRef<HTMLDivElement | null>(null);
   const prevCanvasBlocksLength = useRef(canvasBlocks.length);
+  const [showMiniMap, setShowMiniMap] = useState(false);
 
   const { setNodeRef } = useDroppable({
     id: "canvas",
@@ -90,6 +93,26 @@ const DroppableCanvas = ({}: DroppableCanvasProps) => {
           <div className="h-6 w-6"></div>
         </div>
       </div>
+
+      {/* Mini-map Toggle Button */}
+      <div className="absolute right-4 top-4 z-30">
+        <button
+          onClick={() => setShowMiniMap(!showMiniMap)}
+          className="rounded bg-zinc-800/70 p-1.5 text-gray-400 shadow-lg backdrop-blur-sm transition-all hover:bg-zinc-700/80 hover:text-gray-200"
+          title={
+            showMiniMap ? "Hide PyTorch Mini-map" : "Show PyTorch Mini-map"
+          }
+        >
+          {showMiniMap ? <MdClose size={14} /> : <MdCode size={14} />}
+        </button>
+      </div>
+
+      {/* PyTorch Mini-map Overlay */}
+      {showMiniMap && (
+        <div className="absolute bottom-4 right-4 top-12 z-20">
+          <PyTorchMiniMap canvasRef={canvasElementRef} />
+        </div>
+      )}
     </div>
   );
 };
