@@ -8,9 +8,6 @@
 <img width="1470" alt="image" src="https://github.com/user-attachments/assets/c661f263-0344-4957-959a-0623e255b627" />
 <img width="1470"alt="image" src="https://github.com/user-attachments/assets/b82bfa15-88c2-45d8-8e39-1e0e248391d2" />
 
-
-
-
 ### Running locally
 
 The scraply server isn't deployed yet, therefore you need to run your own backend!
@@ -25,6 +22,14 @@ The scraply server isn't deployed yet, therefore you need to run your own backen
 
 - 👾 explainability features
 - 👾 outputs tab with model insights
+
+### Explainability:
+
+The heat maps shown when initializing a CNN are generated from a method called PEEK. It was developed by Mackenzie Meni and the NETS Lab at the Florida Institute of Technology. 
+Check out the paper [here](https://doi.org/10.2514/6.2024-2766)!
+
+Here are some cool PEEK maps from the CIFAR10 image dataset
+<img width="1061" height="792" alt="image" src="https://github.com/user-attachments/assets/d8665169-5657-4e45-b122-6a2dcbb3a3a0" />
 
 ### Coming Soon:
 
