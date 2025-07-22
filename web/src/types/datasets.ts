@@ -3,4 +3,5 @@ export type Dataset = {
   inputName: string;
   kind: "regression" | "classification";
   shape: [number, number];
+  summary: string;
 };
