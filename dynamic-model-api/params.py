@@ -71,7 +71,7 @@ ACTIVATIONS = {
     "ReLU": nn.ReLU(),
     "Sigmoid": nn.Sigmoid(),
     "Tanh": nn.Tanh(),
-    "Softmax": nn.Softmax(),
+    "Softmax": nn.Softmax(dim=1), # forcing dim=1, as this is usually the case. 
     "LeakyReLU": nn.LeakyReLU(),
     "PReLU": nn.PReLU(),
 }
