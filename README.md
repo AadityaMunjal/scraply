@@ -25,7 +25,8 @@ The scraply server isn't deployed yet, therefore you need to run your own backen
 
 ### Explainability:
 
-The heat maps shown when initializing a CNN are generated from a method called PEEK. It was developed by Mackenzie Meni and the NETS Lab at the Florida Institute of Technology. 
+The heat maps shown when initializing a CNN are generated from a method called PEEK[^1]. It was developed by Mackenzie Meni and the NETS Lab at the Florida Institute of Technology. 
+PEEK visualizes neural network decision-making by computing entropy-based maps of hidden feature layers. It is able to create heat maps by highlighting the most information-rich regions in the input.
 Check out the paper [here](https://doi.org/10.2514/6.2024-2766)!
 
 Here are some cool PEEK maps from the CIFAR10 image dataset
@@ -45,3 +46,6 @@ Alan 🧑‍🍳: Cloud Ops
 Mehek 🤓: Backend/AI
 
 Adi 🤩: Frontend/UI
+
+
+[^1]: M. Meni, T. Mahendrakar, O. D. Raney, R. T. White, M. L. Mayo, and K. R. Pilkiewicz (2024). *Taking a PEEK into YOLOv5 for Satellite Component Recognition via Entropy-based Visual Explanations.* AIAA SCITECH 2024 Forum. [https://arc.aiaa.org/doi/abs/10.2514/6.2024-2766](https://arc.aiaa.org/doi/abs/10.2514/6.2024-2766)
