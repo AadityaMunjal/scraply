@@ -6,14 +6,14 @@ const LAYERS: Dataset[] = [
     inputName: "pima",
     kind: "classification",
     shape: [8, 1],
-    summary: "Medical dataset for diabetes prediction using 8 health features.",
+    summary: "Medical dataset for diabetes prediction using 8 health features. Binary output",
   },
   {
     label: "MNIST",
     inputName: "MNIST",
     kind: "classification",
     shape: [784, 10],
-    summary: "Handwritten digit images, 28x28 pixels, 10 output classes total.",
+    summary: "Handwritten digit images, 28x28 grayscale, 10 output classes.",
   },
   {
     label: "FashionMNIST",
@@ -29,7 +29,7 @@ const LAYERS: Dataset[] = [
     kind: "classification",
     shape: [3072, 10],
     summary:
-      "32x32 color images, 10 object classes, diverse real-world objects.",
+      "Everyday images from frogs to fire-trucks, 32x32 color, 10 classes",
   },
 ];
 
