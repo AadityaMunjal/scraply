@@ -17,9 +17,9 @@ export const LAYER_BLOCKS: LayersToolbarMap = [
     color: "#DC7633", // darker orange
     activationFunction: "ReLU" as ActivationFunction,
     params: {
+      dimension: 2,
       inputNeurons: 8,
       outputNeurons: 8,
-      dimension: 2,
       kernelSize: 3,
       stride: 1,
       padding: 1,
