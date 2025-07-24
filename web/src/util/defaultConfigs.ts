@@ -342,6 +342,622 @@ export const DEFAULT_DATASET_CONFIGS: Record<string, UILayer[]> = {
   ],
 };
 
+// // VGGNet-style default configs for each dataset, doesnt include pima. for image datasets only
+// export const VGGNET_DATASET_CONFIGS: Record<string, UILayer[]> = {
+//   MNIST: [
+//     // VGG-like: stack of convs, then FC
+//     {
+//       id: `conv-${Date.now()}-1`,
+//       ...getBlockMeta("Conv"),
+//       activationFunction: "ReLU",
+//       params: {
+//         inputNeurons: 1,
+//         outputNeurons: 64,
+//         dimension: 2 as 2,
+//         kernelSize: 3,
+//         stride: 1,
+//         padding: 1,
+//       },
+//     } as const,
+//     {
+//       id: `conv-${Date.now()}-2`,
+//       ...getBlockMeta("Conv"),
+//       activationFunction: "ReLU",
+//       params: {
+//         inputNeurons: 64,
+//         outputNeurons: 64,
+//         dimension: 2 as 2,
+//         kernelSize: 3,
+//         stride: 1,
+//         padding: 1,
+//       },
+//     } as const,
+//     {
+//       id: `maxpool-${Date.now()}-1`,
+//       ...getBlockMeta("MaxPool"),
+//       params: {
+//         dimension: 2 as 2,
+//         kernelSize: 2,
+//         stride: 2,
+//         padding: 0,
+//       },
+//     } as const,
+//     {
+//       id: `conv-${Date.now()}-3`,
+//       ...getBlockMeta("Conv"),
+//       activationFunction: "ReLU",
+//       params: {
+//         inputNeurons: 64,
+//         outputNeurons: 128,
+//         dimension: 2 as 2,
+//         kernelSize: 3,
+//         stride: 1,
+//         padding: 1,
+//       },
+//     } as const,
+//     {
+//       id: `conv-${Date.now()}-4`,
+//       ...getBlockMeta("Conv"),
+//       activationFunction: "ReLU",
+//       params: {
+//         inputNeurons: 128,
+//         outputNeurons: 128,
+//         dimension: 2 as 2,
+//         kernelSize: 3,
+//         stride: 1,
+//         padding: 1,
+//       },
+//     } as const,
+//     {
+//       id: `maxpool-${Date.now()}-2`,
+//       ...getBlockMeta("MaxPool"),
+//       params: {
+//         dimension: 2 as 2,
+//         kernelSize: 2,
+//         stride: 2,
+//         padding: 0,
+//       },
+//     } as const,
+//     {
+//       id: `flatten-${Date.now()}`,
+//       ...getBlockMeta("Flatten"),
+//       inputNeurons: 3200,
+//       startDimension: 1,
+//       endDimension: -1,
+//     } as const,
+//     {
+//       id: `linear-${Date.now()}-1`,
+//       ...getBlockMeta("Linear"),
+//       activationFunction: "ReLU",
+//       params: {
+//         inputNeurons: 3200,
+//         outputNeurons: 256,
+//       },
+//     } as const,
+//     {
+//       id: `dropout-${Date.now()}-1`,
+//       ...getBlockMeta("Dropout"),
+//       params: {
+//         dropout: 0.5,
+//       },
+//     } as const,
+//     {
+//       id: `linear-${Date.now()}-2`,
+//       ...getBlockMeta("Linear"),
+//       activationFunction: "Softmax",
+//       params: {
+//         inputNeurons: 256,
+//         outputNeurons: 10,
+//       },
+//     } as const,
+//   ],
+//   FashionMNIST: [
+//     {
+//       id: `conv-${Date.now()}-1`,
+//       ...getBlockMeta("Conv"),
+//       activationFunction: "ReLU",
+//       params: {
+//         inputNeurons: 1,
+//         outputNeurons: 64,
+//         dimension: 2 as 2,
+//         kernelSize: 3,
+//         stride: 1,
+//         padding: 1,
+//       },
+//     } as const,
+//     {
+//       id: `conv-${Date.now()}-2`,
+//       ...getBlockMeta("Conv"),
+//       activationFunction: "ReLU",
+//       params: {
+//         inputNeurons: 64,
+//         outputNeurons: 64,
+//         dimension: 2 as 2,
+//         kernelSize: 3,
+//         stride: 1,
+//         padding: 1,
+//       },
+//     } as const,
+//     {
+//       id: `maxpool-${Date.now()}-1`,
+//       ...getBlockMeta("MaxPool"),
+//       params: {
+//         dimension: 2 as 2,
+//         kernelSize: 2,
+//         stride: 2,
+//         padding: 0,
+//       },
+//     } as const,
+//     {
+//       id: `conv-${Date.now()}-3`,
+//       ...getBlockMeta("Conv"),
+//       activationFunction: "ReLU",
+//       params: {
+//         inputNeurons: 64,
+//         outputNeurons: 128,
+//         dimension: 2 as 2,
+//         kernelSize: 3,
+//         stride: 1,
+//         padding: 1,
+//       },
+//     } as const,
+//     {
+//       id: `conv-${Date.now()}-4`,
+//       ...getBlockMeta("Conv"),
+//       activationFunction: "ReLU",
+//       params: {
+//         inputNeurons: 128,
+//         outputNeurons: 128,
+//         dimension: 2 as 2,
+//         kernelSize: 3,
+//         stride: 1,
+//         padding: 1,
+//       },
+//     } as const,
+//     {
+//       id: `maxpool-${Date.now()}-2`,
+//       ...getBlockMeta("MaxPool"),
+//       params: {
+//         dimension: 2 as 2,
+//         kernelSize: 2,
+//         stride: 2,
+//         padding: 0,
+//       },
+//     } as const,
+//     {
+//       id: `flatten-${Date.now()}`,
+//       ...getBlockMeta("Flatten"),
+//       inputNeurons: 3200,
+//       startDimension: 1,
+//       endDimension: -1,
+//     } as const,
+//     {
+//       id: `linear-${Date.now()}-1`,
+//       ...getBlockMeta("Linear"),
+//       activationFunction: "ReLU",
+//       params: {
+//         inputNeurons: 3200,
+//         outputNeurons: 256,
+//       },
+//     } as const,
+//     {
+//       id: `dropout-${Date.now()}-1`,
+//       ...getBlockMeta("Dropout"),
+//       params: {
+//         dropout: 0.5,
+//       },
+//     } as const,
+//     {
+//       id: `linear-${Date.now()}-2`,
+//       ...getBlockMeta("Linear"),
+//       activationFunction: "Softmax",
+//       params: {
+//         inputNeurons: 256,
+//         outputNeurons: 10,
+//       },
+//     } as const,
+//   ],
+//   CIFAR10: [
+//     {
+//       id: `conv-${Date.now()}-1`,
+//       ...getBlockMeta("Conv"),
+//       activationFunction: "ReLU",
+//       params: {
+//         inputNeurons: 3,
+//         outputNeurons: 64,
+//         dimension: 2 as 2,
+//         kernelSize: 3,
+//         stride: 1,
+//         padding: 1,
+//       },
+//     } as const,
+//     {
+//       id: `conv-${Date.now()}-2`,
+//       ...getBlockMeta("Conv"),
+//       activationFunction: "ReLU",
+//       params: {
+//         inputNeurons: 64,
+//         outputNeurons: 64,
+//         dimension: 2 as 2,
+//         kernelSize: 3,
+//         stride: 1,
+//         padding: 1,
+//       },
+//     } as const,
+//     {
+//       id: `maxpool-${Date.now()}-1`,
+//       ...getBlockMeta("MaxPool"),
+//       params: {
+//         dimension: 2 as 2,
+//         kernelSize: 2,
+//         stride: 2,
+//         padding: 0,
+//       },
+//     } as const,
+//     {
+//       id: `conv-${Date.now()}-3`,
+//       ...getBlockMeta("Conv"),
+//       activationFunction: "ReLU",
+//       params: {
+//         inputNeurons: 64,
+//         outputNeurons: 128,
+//         dimension: 2 as 2,
+//         kernelSize: 3,
+//         stride: 1,
+//         padding: 1,
+//       },
+//     } as const,
+//     {
+//       id: `conv-${Date.now()}-4`,
+//       ...getBlockMeta("Conv"),
+//       activationFunction: "ReLU",
+//       params: {
+//         inputNeurons: 128,
+//         outputNeurons: 128,
+//         dimension: 2 as 2,
+//         kernelSize: 3,
+//         stride: 1,
+//         padding: 1,
+//       },
+//     } as const,
+//     {
+//       id: `maxpool-${Date.now()}-2`,
+//       ...getBlockMeta("MaxPool"),
+//       params: {
+//         dimension: 2 as 2,
+//         kernelSize: 2,
+//         stride: 2,
+//         padding: 0,
+//       },
+//     } as const,
+//     {
+//       id: `flatten-${Date.now()}`,
+//       ...getBlockMeta("Flatten"),
+//       inputNeurons: 8192,
+//       startDimension: 1,
+//       endDimension: -1,
+//     } as const,
+//     {
+//       id: `linear-${Date.now()}-1`,
+//       ...getBlockMeta("Linear"),
+//       activationFunction: "ReLU",
+//       params: {
+//         inputNeurons: 8192,
+//         outputNeurons: 512,
+//       },
+//     } as const,
+//     {
+//       id: `dropout-${Date.now()}-1`,
+//       ...getBlockMeta("Dropout"),
+//       params: {
+//         dropout: 0.5,
+//       },
+//     } as const,
+//     {
+//       id: `linear-${Date.now()}-2`,
+//       ...getBlockMeta("Linear"),
+//       activationFunction: "Softmax",
+//       params: {
+//         inputNeurons: 512,
+//         outputNeurons: 10,
+//       },
+//     } as const,
+//   ],
+// };
+
+// // AlexNet-style default configs for each dataset, for image datasets only. doesnt include pima
+// export const ALEXNET_DATASET_CONFIGS: Record<string, UILayer[]> = {
+//   MNIST: [
+//     {
+//       id: `conv-${Date.now()}-1`,
+//       ...getBlockMeta("Conv"),
+//       activationFunction: "ReLU",
+//       params: {
+//         inputNeurons: 1,
+//         outputNeurons: 64,
+//         dimension: 2 as 2,
+//         kernelSize: 5,
+//         stride: 1,
+//         padding: 2,
+//       },
+//     } as const,
+//     {
+//       id: `maxpool-${Date.now()}-1`,
+//       ...getBlockMeta("MaxPool"),
+//       params: {
+//         dimension: 2 as 2,
+//         kernelSize: 2,
+//         stride: 2,
+//         padding: 0,
+//       },
+//     } as const,
+//     {
+//       id: `conv-${Date.now()}-2`,
+//       ...getBlockMeta("Conv"),
+//       activationFunction: "ReLU",
+//       params: {
+//         inputNeurons: 64,
+//         outputNeurons: 192,
+//         dimension: 2 as 2,
+//         kernelSize: 5,
+//         stride: 1,
+//         padding: 2,
+//       },
+//     } as const,
+//     {
+//       id: `maxpool-${Date.now()}-2`,
+//       ...getBlockMeta("MaxPool"),
+//       params: {
+//         dimension: 2 as 2,
+//         kernelSize: 2,
+//         stride: 2,
+//         padding: 0,
+//       },
+//     } as const,
+//     {
+//       id: `flatten-${Date.now()}`,
+//       ...getBlockMeta("Flatten"),
+//       inputNeurons: 1200,
+//       startDimension: 1,
+//       endDimension: -1,
+//     } as const,
+//     {
+//       id: `linear-${Date.now()}-1`,
+//       ...getBlockMeta("Linear"),
+//       activationFunction: "ReLU",
+//       params: {
+//         inputNeurons: 1200,
+//         outputNeurons: 256,
+//       },
+//     } as const,
+//     {
+//       id: `dropout-${Date.now()}-1`,
+//       ...getBlockMeta("Dropout"),
+//       params: {
+//         dropout: 0.5,
+//       },
+//     } as const,
+//     {
+//       id: `linear-${Date.now()}-2`,
+//       ...getBlockMeta("Linear"),
+//       activationFunction: "Softmax",
+//       params: {
+//         inputNeurons: 256,
+//         outputNeurons: 10,
+//       },
+//     } as const,
+//   ],
+//   FashionMNIST: [
+//     {
+//       id: `conv-${Date.now()}-1`,
+//       ...getBlockMeta("Conv"),
+//       activationFunction: "ReLU",
+//       params: {
+//         inputNeurons: 1,
+//         outputNeurons: 64,
+//         dimension: 2 as 2,
+//         kernelSize: 5,
+//         stride: 1,
+//         padding: 2,
+//       },
+//     } as const,
+//     {
+//       id: `maxpool-${Date.now()}-1`,
+//       ...getBlockMeta("MaxPool"),
+//       params: {
+//         dimension: 2 as 2,
+//         kernelSize: 2,
+//         stride: 2,
+//         padding: 0,
+//       },
+//     } as const,
+//     {
+//       id: `conv-${Date.now()}-2`,
+//       ...getBlockMeta("Conv"),
+//       activationFunction: "ReLU",
+//       params: {
+//         inputNeurons: 64,
+//         outputNeurons: 192,
+//         dimension: 2 as 2,
+//         kernelSize: 5,
+//         stride: 1,
+//         padding: 2,
+//       },
+//     } as const,
+//     {
+//       id: `maxpool-${Date.now()}-2`,
+//       ...getBlockMeta("MaxPool"),
+//       params: {
+//         dimension: 2 as 2,
+//         kernelSize: 2,
+//         stride: 2,
+//         padding: 0,
+//       },
+//     } as const,
+//     {
+//       id: `flatten-${Date.now()}`,
+//       ...getBlockMeta("Flatten"),
+//       inputNeurons: 1200,
+//       startDimension: 1,
+//       endDimension: -1,
+//     } as const,
+//     {
+//       id: `linear-${Date.now()}-1`,
+//       ...getBlockMeta("Linear"),
+//       activationFunction: "ReLU",
+//       params: {
+//         inputNeurons: 1200,
+//         outputNeurons: 256,
+//       },
+//     } as const,
+//     {
+//       id: `dropout-${Date.now()}-1`,
+//       ...getBlockMeta("Dropout"),
+//       params: {
+//         dropout: 0.5,
+//       },
+//     } as const,
+//     {
+//       id: `linear-${Date.now()}-2`,
+//       ...getBlockMeta("Linear"),
+//       activationFunction: "Softmax",
+//       params: {
+//         inputNeurons: 256,
+//         outputNeurons: 10,
+//       },
+//     } as const,
+//   ],
+//   CIFAR10: [
+//     {
+//       id: `conv-${Date.now()}-1`,
+//       ...getBlockMeta("Conv"),
+//       activationFunction: "ReLU",
+//       params: {
+//         inputNeurons: 3,
+//         outputNeurons: 64,
+//         dimension: 2 as 2,
+//         kernelSize: 11,
+//         stride: 4,
+//         padding: 2,
+//       },
+//     } as const,
+//     {
+//       id: `maxpool-${Date.now()}-1`,
+//       ...getBlockMeta("MaxPool"),
+//       params: {
+//         dimension: 2 as 2,
+//         kernelSize: 3,
+//         stride: 2,
+//         padding: 0,
+//       },
+//     } as const,
+//     {
+//       id: `conv-${Date.now()}-2`,
+//       ...getBlockMeta("Conv"),
+//       activationFunction: "ReLU",
+//       params: {
+//         inputNeurons: 64,
+//         outputNeurons: 192,
+//         dimension: 2 as 2,
+//         kernelSize: 5,
+//         stride: 1,
+//         padding: 2,
+//       },
+//     } as const,
+//     {
+//       id: `maxpool-${Date.now()}-2`,
+//       ...getBlockMeta("MaxPool"),
+//       params: {
+//         dimension: 2 as 2,
+//         kernelSize: 3,
+//         stride: 2,
+//         padding: 0,
+//       },
+//     } as const,
+//     {
+//       id: `conv-${Date.now()}-3`,
+//       ...getBlockMeta("Conv"),
+//       activationFunction: "ReLU",
+//       params: {
+//         inputNeurons: 192,
+//         outputNeurons: 384,
+//         dimension: 2 as 2,
+//         kernelSize: 3,
+//         stride: 1,
+//         padding: 1,
+//       },
+//     } as const,
+//     {
+//       id: `conv-${Date.now()}-4`,
+//       ...getBlockMeta("Conv"),
+//       activationFunction: "ReLU",
+//       params: {
+//         inputNeurons: 384,
+//         outputNeurons: 256,
+//         dimension: 2 as 2,
+//         kernelSize: 3,
+//         stride: 1,
+//         padding: 1,
+//       },
+//     } as const,
+//     {
+//       id: `conv-${Date.now()}-5`,
+//       ...getBlockMeta("Conv"),
+//       activationFunction: "ReLU",
+//       params: {
+//         inputNeurons: 256,
+//         outputNeurons: 256,
+//         dimension: 2 as 2,
+//         kernelSize: 3,
+//         stride: 1,
+//         padding: 1,
+//       },
+//     } as const,
+//     {
+//       id: `maxpool-${Date.now()}-3`,
+//       ...getBlockMeta("MaxPool"),
+//       params: {
+//         dimension: 2 as 2,
+//         kernelSize: 3,
+//         stride: 2,
+//         padding: 0,
+//       },
+//     } as const,
+//     {
+//       id: `flatten-${Date.now()}`,
+//       ...getBlockMeta("Flatten"),
+//       inputNeurons: 1024,
+//       startDimension: 1,
+//       endDimension: -1,
+//     } as const,
+//     {
+//       id: `linear-${Date.now()}-1`,
+//       ...getBlockMeta("Linear"),
+//       activationFunction: "ReLU",
+//       params: {
+//         inputNeurons: 1024,
+//         outputNeurons: 512,
+//       },
+//     } as const,
+//     {
+//       id: `dropout-${Date.now()}-1`,
+//       ...getBlockMeta("Dropout"),
+//       params: {
+//         dropout: 0.5,
+//       },
+//     } as const,
+//     {
+//       id: `linear-${Date.now()}-2`,
+//       ...getBlockMeta("Linear"),
+//       activationFunction: "Softmax",
+//       params: {
+//         inputNeurons: 512,
+//         outputNeurons: 10,
+//       },
+//     } as const,
+//   ],
+// };
+
 export const generateUniqueBlocks = (datasetName: string): UILayer[] => {
   const baseConfig = DEFAULT_DATASET_CONFIGS[datasetName];
   if (!baseConfig) return [];
