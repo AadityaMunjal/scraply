@@ -507,7 +507,7 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                             </div>
                             <div className="h-2.5 overflow-hidden rounded-full bg-blue-900/40 shadow-inner">
                               <div
-                                className="h-full rounded-full bg-cyan-500 shadow-sm transition-all duration-500"
+                                className="h-full rounded-full bg-zinc-600 shadow-sm transition-all duration-500"
                                 style={{
                                   width: `${Math.min(100, Math.max(0, currentProgress.test_accuracy))}%`,
                                 }}
@@ -527,7 +527,7 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                             </div>
                             <div className="h-2.5 overflow-hidden rounded-full bg-blue-900/40 shadow-inner">
                               <div
-                                className="h-full rounded-full bg-amber-500 shadow-sm transition-all duration-500"
+                                className="h-full rounded-full bg-zinc-600 shadow-sm transition-all duration-500"
                                 style={{
                                   width: `${Math.max(10, 100 - currentProgress.train_loss * 20)}%`,
                                 }}
@@ -547,7 +547,7 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                             </div>
                             <div className="h-2.5 overflow-hidden rounded-full bg-blue-900/40 shadow-inner">
                               <div
-                                className="h-full rounded-full bg-rose-500 shadow-sm transition-all duration-500"
+                                className="h-full rounded-full bg-zinc-600 shadow-sm transition-all duration-500"
                                 style={{
                                   width: `${Math.max(10, 100 - currentProgress.test_loss * 20)}%`,
                                 }}

@@ -123,7 +123,7 @@ const HistoryItem: React.FC<HistoryItemProps> = ({
             <div className="flex items-center gap-3">
               <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-slate-700/50 shadow-inner">
                 <div
-                  className="h-full rounded-full bg-cyan-500 shadow-sm transition-all duration-500"
+                  className="h-full rounded-full bg-zinc-600 shadow-sm transition-all duration-500"
                   style={{
                     width: `${Math.min(100, Math.max(0, trainingRes.avg_test_acc))}%`,
                   }}
@@ -162,7 +162,7 @@ const HistoryItem: React.FC<HistoryItemProps> = ({
             <div className="flex items-center gap-3">
               <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-slate-700/50 shadow-inner">
                 <div
-                  className="h-full rounded-full bg-amber-500 shadow-sm transition-all duration-500"
+                  className="h-full rounded-full bg-zinc-600 shadow-sm transition-all duration-500"
                   style={{
                     width: `${Math.max(10, 100 - trainingRes.avg_train_loss * 20)}%`,
                   }}
@@ -201,7 +201,7 @@ const HistoryItem: React.FC<HistoryItemProps> = ({
             <div className="flex items-center gap-3">
               <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-slate-700/50 shadow-inner">
                 <div
-                  className="h-full rounded-full bg-rose-500 shadow-sm transition-all duration-500"
+                  className="h-full rounded-full bg-zinc-600 shadow-sm transition-all duration-500"
                   style={{
                     width: `${Math.max(10, 100 - trainingRes.avg_test_loss * 20)}%`,
                   }}
