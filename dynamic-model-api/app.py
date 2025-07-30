@@ -33,32 +33,6 @@ socketio = SocketIO(
     cors_allowed_origins=["http://localhost:3000", "https://scraply-prod.vercel.app"],
 )
 
-# # for potential train & streaming:
-
-# # in models.py need function doing the same output way as this:
-# def train_and_stream():
-#     for epoch in range(1, 6):
-#         # Simulate training metrics
-#         data = {"epoch": epoch, "loss": 0.1*epoch, "accuracy": 0.9 - 0.05*epoch}
-#         yield f"data: {data}\n\n"
-#         time.sleep(1)  # simulate time per epoch
-
-#     # After training done, send dummy images base64 encoded
-#     images = []
-#     for i in range(3):  # replace with your 118 images base64 strings
-#         img_b64 = base64.b64encode(b"fake_image_bytes_" + bytes(str(i), 'utf-8')).decode('utf-8')
-#         images.append(img_b64)
-#     yield f"data: {{'status':'done', 'images': {images}}}\n\n"
-
-# # in app.py make an endpoint like this:
-# @app.route('/train-stream')
-# def train_stream():
-#     return Response(train_and_stream(), mimetype='text/event-stream')
-
-# if __name__ == '__main__':
-#     app.run(debug=True)
-
-
 @app.route("/")
 def hello_world():
     return {"data": "hello"}
