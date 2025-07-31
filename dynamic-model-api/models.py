@@ -108,7 +108,6 @@ class DynamicModel(nn.Module):
                     print(f"Layer {layer_type} not recognized or not implemented.")
 
             elif layer_type in ACTIVATIONS.keys():
-            elif layer_type in ACTIVATIONS.keys():
                 component = ACTIVATIONS[layer_type]
 
             else:
