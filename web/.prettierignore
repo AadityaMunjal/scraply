@@ -1,0 +1,36 @@
+# Ignore all Python files
+*.py
+
+# Ignore specific Python files
+**/models.py
+**/dynamic-model-api/**/*.py
+
+# Ignore other common files that shouldn't be formatted by prettier
+*.md
+*.json
+*.yml
+*.yaml
+*.toml
+*.lock
+*.log
+*.txt
+*.csv
+*.dat
+*.pkl
+*.pth
+*.h5
+*.hdf5
+*.npy
+*.npz
+
+# Ignore directories
+node_modules/
+.next/
+.venv/
+__pycache__/
+*.egg-info/
+dist/
+build/
+.coverage/
+.pytest_cache/
+.ruff_cache/ 
