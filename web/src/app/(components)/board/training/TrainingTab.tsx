@@ -228,8 +228,7 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
   return (
     <div className="h-full p-4">
       <div className="mx-auto mb-6 max-w-7xl">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-zinc-100">Training</h1>
+        <div className="flex items-center justify-end">
           <div className="flex items-center space-x-3">
             {!isLiveTraining && (
               <button
