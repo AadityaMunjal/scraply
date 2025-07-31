@@ -33,6 +33,7 @@ socketio = SocketIO(
     cors_allowed_origins=["http://localhost:3000", "https://scraply-prod.vercel.app"],
 )
 
+
 @app.route("/")
 def hello_world():
     return {"data": "hello"}
@@ -258,7 +259,7 @@ def handle_disconnect():
     print("Client disconnected")
 
 
-active_training = {"is_training": False, "current_progress": None}
+active_training = {"is_training": False, "current_progress": None, "is_paused": False}
 
 
 @socketio.on("check_training_status")
@@ -268,8 +269,29 @@ def handle_check_training_status():
         {
             "is_training": active_training["is_training"],
             "current_progress": active_training["current_progress"],
+            "is_paused": active_training["is_paused"],
         },
     )
+
+
+@socketio.on("pause_training")
+def handle_pause_training():
+    if active_training["is_training"]:
+        active_training["is_paused"] = True
+        print("Training paused")
+        emit("training_paused", {"message": "Training has been paused"})
+    else:
+        emit("training_error", {"error": "No active training to pause"})
+
+
+@socketio.on("resume_training")
+def handle_resume_training():
+    if active_training["is_training"] and active_training["is_paused"]:
+        active_training["is_paused"] = False
+        print("Training resumed")
+        emit("training_resumed", {"message": "Training has been resumed"})
+    else:
+        emit("training_error", {"error": "No paused training to resume"})
 
 
 @app.post("/train-stream")
@@ -288,6 +310,7 @@ def train_stream():
     try:
         active_training["is_training"] = True
         active_training["current_progress"] = None
+        active_training["is_paused"] = False
 
         model = DynamicModel(layers)
         t = Train(
@@ -308,6 +331,7 @@ def train_stream():
         # Mark training as complete
         active_training["is_training"] = False
         active_training["current_progress"] = None
+        active_training["is_paused"] = False
 
         return {
             "status": "training_started",
@@ -319,6 +343,7 @@ def train_stream():
         # Reset training state on error
         active_training["is_training"] = False
         active_training["current_progress"] = None
+        active_training["is_paused"] = False
         socketio.emit("training_error", {"error": str(e)})
         return {"error": str(e)}, 500
 

@@ -23,9 +23,12 @@ interface UseSocketReturn {
   isConnected: boolean;
   trainingProgress: TrainingProgress | null;
   isTrainingActive: boolean;
+  isTrainingPaused: boolean;
   trainingCompleted: TrainingCompleted | null;
   trainingError: string | null;
   startTraining: (config: any) => void;
+  pauseTraining: () => void;
+  resumeTraining: () => void;
   resetTraining: () => void;
   checkTrainingStatus: () => void;
 }
@@ -36,6 +39,7 @@ export const useSocket = (): UseSocketReturn => {
   const [trainingProgress, setTrainingProgress] =
     useState<TrainingProgress | null>(null);
   const [isTrainingActive, setIsTrainingActive] = useState(false);
+  const [isTrainingPaused, setIsTrainingPaused] = useState(false);
   const [trainingCompleted, setTrainingCompleted] =
     useState<TrainingCompleted | null>(null);
   const [trainingError, setTrainingError] = useState<string | null>(null);
@@ -102,12 +106,25 @@ export const useSocket = (): UseSocketReturn => {
       console.log("Training status:", data);
       if (data.is_training) {
         setIsTrainingActive(true);
+        setIsTrainingPaused(data.is_paused || false);
         if (data.current_progress) {
           setTrainingProgress(data.current_progress);
         }
       } else {
         setIsTrainingActive(false);
+        setIsTrainingPaused(false);
       }
+    });
+
+    // Handle training pause/resume events
+    newSocket.on("training_paused", (data: any) => {
+      console.log("Training paused:", data);
+      setIsTrainingPaused(true);
+    });
+
+    newSocket.on("training_resumed", (data: any) => {
+      console.log("Training resumed:", data);
+      setIsTrainingPaused(false);
     });
 
     return () => {
@@ -139,11 +156,24 @@ export const useSocket = (): UseSocketReturn => {
     }
   };
 
+  const pauseTraining = () => {
+    if (socketRef.current?.connected) {
+      socketRef.current.emit("pause_training");
+    }
+  };
+
+  const resumeTraining = () => {
+    if (socketRef.current?.connected) {
+      socketRef.current.emit("resume_training");
+    }
+  };
+
   const resetTraining = () => {
     setTrainingProgress(null);
     setTrainingCompleted(null);
     setTrainingError(null);
     setIsTrainingActive(false);
+    setIsTrainingPaused(false);
   };
 
   const checkTrainingStatus = () => {
@@ -157,9 +187,12 @@ export const useSocket = (): UseSocketReturn => {
     isConnected,
     trainingProgress,
     isTrainingActive,
+    isTrainingPaused,
     trainingCompleted,
     trainingError,
     startTraining,
+    pauseTraining,
+    resumeTraining,
     resetTraining,
     checkTrainingStatus,
   };
