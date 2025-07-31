@@ -36,6 +36,7 @@ interface TrainingConfigState {
   // Live training progress
   currentProgress: TrainingProgress | null;
   isLiveTraining: boolean;
+  isTrainingPaused: boolean;
 
   // Configuration actions
   setLoss: (loss: LossFunction) => void;
@@ -54,6 +55,7 @@ interface TrainingConfigState {
   // Live training actions
   setCurrentProgress: (progress: TrainingProgress | null) => void;
   setIsLiveTraining: (isLive: boolean) => void;
+  setIsTrainingPaused: (isPaused: boolean) => void;
 
   // Output
   currentOutput: OutputsResult | null;
@@ -74,6 +76,7 @@ export const useTrainingStore = create<TrainingConfigState>()(
     // Initial live training state
     currentProgress: null,
     isLiveTraining: false,
+    isTrainingPaused: false,
 
     // Config actions
     setLoss: (loss: LossFunction) => {
@@ -145,6 +148,7 @@ export const useTrainingStore = create<TrainingConfigState>()(
         state.openHistoryItemIdx = null;
         state.currentProgress = null;
         state.isLiveTraining = false;
+        state.isTrainingPaused = false;
       });
     },
 
@@ -158,6 +162,12 @@ export const useTrainingStore = create<TrainingConfigState>()(
     setIsLiveTraining: (isLive: boolean) => {
       set((state) => {
         state.isLiveTraining = isLive;
+      });
+    },
+
+    setIsTrainingPaused: (isPaused: boolean) => {
+      set((state) => {
+        state.isTrainingPaused = isPaused;
       });
     },
 
