@@ -31,9 +31,12 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
     isConnected,
     trainingProgress,
     isTrainingActive,
+    isTrainingPaused: socketTrainingPaused,
     trainingCompleted,
     trainingError,
     startTraining: startSocketTraining,
+    pauseTraining,
+    resumeTraining,
     resetTraining,
     checkTrainingStatus,
   } = useSocket();
@@ -65,8 +68,10 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
     // Live training state
     currentProgress,
     isLiveTraining,
+    isTrainingPaused: liveTrainingPaused,
     setCurrentProgress,
     setIsLiveTraining,
+    setIsTrainingPaused,
   } = useTrainingStore();
 
   // Handle live training progress updates
@@ -75,6 +80,11 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
       setCurrentProgress(trainingProgress);
     }
   }, [trainingProgress, setCurrentProgress]);
+
+  // Handle training pause state updates from socket
+  useEffect(() => {
+    setIsTrainingPaused(socketTrainingPaused);
+  }, [socketTrainingPaused, setIsTrainingPaused]);
 
   // Check training status when component mounts or connection is reestablished
   useEffect(() => {
@@ -174,6 +184,14 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
     }
   };
 
+  const handlePauseResume = () => {
+    if (liveTrainingPaused) {
+      resumeTraining();
+    } else {
+      pauseTraining();
+    }
+  };
+
   const isTrainingInProgress =
     isTraining || startTrainingMutation.isPending || isLiveTraining;
 
@@ -213,24 +231,64 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
 
             {/* Train Button */}
             <div className="mt-6 border-t border-zinc-700 pt-6">
-              <button
-                disabled={isTrainingInProgress}
-                className={`w-full rounded-xl px-6 py-3 text-base font-medium transition-all duration-200 ${
-                  isTrainingInProgress
-                    ? "cursor-not-allowed bg-zinc-800 text-zinc-600"
-                    : "bg-blue-600 text-white shadow-sm hover:bg-blue-700 hover:shadow-md active:scale-[0.99]"
-                }`}
-                onClick={handleTrain}
-              >
-                {isTrainingInProgress ? (
-                  <div className="flex items-center justify-center space-x-3">
-                    <SpinnerIcon className="h-5 w-5 animate-spin" />
-                    <span>Training Model...</span>
-                  </div>
-                ) : (
-                  <span>Start Training</span>
+              <div className="space-y-3">
+                <button
+                  disabled={isTrainingInProgress}
+                  className={`w-full rounded-xl px-6 py-3 text-base font-medium transition-all duration-200 ${
+                    isTrainingInProgress
+                      ? "cursor-not-allowed bg-zinc-800 text-zinc-600"
+                      : "bg-blue-600 text-white shadow-sm hover:bg-blue-700 hover:shadow-md active:scale-[0.99]"
+                  }`}
+                  onClick={handleTrain}
+                >
+                  {isTrainingInProgress ? (
+                    <div className="flex items-center justify-center space-x-3">
+                      <SpinnerIcon className="h-5 w-5 animate-spin" />
+                      <span>Training Model...</span>
+                    </div>
+                  ) : (
+                    <span>Start Training</span>
+                  )}
+                </button>
+
+                {/* Pause/Resume Button - Only show during training */}
+                {isLiveTraining && (
+                  <button
+                    className={`w-full rounded-xl px-6 py-3 text-base font-medium transition-all duration-200 ${
+                      liveTrainingPaused
+                        ? "bg-green-600 text-white shadow-sm hover:bg-green-700 hover:shadow-md active:scale-[0.99]"
+                        : "bg-yellow-600 text-white shadow-sm hover:bg-yellow-700 hover:shadow-md active:scale-[0.99]"
+                    }`}
+                    onClick={handlePauseResume}
+                  >
+                    <div className="flex items-center justify-center space-x-2">
+                      {liveTrainingPaused ? (
+                        <>
+                          <svg
+                            className="h-5 w-5"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path d="M8 5v10l7-5-7-5z" />
+                          </svg>
+                          <span>Resume Training</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg
+                            className="h-5 w-5"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path d="M5.5 3.5A1.5 1.5 0 017 2h6a1.5 1.5 0 011.5 1.5v13a1.5 1.5 0 01-1.5 1.5H7a1.5 1.5 0 01-1.5-1.5v-13z" />
+                          </svg>
+                          <span>Pause Training</span>
+                        </>
+                      )}
+                    </div>
+                  </button>
                 )}
-              </button>
+              </div>
             </div>
           </div>
 
@@ -282,17 +340,36 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                     <div className="mb-5 flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <div className="relative">
-                          <div className="absolute inset-0 animate-pulse rounded-full bg-blue-400/20" />
-                          <SpinnerIcon className="relative h-5 w-5 animate-spin text-blue-400" />
+                          {liveTrainingPaused ? (
+                            <svg
+                              className="h-5 w-5 text-yellow-400"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path d="M5.5 3.5A1.5 1.5 0 017 2h6a1.5 1.5 0 011.5 1.5v13a1.5 1.5 0 01-1.5 1.5H7a1.5 1.5 0 01-1.5-1.5v-13z" />
+                            </svg>
+                          ) : (
+                            <>
+                              <div className="absolute inset-0 animate-pulse rounded-full bg-blue-400/20" />
+                              <SpinnerIcon className="relative h-5 w-5 animate-spin text-blue-400" />
+                            </>
+                          )}
                         </div>
                         <div>
                           <span className="text-base font-semibold text-blue-100">
-                            Training in Progress
+                            {liveTrainingPaused
+                              ? "Training Paused"
+                              : "Training in Progress"}
                           </span>
                           {currentProgress && (
                             <div className="mt-0.5 text-xs font-medium text-blue-300/80">
                               Epoch {currentProgress.epoch} of{" "}
                               {currentProgress.total_epochs}
+                              {liveTrainingPaused && (
+                                <span className="ml-2 rounded-full bg-yellow-500/20 px-2 py-0.5 text-yellow-300">
+                                  PAUSED
+                                </span>
+                              )}
                             </div>
                           )}
                         </div>
