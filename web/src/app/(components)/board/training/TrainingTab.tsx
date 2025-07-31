@@ -1,6 +1,7 @@
 "use client";
 import { CgSpinnerTwoAlt as SpinnerIcon } from "react-icons/cg";
 import { HiTrash } from "react-icons/hi2";
+import { FaPlay, FaPause, FaStop } from "react-icons/fa";
 import { ResponsiveLine } from "@nivo/line";
 import { getConfig } from "~/util/board.util";
 import { useStartTraining } from "~/hooks/useApi";
@@ -37,6 +38,7 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
     startTraining: startSocketTraining,
     pauseTraining,
     resumeTraining,
+    stopTraining,
     resetTraining,
     checkTrainingStatus,
   } = useSocket();
@@ -85,6 +87,24 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
   useEffect(() => {
     setIsTrainingPaused(socketTrainingPaused);
   }, [socketTrainingPaused, setIsTrainingPaused]);
+
+  // Handle training stop events
+  useEffect(() => {
+    if (!isTrainingActive && isLiveTraining) {
+      // Training was stopped from backend
+      setIsLiveTraining(false);
+      setIsTraining(false);
+      setIsTrainingPaused(false);
+      setCurrentProgress(null);
+    }
+  }, [
+    isTrainingActive,
+    isLiveTraining,
+    setIsLiveTraining,
+    setIsTraining,
+    setIsTrainingPaused,
+    setCurrentProgress,
+  ]);
 
   // Check training status when component mounts or connection is reestablished
   useEffect(() => {
@@ -192,16 +212,92 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
     }
   };
 
+  const handleStopTraining = () => {
+    stopTraining();
+
+    setIsTraining(false);
+    setIsLiveTraining(false);
+    setIsTrainingPaused(false);
+    setCurrentProgress(null);
+    resetTraining();
+  };
+
   const isTrainingInProgress =
     isTraining || startTrainingMutation.isPending || isLiveTraining;
 
   return (
-    <div className="h-full p-6">
-      <div className="mx-auto grid h-full max-w-7xl grid-cols-1 gap-8 lg:grid-cols-2">
+    <div className="h-full p-4">
+      <div className="mx-auto mb-6 max-w-7xl">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-zinc-100">Training</h1>
+          <div className="flex items-center space-x-3">
+            {!isLiveTraining && (
+              <button
+                disabled={isTrainingInProgress}
+                className={`flex items-center space-x-2 rounded-lg px-4 py-2 text-sm font-medium shadow-sm transition-all duration-200 ${
+                  isTrainingInProgress
+                    ? "cursor-not-allowed bg-zinc-800 text-zinc-500 shadow-none"
+                    : "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md active:scale-95"
+                }`}
+                onClick={handleTrain}
+              >
+                {isTrainingInProgress ? (
+                  <>
+                    <SpinnerIcon className="h-4 w-4 animate-spin" />
+                    <span>Training...</span>
+                  </>
+                ) : (
+                  <>
+                    <FaPlay className="h-4 w-4" />
+                    <span>Start Training</span>
+                  </>
+                )}
+              </button>
+            )}
+
+            {/* Pause/Resume Button - Only show during training */}
+            {isLiveTraining && (
+              <button
+                className={`flex items-center space-x-2 rounded-lg px-4 py-2 text-sm font-medium shadow-sm transition-all duration-200 hover:shadow-md active:scale-95 ${
+                  liveTrainingPaused
+                    ? "bg-green-600 text-white hover:bg-green-700"
+                    : "bg-amber-500 text-white hover:bg-amber-600"
+                }`}
+                onClick={handlePauseResume}
+              >
+                {liveTrainingPaused ? (
+                  <>
+                    <FaPlay className="h-4 w-4" />
+                    <span>Resume</span>
+                  </>
+                ) : (
+                  <>
+                    <FaPause className="h-4 w-4" />
+                    <span>Pause</span>
+                  </>
+                )}
+              </button>
+            )}
+
+            {/* Stop Training Button - Only show during training */}
+            {isLiveTraining && (
+              <button
+                className="flex items-center space-x-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:bg-red-700 hover:shadow-md active:scale-95"
+                onClick={handleStopTraining}
+              >
+                <FaStop className="h-4 w-4" />
+                <span>Stop</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="mx-auto grid h-full max-w-7xl grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Training Configuration Section */}
-        <div className="space-y-6">
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-sm">
-            <h2 className="mb-6 text-xl font-semibold text-zinc-100">
+        <div className="space-y-4">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 shadow-sm">
+            <h2 className="mb-4 text-lg font-semibold text-zinc-100">
               Training Configuration
             </h2>
 
@@ -228,84 +324,22 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                 setBatchSize(DEFAULT_TRAINING_CONFIG.batchSize)
               }
             />
-
-            {/* Train Button */}
-            <div className="mt-6 border-t border-zinc-700 pt-6">
-              <div className="space-y-3">
-                <button
-                  disabled={isTrainingInProgress}
-                  className={`w-full rounded-xl px-6 py-3 text-base font-medium transition-all duration-200 ${
-                    isTrainingInProgress
-                      ? "cursor-not-allowed bg-zinc-800 text-zinc-600"
-                      : "bg-blue-600 text-white shadow-sm hover:bg-blue-700 hover:shadow-md active:scale-[0.99]"
-                  }`}
-                  onClick={handleTrain}
-                >
-                  {isTrainingInProgress ? (
-                    <div className="flex items-center justify-center space-x-3">
-                      <SpinnerIcon className="h-5 w-5 animate-spin" />
-                      <span>Training Model...</span>
-                    </div>
-                  ) : (
-                    <span>Start Training</span>
-                  )}
-                </button>
-
-                {/* Pause/Resume Button - Only show during training */}
-                {isLiveTraining && (
-                  <button
-                    className={`w-full rounded-xl px-6 py-3 text-base font-medium transition-all duration-200 ${
-                      liveTrainingPaused
-                        ? "bg-green-600 text-white shadow-sm hover:bg-green-700 hover:shadow-md active:scale-[0.99]"
-                        : "bg-yellow-600 text-white shadow-sm hover:bg-yellow-700 hover:shadow-md active:scale-[0.99]"
-                    }`}
-                    onClick={handlePauseResume}
-                  >
-                    <div className="flex items-center justify-center space-x-2">
-                      {liveTrainingPaused ? (
-                        <>
-                          <svg
-                            className="h-5 w-5"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path d="M8 5v10l7-5-7-5z" />
-                          </svg>
-                          <span>Resume Training</span>
-                        </>
-                      ) : (
-                        <>
-                          <svg
-                            className="h-5 w-5"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path d="M5.5 3.5A1.5 1.5 0 017 2h6a1.5 1.5 0 011.5 1.5v13a1.5 1.5 0 01-1.5 1.5H7a1.5 1.5 0 01-1.5-1.5v-13z" />
-                          </svg>
-                          <span>Pause Training</span>
-                        </>
-                      )}
-                    </div>
-                  </button>
-                )}
-              </div>
-            </div>
           </div>
 
           {/* Error Display */}
           {(startTrainingMutation.error || trainingError) && (
-            <div className="rounded-xl border border-red-800 bg-red-950 p-4">
-              <div className="flex items-start space-x-3">
+            <div className="rounded-lg border border-red-800 bg-red-950 p-3">
+              <div className="flex items-start space-x-2">
                 <div className="flex-shrink-0">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-red-900">
-                    <span className="text-sm text-red-400">!</span>
+                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-red-900">
+                    <span className="text-xs text-red-400">!</span>
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-red-200">
+                  <h3 className="text-xs font-medium text-red-200">
                     Training Failed
                   </h3>
-                  <p className="mt-1 text-sm text-red-300">
+                  <p className="mt-1 text-xs text-red-300">
                     {trainingError || String(startTrainingMutation.error)}
                   </p>
                 </div>
@@ -315,34 +349,34 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
         </div>
 
         {/* Training History Section */}
-        <div className="space-y-6">
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-sm">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-zinc-100">
+        <div className="space-y-4">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-zinc-100">
                 Training History
               </h2>
               {trainingHistory.length > 0 && (
                 <button
                   onClick={clearHistory}
-                  className="group flex items-center space-x-2 rounded-lg bg-zinc-800 px-3 py-2 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-700"
+                  className="group flex items-center space-x-1 rounded-md bg-zinc-800 px-2 py-1 text-xs font-medium text-zinc-300 transition-colors hover:bg-zinc-700"
                 >
-                  <HiTrash className="h-4 w-4" />
+                  <HiTrash className="h-3 w-3" />
                   <span>Clear All</span>
                 </button>
               )}
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               {/* Live Training Progress */}
               {isLiveTraining && (
-                <div className="group relative overflow-hidden rounded-2xl border border-blue-500/20 bg-zinc-800 p-6 shadow-xl backdrop-blur-sm transition-all duration-300 hover:border-blue-400/30 hover:shadow-2xl">
+                <div className="group relative overflow-hidden rounded-xl border border-blue-500/20 bg-zinc-800 p-4 shadow-lg backdrop-blur-sm transition-all duration-300 hover:border-blue-400/30 hover:shadow-xl">
                   <div className="relative z-10">
-                    <div className="mb-5 flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
+                    <div className="mb-3 flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
                         <div className="relative">
                           {liveTrainingPaused ? (
                             <svg
-                              className="h-5 w-5 text-yellow-400"
+                              className="h-4 w-4 text-yellow-400"
                               fill="currentColor"
                               viewBox="0 0 20 20"
                             >
@@ -351,12 +385,12 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                           ) : (
                             <>
                               <div className="absolute inset-0 animate-pulse rounded-full bg-blue-400/20" />
-                              <SpinnerIcon className="relative h-5 w-5 animate-spin text-blue-400" />
+                              <SpinnerIcon className="relative h-4 w-4 animate-spin text-blue-400" />
                             </>
                           )}
                         </div>
                         <div>
-                          <span className="text-base font-semibold text-blue-100">
+                          <span className="text-sm font-semibold text-blue-100">
                             {liveTrainingPaused
                               ? "Training Paused"
                               : "Training in Progress"}
@@ -366,7 +400,7 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                               Epoch {currentProgress.epoch} of{" "}
                               {currentProgress.total_epochs}
                               {liveTrainingPaused && (
-                                <span className="ml-2 rounded-full bg-yellow-500/20 px-2 py-0.5 text-yellow-300">
+                                <span className="ml-1 rounded bg-yellow-500/20 px-1.5 py-0.5 text-xs text-yellow-300">
                                   PAUSED
                                 </span>
                               )}
@@ -376,7 +410,7 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                       </div>
                       {currentProgress && (
                         <div className="text-right">
-                          <div className="text-lg font-bold text-blue-100">
+                          <div className="text-base font-bold text-blue-100">
                             {currentProgress.progress.toFixed(1)}%
                           </div>
                           <div className="text-xs text-blue-300/70">
@@ -389,8 +423,8 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                     {currentProgress && (
                       <>
                         {/* Overall Progress Bar */}
-                        <div className="mb-6">
-                          <div className="h-3 w-full overflow-hidden rounded-full bg-blue-950/50 shadow-inner">
+                        <div className="mb-4">
+                          <div className="h-2 w-full overflow-hidden rounded-full bg-blue-950/50 shadow-inner">
                             <div
                               className="h-full rounded-full bg-blue-500 shadow-sm transition-all duration-500 ease-out"
                               style={{ width: `${currentProgress.progress}%` }}
@@ -551,18 +585,18 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                           )}
 
                         {/* Metrics Stack */}
-                        <div className="space-y-4">
+                        <div className="space-y-2">
                           {/* Train Accuracy */}
-                          <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
-                            <div className="mb-3 flex items-center justify-between">
-                              <span className="text-sm font-medium text-blue-200/90">
+                          <div className="rounded-lg border border-white/10 bg-white/5 p-2 backdrop-blur-sm">
+                            <div className="mb-1 flex items-center justify-between">
+                              <span className="text-xs font-medium text-blue-200/90">
                                 Train Accuracy
                               </span>
-                              <span className="text-xl font-bold text-blue-100">
+                              <span className="text-sm font-bold text-blue-100">
                                 {Math.round(currentProgress.train_accuracy)}%
                               </span>
                             </div>
-                            <div className="h-2.5 overflow-hidden rounded-full bg-blue-900/40 shadow-inner">
+                            <div className="h-1.5 overflow-hidden rounded-full bg-blue-900/40 shadow-inner">
                               <div
                                 className="h-full rounded-full bg-emerald-500 shadow-sm transition-all duration-500"
                                 style={{
@@ -573,16 +607,16 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                           </div>
 
                           {/* Test Accuracy */}
-                          <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
-                            <div className="mb-3 flex items-center justify-between">
-                              <span className="text-sm font-medium text-blue-200/90">
+                          <div className="rounded-lg border border-white/10 bg-white/5 p-2 backdrop-blur-sm">
+                            <div className="mb-1 flex items-center justify-between">
+                              <span className="text-xs font-medium text-blue-200/90">
                                 Test Accuracy
                               </span>
-                              <span className="text-xl font-bold text-blue-100">
+                              <span className="text-sm font-bold text-blue-100">
                                 {Math.round(currentProgress.test_accuracy)}%
                               </span>
                             </div>
-                            <div className="h-2.5 overflow-hidden rounded-full bg-blue-900/40 shadow-inner">
+                            <div className="h-1.5 overflow-hidden rounded-full bg-blue-900/40 shadow-inner">
                               <div
                                 className="h-full rounded-full bg-zinc-600 shadow-sm transition-all duration-500"
                                 style={{
@@ -593,16 +627,16 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                           </div>
 
                           {/* Train Loss */}
-                          <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
-                            <div className="mb-3 flex items-center justify-between">
-                              <span className="text-sm font-medium text-blue-200/90">
+                          <div className="rounded-lg border border-white/10 bg-white/5 p-2 backdrop-blur-sm">
+                            <div className="mb-1 flex items-center justify-between">
+                              <span className="text-xs font-medium text-blue-200/90">
                                 Train Loss
                               </span>
-                              <span className="font-mono text-lg font-semibold text-blue-100">
+                              <span className="font-mono text-sm font-semibold text-blue-100">
                                 {currentProgress.train_loss.toFixed(4)}
                               </span>
                             </div>
-                            <div className="h-2.5 overflow-hidden rounded-full bg-blue-900/40 shadow-inner">
+                            <div className="h-1.5 overflow-hidden rounded-full bg-blue-900/40 shadow-inner">
                               <div
                                 className="h-full rounded-full bg-zinc-600 shadow-sm transition-all duration-500"
                                 style={{
@@ -613,16 +647,16 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                           </div>
 
                           {/* Test Loss */}
-                          <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
-                            <div className="mb-3 flex items-center justify-between">
-                              <span className="text-sm font-medium text-blue-200/90">
+                          <div className="rounded-lg border border-white/10 bg-white/5 p-2 backdrop-blur-sm">
+                            <div className="mb-1 flex items-center justify-between">
+                              <span className="text-xs font-medium text-blue-200/90">
                                 Test Loss
                               </span>
-                              <span className="font-mono text-lg font-semibold text-blue-100">
+                              <span className="font-mono text-sm font-semibold text-blue-100">
                                 {currentProgress.test_loss.toFixed(4)}
                               </span>
                             </div>
-                            <div className="h-2.5 overflow-hidden rounded-full bg-blue-900/40 shadow-inner">
+                            <div className="h-1.5 overflow-hidden rounded-full bg-blue-900/40 shadow-inner">
                               <div
                                 className="h-full rounded-full bg-zinc-600 shadow-sm transition-all duration-500"
                                 style={{
@@ -651,10 +685,10 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                     />
                   ))
                 : !isLiveTraining && (
-                    <div className="rounded-xl bg-zinc-800 p-8 text-center">
-                      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-700">
+                    <div className="rounded-lg bg-zinc-800 p-6 text-center">
+                      <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-zinc-700">
                         <svg
-                          className="h-6 w-6 text-zinc-400"
+                          className="h-5 w-5 text-zinc-400"
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -667,10 +701,10 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                           />
                         </svg>
                       </div>
-                      <h3 className="mb-2 text-lg font-medium text-zinc-100">
+                      <h3 className="mb-2 text-base font-medium text-zinc-100">
                         No Training History
                       </h3>
-                      <p className="text-sm text-zinc-400">
+                      <p className="text-xs text-zinc-400">
                         Start training your model to see results and metrics
                         here.
                       </p>

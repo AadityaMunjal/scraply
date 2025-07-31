@@ -762,10 +762,12 @@ class Train:
                 time.sleep(0.1)  # Sleep briefly to avoid busy waiting
                 if not active_training.get("is_training", False):
                     # Training was stopped while paused
+                    socketio.emit("training_stopped", {"message": "Training stopped"})
                     return
 
             # Check if training was stopped
             if not active_training or not active_training.get("is_training", False):
+                socketio.emit("training_stopped", {"message": "Training stopped"})
                 return
 
             print(f"Epoch {t + 1}/{n_epochs}...")
