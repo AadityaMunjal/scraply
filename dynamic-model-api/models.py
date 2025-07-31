@@ -71,7 +71,7 @@ class DynamicModel(nn.Module):
             component = None
 
             layer_type = l["kind"]
-            if layer_type in LAYERS.keys():  # is a layer
+            if layer_type in LAYERS.keys():
                 layer_args = l["args"]
                 if layer_type == "Linear":
                     i, o = layer_args
@@ -93,7 +93,7 @@ class DynamicModel(nn.Module):
 
                 elif layer_type == "Flatten":
                     start_dim = 1
-                    end_dim = -1  
+                    end_dim = -1
                     component = nn.Flatten(start_dim, end_dim)
                     # forcing nn.Flatten(1,-1)
 
@@ -105,7 +105,7 @@ class DynamicModel(nn.Module):
                 if component is None:
                     print(f"Layer {layer_type} not recognized or not implemented.")
 
-            elif layer_type in ACTIVATIONS.keys(): 
+            elif layer_type in ACTIVATIONS.keys():
                 component = ACTIVATIONS[layer_type]
 
             else:
@@ -117,7 +117,7 @@ class DynamicModel(nn.Module):
         self.layers = nn.ModuleList(self.layer_list)
 
         # register hooks for convolutional layers only
-        saver = ConditionalActivationSaver(self) 
+        saver = ConditionalActivationSaver(self)
         self._register_conv_hooks(saver.hook)
 
     def _register_conv_hooks(self, hook_fn):
@@ -278,15 +278,12 @@ class Train:
                     class_correct[true_label] += 1
 
             # Calculate accuracy for each class
-            # code is redundant! fix later. refer to per_class_metrics to get 3 lowest class accuracies instead
-            class_accuracy = {}
-            for class_label in range(self.num_classes):
-                if class_total[class_label] > 0:
-                    class_accuracy[class_label] = (class_correct[class_label] / class_total[class_label])
-                else:
-                    class_accuracy[class_label] = 0.0
-
-            # get 3 lowest class acurracies
+            # Use per_class_metrics to get the three lowest class accuracies (lowest first)
+            class_accuracy = {
+                class_idx: per_class_metrics["accuracy"][class_idx]
+                for class_idx in range(len(per_class_metrics["accuracy"]))
+            }
+            
             sorted_classes = sorted(class_accuracy.items(), key=lambda x: x[1])
             lowest_accuracy_classes = [class_label for class_label, accuracy in sorted_classes[:3]]
             lowest_accuracy_classes_info = {}
