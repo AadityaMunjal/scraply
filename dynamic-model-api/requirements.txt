@@ -12,7 +12,8 @@ opencv-python
 scikit-learn
 scipy
 seaborn
-torch # will install cpu version, must download manually to match with machine
-torchaudio # will install cpu version, must download manually to match with machine
-torchvision # will install cpu version, must download manually to match with machine
 nbformat
+# PYTORCH (will install cpu version, must download manually to match with machine):
+torch 
+torchaudio 
+torchvision 
