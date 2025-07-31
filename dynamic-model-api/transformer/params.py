@@ -42,7 +42,6 @@ LAYERS = {
 LOSSES = {
     "BCE": nn.BCELoss(),  # binary cross entropy --> 0 or 1 classification models
     "CrossEntropy": nn.CrossEntropyLoss(),  # multi-class classification models (including CNN)
-    # "MSE": nn.MSELoss() # regression models
     "BCEWithLogitsLoss": nn.BCEWithLogitsLoss(),  # with logits for CNN binary classification
 }
 
