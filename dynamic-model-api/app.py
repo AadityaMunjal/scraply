@@ -59,26 +59,6 @@ def generate():
 
 @app.post("/train")  # this is basically train AND test
 def train():
-    # example data
-    # data = {
-    #     "input": "MNIST",
-    #     "layers": [
-    #         {"kind": "Conv2D", "args": (1, 16, 3)},
-    #         {"kind": "ReLU"},
-    #         {"kind": "MaxPool2D", "args": (2, 2)},
-    #         {"kind": "Conv2D", "args": (16, 32, 3)},
-    #         {"kind": "ReLU"},
-    #         {"kind": "MaxPool2D", "args": (2, 2)},
-    #         {"kind": "Flatten", "args": [1,-1]},
-    #         {"kind": "Linear", "args": (800, 128)}, # supposed to be 32 * 7 * 7
-    #         {"kind": "ReLU"},
-    #         {"kind": "Linear", "args": (128, 10)},
-    #     ],
-    #     "loss": "CrossEntropy",
-    #     "optimizer": {"kind": "Adam", "lr": 0.001},
-    #     "epoch": 5,
-    #     "batch_size": 64,
-    # }
 
     data = request.get_json()
     print("Received data:", data)
