@@ -29,6 +29,7 @@ interface UseSocketReturn {
   startTraining: (config: any) => void;
   pauseTraining: () => void;
   resumeTraining: () => void;
+  stopTraining: () => void;
   resetTraining: () => void;
   checkTrainingStatus: () => void;
 }
@@ -127,6 +128,12 @@ export const useSocket = (): UseSocketReturn => {
       setIsTrainingPaused(false);
     });
 
+    newSocket.on("training_stopped", (data: any) => {
+      console.log("Training stopped:", data);
+      setIsTrainingActive(false);
+      setIsTrainingPaused(false);
+    });
+
     return () => {
       newSocket.close();
     };
@@ -168,6 +175,12 @@ export const useSocket = (): UseSocketReturn => {
     }
   };
 
+  const stopTraining = () => {
+    if (socketRef.current?.connected) {
+      socketRef.current.emit("stop_training");
+    }
+  };
+
   const resetTraining = () => {
     setTrainingProgress(null);
     setTrainingCompleted(null);
@@ -193,6 +206,7 @@ export const useSocket = (): UseSocketReturn => {
     startTraining,
     pauseTraining,
     resumeTraining,
+    stopTraining,
     resetTraining,
     checkTrainingStatus,
   };

@@ -294,6 +294,18 @@ def handle_resume_training():
         emit("training_error", {"error": "No paused training to resume"})
 
 
+@socketio.on("stop_training")
+def handle_stop_training():
+    if active_training["is_training"]:
+        active_training["is_training"] = False
+        active_training["is_paused"] = False
+        active_training["current_progress"] = None
+        print("Training stopped")
+        emit("training_stopped", {"message": "Training has been stopped"})
+    else:
+        emit("training_error", {"error": "No active training to stop"})
+
+
 @app.post("/train-stream")
 def train_stream():
     """Streaming training endpoint that emits progress via WebSocket"""
