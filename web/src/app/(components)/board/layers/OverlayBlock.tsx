@@ -58,12 +58,12 @@ const OtherParamsInputs = ({
               key={paramKey}
               className="flex items-center justify-between gap-3"
             >
-              <label className="min-w-fit text-sm font-medium text-zinc-300">
+              <label className="min-w-fit text-sm font-medium text-white">
                 {config.label}
               </label>
               <input
                 type="number"
-                className="h-8 w-14 rounded-md border border-zinc-700 bg-zinc-800 text-center text-sm text-zinc-100 shadow-sm outline-none transition-all duration-200 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400"
+                className="h-8 w-14 rounded-md border border-gray-300 bg-white text-center text-sm text-gray-900 shadow-sm outline-none transition-all duration-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-400"
                 value={paramValue}
                 min={config.min}
                 step={config.step || 1}
@@ -123,8 +123,9 @@ const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
   return (
     <div className="group relative flex items-center gap-2">
       <div
-        className="w-full min-w-80 flex-1 cursor-grab rounded-lg border-l-4 bg-zinc-900 p-5 text-white shadow-xl transition-all duration-100 hover:bg-zinc-800/30 hover:shadow-2xl"
+        className="w-full min-w-80 flex-1 cursor-grab rounded-lg border-l-4 p-5 text-white shadow-xl transition-all duration-100 hover:shadow-2xl hover:brightness-110"
         style={{
+          backgroundColor: `${color}`,
           borderLeftColor: color,
           boxShadow: `0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), 4px 0 20px -4px ${color}30`,
         }}
@@ -132,7 +133,7 @@ const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
         {/* Header with layer name and neuron inputs */}
         <div className="mb-4 flex items-start justify-between">
           <div className="flex flex-col">
-            <h3 className="text-lg font-bold tracking-tight text-zinc-100">
+            <h3 className="text-lg font-bold tracking-tight text-white">
               {label}
             </h3>
           </div>
@@ -140,9 +141,9 @@ const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
           {hasNeurons(block) && (
             <div className="flex gap-3">
               <div className="flex flex-col items-center gap-1">
-                <label className="text-xs font-medium text-zinc-400">In</label>
+                <label className="text-xs font-medium text-white">In</label>
                 <input
-                  className="h-8 w-12 rounded-md border border-zinc-700 bg-zinc-800 text-center text-sm text-zinc-100 shadow-sm outline-none transition-all duration-200 focus:border-zinc-500 focus:ring-1"
+                  className="h-8 w-12 rounded-md border border-gray-300 bg-white text-center text-sm text-gray-900 shadow-sm outline-none transition-all duration-200 focus:border-blue-500 focus:ring-1"
                   style={{ "--accent-color": color } as React.CSSProperties}
                   type="number"
                   value={block.params.inputNeurons}
@@ -153,9 +154,9 @@ const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
                 />
               </div>
               <div className="flex flex-col items-center gap-1">
-                <label className="text-xs font-medium text-zinc-400">Out</label>
+                <label className="text-xs font-medium text-white">Out</label>
                 <input
-                  className="h-8 w-12 rounded-md border border-zinc-700 bg-zinc-800 text-center text-sm text-zinc-100 shadow-sm outline-none transition-all duration-200 focus:border-zinc-500 focus:ring-1"
+                  className="h-8 w-12 rounded-md border border-gray-300 bg-white text-center text-sm text-gray-900 shadow-sm outline-none transition-all duration-200 focus:border-blue-500 focus:ring-1"
                   style={{ "--accent-color": color } as React.CSSProperties}
                   type="number"
                   value={block.params.outputNeurons}
@@ -185,11 +186,11 @@ const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
         {/* Activation function dropdown */}
         {hasActivationFunction(block) && (
           <div className="relative">
-            <label className="mb-2 block text-sm font-medium text-zinc-300">
+            <label className="mb-2 block text-sm font-medium text-white">
               Activation
             </label>
             <select
-              className="w-full cursor-pointer rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 shadow-sm outline-none transition-all duration-200 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400"
+              className="w-full cursor-pointer rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm outline-none transition-all duration-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-400"
               value={block.activationFunction as string}
               onChange={(e) => {
                 const newActivationFunction = e.target.value;
