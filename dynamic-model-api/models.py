@@ -232,7 +232,7 @@ class Train:
         self.model.feature_save = False
         self.model.eval()  # set model to eval mode
 
-        all_predictions, all_labels, all_indicies = [], [], []
+        all_predictions, all_labels, all_indices = [], [], []
         test_loss, correct, total = 0, 0, 0 
 
         with torch.no_grad():
