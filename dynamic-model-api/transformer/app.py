@@ -23,10 +23,7 @@ import threading
 
 app = Flask(__name__)
 CORS(app, origins=["http://localhost:3000", "https://scraply-prod.vercel.app"])
-socketio = SocketIO(
-    app,
-    cors_allowed_origins=["http://localhost:3000", "https://scraply-prod.vercel.app"],
-)
+socketio = SocketIO(app, cors_allowed_origins=["http://localhost:3000", "https://scraply-prod.vercel.app"],)
 
 @app.route("/")
 def hello_world():
@@ -41,23 +38,6 @@ def health_check():
 
 @app.post("/transformertrain")  # MODEL IS MOVED TO DEVICE INSIDE OF TRAIN FUNCTION
 def transformertrain():
-    # # example arguments
-    # embed_dim = 100
-    # heads = 2
-    # hidden_dim = 2048
-    # # example data
-    # params = {
-    #     "input": "alice", # preprocess
-    #     "layers": [
-    #         {"kind": "Decoder", "args": (embed_dim, heads, hidden_dim)},
-    #         {"kind": "Decoder", "args": (embed_dim, heads, hidden_dim)},
-    #         {"kind": "Output", "args": 0.3},
-    #     ],
-    #     "loss": "CrossEntropy",
-    #     "optimizer": {"kind": "Adam", "lr": 0.001},
-    #     "epoch": 100,
-    #     "batch_size": 32,
-    # }
 
     data = request.get_json()
     print("Received data:", data)
@@ -74,9 +54,7 @@ def transformertrain():
             torch.cuda.empty_cache()  # clear GPU memory
 
         dataset = TransformerData(inp)
-        model = TransformerModel(
-            layers, dataset.vocab_size, dataset.sequence_length
-        )  # model is moved to device in train function
+        model = TransformerModel(layers, dataset.vocab_size, dataset.sequence_length)  # model is moved to device in train function
 
         t = TransformerTrain(
             model=model,
@@ -124,9 +102,6 @@ def transformertest():
         "batch_size": 32,
     }
 
-    inp = data["input"]
-    layers = data["layers"]
-
     temperature = infer_data["temperature"]
     prompt = infer_data["prompt"]
     generate_length = 100  # this should be an actual argument in the future
@@ -140,16 +115,9 @@ def transformertest():
         if torch.cuda.is_available():
             torch.cuda.empty_cache()  # clear GPU memory
 
-        model = TransformerModel(
-            data["layers"], dataset.vocab_size, dataset.sequence_length
-        )
-
+        model = TransformerModel( data["layers"], dataset.vocab_size, dataset.sequence_length)
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-        model.load_state_dict(
-            torch.load("datasets/model2.pth", weights_only=True, map_location=device)
-        )
-
+        model.load_state_dict(torch.load("datasets/model2.pth", weights_only=True, map_location=device))
         print("Model loaded successfully!")
 
         word_to_int = dataset.word_to_int
@@ -159,9 +127,7 @@ def transformertest():
         model.to(device)  # move model to device
 
         text_gen = Inference(model, word_to_int, int_to_word, SEQUENCE_LENGTH)
-        sample = text_gen.generate_text(
-            prompt, generate_length, temperature=temperature, top_k=None
-        )
+        sample = text_gen.generate_text(prompt, generate_length, temperature=temperature, top_k=None)
 
         RESULTS = {"text": sample}
 
