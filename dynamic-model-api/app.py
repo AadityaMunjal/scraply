@@ -24,6 +24,7 @@ import torch.nn.functional as F
 from sklearn.model_selection import train_test_split  # --> pip install scikit-learn
 import math
 from collections import Counter
+import threading
 
 
 app = Flask(__name__)
@@ -306,6 +307,24 @@ def handle_stop_training():
         emit("training_error", {"error": "No active training to stop"})
 
 
+def run_training_background(t, n_epochs, batch_size, socketio, active_training):
+    """Run training in background thread to avoid Flask response conflicts"""
+    try:
+        results = t.train_test_log_stream(
+            n_epochs, batch_size, socketio, active_training
+        )
+        # Mark training as complete
+        active_training["is_training"] = False
+        active_training["current_progress"] = None
+        active_training["is_paused"] = False
+    except Exception as e:
+        print("Background training error:", e)
+        active_training["is_training"] = False
+        active_training["current_progress"] = None
+        active_training["is_paused"] = False
+        socketio.emit("training_error", {"error": str(e)})
+
+
 @app.post("/train-stream")
 def train_stream():
     """Streaming training endpoint that emits progress via WebSocket"""
@@ -335,15 +354,13 @@ def train_stream():
 
         print("Model initialized successfully! Starting streaming training...")
 
-        # Start streaming training with WebSocket emissions
-        results = t.train_test_log_stream(
-            n_epochs, batch_size, socketio, active_training
+        # Start training in background thread to avoid Flask response conflicts
+        training_thread = threading.Thread(
+            target=run_training_background,
+            args=(t, n_epochs, batch_size, socketio, active_training),
         )
-
-        # Mark training as complete
-        active_training["is_training"] = False
-        active_training["current_progress"] = None
-        active_training["is_paused"] = False
+        training_thread.daemon = True
+        training_thread.start()
 
         return {
             "status": "training_started",
