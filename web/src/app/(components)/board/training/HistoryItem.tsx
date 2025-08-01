@@ -1,7 +1,7 @@
-import { TrainingResult, TrainingResultFormat } from "~/types/index";
+import { TrainingResult } from "~/types/index";
 import { ResponsiveLine } from "@nivo/line";
-import { downloadFile, getConfig } from "~/util/board.util";
 import { useTrainingStore } from "~/state/trainingStore";
+import { useDownloadFile } from "~/hooks/useApi";
 
 interface HistoryItemProps {
   idx: number;
@@ -25,6 +25,7 @@ const HistoryItem: React.FC<HistoryItemProps> = ({
   };
 
   const { openHistoryItemIdx, setOpenHistoryItem } = useTrainingStore();
+  const { mutate: downloadFile } = useDownloadFile();
 
   return (
     <div className="group my-4 overflow-hidden rounded-2xl border border-slate-700/50 bg-zinc-900 shadow-xl backdrop-blur-sm transition-all duration-300 hover:shadow-2xl">
@@ -40,21 +41,45 @@ const HistoryItem: React.FC<HistoryItemProps> = ({
             <h3 className="text-xl font-bold text-slate-100">
               Training Run {idx}
             </h3>
-            <svg
-              className={`h-5 w-5 text-slate-400 transition-transform duration-200 ${
-                openHistoryItemIdx === idx ? "rotate-180" : ""
-              }`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  downloadFile(trainingRes.trainingConfig);
+                }}
+                className="rounded-lg bg-zinc-700 p-2 text-zinc-200 transition-colors duration-200 hover:bg-zinc-600"
+                title="Download Python Notebook"
+              >
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+              </button>
+              <svg
+                className={`h-5 w-5 text-slate-400 transition-transform duration-200 ${
+                  openHistoryItemIdx === idx ? "rotate-180" : ""
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </div>
           </div>
         </button>
       </div>
@@ -361,28 +386,6 @@ const HistoryItem: React.FC<HistoryItemProps> = ({
                 {JSON.stringify(trainingRes.trainingConfig, null, 2)}
               </pre>
             </div>
-          </div>
-
-          {/* Download Section */}
-          <div>
-            <button
-              className="w-full rounded-lg bg-zinc-700 px-4 py-3 font-medium text-zinc-200 transition-colors duration-200 hover:bg-zinc-600"
-              // onClick={() => {
-              //   downloadFile(
-              //     getConfig(
-              //   "pima",
-              //   canvasBlocks,
-              //   loss,
-              //   optimizer,
-              //   0.001,
-              //   100,
-              //   10,
-              //     ),
-              //   );
-              // }}
-            >
-              Download Python Notebook
-            </button>
           </div>
         </div>
       )}
