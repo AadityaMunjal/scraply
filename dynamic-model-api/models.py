@@ -29,15 +29,6 @@ import time
 matplotlib.use("Agg")  # Set the backend to non-interactive Agg
 import matplotlib.pyplot as plt
 
-# Import transformer-related classes from the new file
-from transformer_models import (
-    TransformerModel,
-    PositionalEncoding,
-    TransformerData,
-    TransformerTrain,
-    Inference,
-)
-
 # pau code recommendations:
 # - use enums instead of 'conv1d', 'conv2d', etc
 # - make code more readable through function names etc instead of commenting it like crazy
@@ -306,7 +297,7 @@ class Train:
                 class_idx: per_class_metrics["accuracy"][class_idx]
                 for class_idx in range(len(per_class_metrics["accuracy"]))
             }
-            
+
             sorted_classes = sorted(class_accuracy.items(), key=lambda x: x[1])
             lowest_accuracy_classes = [
                 class_label for class_label, accuracy in sorted_classes[:3]
