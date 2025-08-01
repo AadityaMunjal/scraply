@@ -195,7 +195,7 @@ const ClassificationOutput = () => {
             {/* Peek Maps Grid */}
             <div className="space-y-4">
               <div className="text-sm font-semibold text-zinc-300">
-                Feature Maps
+                PEEK Maps
               </div>
               <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                 {imageClassificationOutput.peek_maps.map((peek_map, i) => (
