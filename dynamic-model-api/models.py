@@ -293,22 +293,11 @@ class Train:
 
             # Calculate accuracy for each class
             # Use per_class_metrics to get the three lowest class accuracies (lowest first)
-            class_accuracy = {
-                class_idx: per_class_metrics["accuracy"][class_idx]
-                for class_idx in range(len(per_class_metrics["accuracy"]))
-            }
-
-            sorted_classes = sorted(class_accuracy.items(), key=lambda x: x[1])
-            lowest_accuracy_classes = [
-                class_label for class_label, accuracy in sorted_classes[:3]
-            ]
-            lowest_accuracy_classes_info = {}
-            for class_label in lowest_accuracy_classes:
-                lowest_accuracy_classes_info[class_label] = class_predictions[
-                    class_label
-                ]
-
-            print(f"\n3 lowest accuracy classes: {lowest_accuracy_classes}")
+            # Get per-class accuracy and find the 3 classes with lowest accuracy
+            accuracies = per_class_metrics["accuracy"]
+            lowest_classes = sorted(range(len(accuracies)), key=lambda i: accuracies[i])[:3]
+            lowest_accuracy_classes_info = {c: class_predictions[c] for c in lowest_classes}
+            print(f"\n3 lowest accuracy classes: {lowest_classes}")
 
             print("\nGetting random predictions per class...")
             random_samples = self.get_random_predictions_per_class(
