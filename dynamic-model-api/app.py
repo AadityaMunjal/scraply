@@ -4,12 +4,7 @@ from models import (
     DynamicModel,
     Train,
 )
-from transformer_models import (
-    TransformerModel,
-    TransformerData,
-    TransformerTrain,
-    Inference,
-)
+
 from flask_cors import CORS  # pip install flask-cors (i think)
 from generate import Generate
 
