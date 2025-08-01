@@ -101,9 +101,7 @@ def handle_connect():
 def handle_disconnect():
     print("Client disconnected")
 
-
 active_training = {"is_training": False, "current_progress": None, "is_paused": False}
-
 
 @socketio.on("check_training_status")
 def handle_check_training_status():
@@ -115,7 +113,6 @@ def handle_check_training_status():
             "is_paused": active_training["is_paused"],
         },
     )
-
 
 @socketio.on("pause_training")
 def handle_pause_training():
@@ -136,7 +133,6 @@ def handle_resume_training():
     else:
         emit("training_error", {"error": "No paused training to resume"})
 
-
 @socketio.on("stop_training")
 def handle_stop_training():
     if active_training["is_training"]:
@@ -152,9 +148,7 @@ def handle_stop_training():
 def run_training_background(t, n_epochs, batch_size, socketio, active_training):
     """Run training in background thread to avoid Flask response conflicts"""
     try:
-        results = t.train_test_log_stream(
-            n_epochs, batch_size, socketio, active_training
-        )
+        results = t.train_test_log_stream(n_epochs, batch_size, socketio, active_training)
         # Mark training as complete
         active_training["is_training"] = False
         active_training["current_progress"] = None
