@@ -6,11 +6,7 @@ from torchvision.transforms import ToTensor
 from torch.utils.data import DataLoader, TensorDataset
 import torch.nn.functional as F
 from sklearn.model_selection import train_test_split  # --> pip install scikit-learn
-from sklearn.metrics import (
-    confusion_matrix,
-    classification_report,
-    precision_recall_fscore_support,
-)
+from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
 import math
 from collections import Counter, defaultdict
 import cv2  # --> pip install opencv-python
@@ -86,7 +82,6 @@ class DynamicModel(nn.Module):
                 elif layer_type == "Flatten":
                     start_dim = 1
                     end_dim = -1
-                    end_dim = -1
                     component = nn.Flatten(start_dim, end_dim)
                     # forcing nn.Flatten(1,-1)
 
@@ -141,11 +136,12 @@ class Train:
         self.num_classes = 0
         ds = DATALOADERS[input]
 
-        self.device = (
-            "cuda"
-            if torch.cuda.is_available()
-            else "mps" if torch.backends.mps.is_available() else "cpu"
-        )
+        if torch.cuda.is_available():
+            self.device = "cuda"
+        elif torch.backends.mps.is_available():
+            self.device = "mps"
+        else:
+            self.device = "cpu"
 
         print(f"Using {self.device} device")
 
@@ -158,9 +154,7 @@ class Train:
             X = ds["X"]
             y = ds["y"]
 
-            X_train, X_test, y_train, y_test = train_test_split(
-                X, y, test_size=0.2, random_state=42
-            )
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
             X_train_tensor = torch.tensor(X_train, dtype=torch.float32)
             y_train_tensor = torch.tensor(y_train, dtype=torch.float32).reshape(-1, 1)
@@ -172,12 +166,8 @@ class Train:
             train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
             test_dataset = TensorDataset(X_test_tensor, y_test_tensor)
 
-            self.train_loader = DataLoader(
-                train_dataset, batch_size=batch_size, shuffle=True
-            )
-            self.test_loader = DataLoader(
-                test_dataset, batch_size=batch_size, shuffle=False
-            )
+            self.train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+            self.test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
         else:
 
@@ -189,17 +179,11 @@ class Train:
                 else len(torch.unique(torch.tensor([label for _, label in train_set])))
             )
 
-            self.train_loader = DataLoader(
-                train_set, batch_size=batch_size, shuffle=True
-            )
-            self.test_loader = DataLoader(
-                test_set, batch_size=batch_size, shuffle=False
-            )
+            self.train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
+            self.test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False)
 
         self.loss_fn = LOSSES[loss]
-        self.optimizer = OPTIMIZERS[optimizer["kind"]](
-            self.model.parameters(), optimizer["lr"]
-        )
+        self.optimizer = OPTIMIZERS[optimizer["kind"]](self.model.parameters(), optimizer["lr"])
         self.final_loss = -1
 
     def train(self, n_epochs, batch_size):
@@ -250,9 +234,7 @@ class Train:
 
                 if self.input == "pima":
                     threshold = 0.5
-                    predicted = (pred > threshold).type(
-                        torch.float
-                    )  # binary classification
+                    predicted = (pred > threshold).type(torch.float)  # binary classification
                     correct += (predicted == y).sum().item()
 
                 else:
@@ -265,12 +247,8 @@ class Train:
                 all_indices.extend([idx * y.size(0) + i for i in range(y.size(0))])
 
         # calculate metrics for all datasets
-        per_class_metrics = self.calculate_per_class_metrics(
-            all_labels, all_predictions
-        )
-        confusion_matrix_data = self.calculate_confusion_matrix(
-            all_labels, all_predictions
-        )
+        per_class_metrics = self.calculate_per_class_metrics(all_labels, all_predictions)
+        confusion_matrix_data = self.calculate_confusion_matrix(all_labels, all_predictions)
         overall_metrics = self.calculate_overall_metrics(all_labels, all_predictions)
 
         if output_info and self.input != "pima":
@@ -291,23 +269,17 @@ class Train:
                 if true_label == pred_label:
                     class_correct[true_label] += 1
 
-            # Calculate accuracy for each class
-            # Use per_class_metrics to get the three lowest class accuracies (lowest first)
-            # Get per-class accuracy and find the 3 classes with lowest accuracy
+            # get 3 lowest class accuracies
             accuracies = per_class_metrics["accuracy"]
             lowest_classes = sorted(range(len(accuracies)), key=lambda i: accuracies[i])[:3]
             lowest_accuracy_classes_info = {c: class_predictions[c] for c in lowest_classes}
             print(f"\n3 lowest accuracy classes: {lowest_classes}")
 
             print("\nGetting random predictions per class...")
-            random_samples = self.get_random_predictions_per_class(
-                class_predictions, num_samples=3
-            )
+            random_samples = self.get_random_predictions_per_class(class_predictions, num_samples=3)
 
             print("Getting misclassified samples for lowest accuracy classes...")
-            misclassified_samples = self.get_misclassified_samples(
-                lowest_accuracy_classes_info, num_samples=3
-            )
+            misclassified_samples = self.get_misclassified_samples(lowest_accuracy_classes_info, num_samples=3)
 
         # returning test loss here :)
         avg_test_loss = test_loss / len(self.test_loader)
@@ -351,16 +323,10 @@ class Train:
         for class_label in range(self.num_classes):
             if class_label in class_predictions:
                 # get only misclassified samples
-                misclassified = [
-                    (idx, true_label, pred_label)
-                    for idx, true_label, pred_label in class_predictions[class_label]
-                    if true_label != pred_label
-                ]
+                misclassified = [sample for sample in class_predictions[class_label] if sample[1] != sample[2]]
 
                 if len(misclassified) >= num_samples:
-                    misclassified_samples[class_label] = random.sample(
-                        misclassified, num_samples
-                    )
+                    misclassified_samples[class_label] = random.sample(misclassified, num_samples)
                 else:
                     misclassified_samples[class_label] = misclassified
 
@@ -376,9 +342,7 @@ class Train:
         labels = np.array(all_labels)
         predictions = np.array(all_predictions)
 
-        precision, recall, f1, support = precision_recall_fscore_support(
-            labels, predictions, average=None, zero_division="warn"
-        )
+        precision, recall, f1, support = precision_recall_fscore_support(labels, predictions, average=None, zero_division="warn")
 
         # Calculate per-class accuracy
         accuracy = []
@@ -391,13 +355,8 @@ class Train:
             accuracy.append(float(acc))
 
         # convert to lists
-        precision = [
-            float(x)
-            for x in (precision.tolist() if hasattr(precision, "tolist") else precision)
-        ]
-        recall = [
-            float(x) for x in (recall.tolist() if hasattr(recall, "tolist") else recall)
-        ]
+        precision = [float(x) for x in (precision.tolist() if hasattr(precision, "tolist") else precision)]
+        recall = [float(x) for x in (recall.tolist() if hasattr(recall, "tolist") else recall)]
         f1 = [float(x) for x in (f1.tolist() if hasattr(f1, "tolist") else f1)]
 
         per_class_metrics = {
@@ -431,9 +390,7 @@ class Train:
         labels = np.array(all_labels)
         predictions = np.array(all_predictions)
 
-        precision, recall, f1, _ = precision_recall_fscore_support(
-            labels, predictions, average="weighted", zero_division="warn"
-        )
+        precision, recall, f1, _ = precision_recall_fscore_support(labels, predictions, average="weighted", zero_division="warn")
         overall_accuracy = np.sum(predictions == labels) / len(labels)
 
         overall_metrics = {
@@ -492,33 +449,17 @@ class Train:
                     if image_np.shape[0] == 1:
                         # Grayscale: (1, H, W) -> (H, W)
                         image_np = image_np[0]
-                        image_np = (
-                            (image_np - image_np.min())
-                            * (255.0 / (image_np.max() - image_np.min()))
-                        ).astype(np.uint8)
-                        image_np_resized = cv2.resize(
-                            image_np, (400, 400), interpolation=cv2.INTER_NEAREST
-                        )
+                        image_np = ((image_np - image_np.min()) * (255.0 / (image_np.max() - image_np.min()))).astype(np.uint8)
+                        image_np_resized = cv2.resize(image_np, (400, 400), interpolation=cv2.INTER_NEAREST)
                         if dev_testing:
-                            cv2.imwrite(
-                                os.path.join(class_dir, f"image_{idx}_original.png"),
-                                image_np_resized,
-                            )
+                            cv2.imwrite(os.path.join(class_dir, f"image_{idx}_original.png"), image_np_resized,)
                     else:
                         # RGB: (3, H, W) -> (H, W, 3)
                         image_np = np.transpose(image_np, (1, 2, 0))
-                        image_np = (
-                            (image_np - image_np.min())
-                            * (255.0 / (image_np.max() - image_np.min()))
-                        ).astype(np.uint8)
-                        image_np_resized = cv2.resize(
-                            image_np, (400, 400), interpolation=cv2.INTER_NEAREST
-                        )
+                        image_np = ((image_np - image_np.min())* (255.0 / (image_np.max() - image_np.min()))).astype(np.uint8)
+                        image_np_resized = cv2.resize(image_np, (400, 400), interpolation=cv2.INTER_NEAREST)
                         if dev_testing:
-                            cv2.imwrite(
-                                os.path.join(class_dir, f"image_{idx}_original.png"),
-                                cv2.cvtColor(image_np_resized, cv2.COLOR_RGB2BGR),
-                            )
+                            cv2.imwrite(os.path.join(class_dir, f"image_{idx}_original.png"),cv2.cvtColor(image_np_resized, cv2.COLOR_RGB2BGR),)
 
                     # Encode original image as base64
                     img_b64 = self.image_to_base64_png(image_np_resized)
@@ -538,65 +479,31 @@ class Train:
                             fmap = fmap[0]
                             fmap = np.moveaxis(fmap, 0, -1)
                             peek_map = self.compute_PEEK(fmap, h, w)
-                            peek_map_norm = (peek_map - peek_map.min()) / (
-                                peek_map.max() - peek_map.min()
-                            )
-                            peek_map_norm_resized = cv2.resize(
-                                peek_map_norm,
-                                (400, 400),
-                                interpolation=cv2.INTER_NEAREST,
-                            )
-                            heatmap = cv2.applyColorMap(
-                                (peek_map_norm_resized * 255).astype(np.uint8),
-                                cv2.COLORMAP_JET,
-                            )
+                            peek_map_norm = (peek_map - peek_map.min()) / (peek_map.max() - peek_map.min())
+                            peek_map_norm_resized = cv2.resize(peek_map_norm,(400, 400),interpolation=cv2.INTER_NEAREST,)
+                            heatmap = cv2.applyColorMap((peek_map_norm_resized * 255).astype(np.uint8),cv2.COLORMAP_JET,)
                             if c == 1:
-                                overlay = cv2.addWeighted(
-                                    cv2.cvtColor(image_np_resized, cv2.COLOR_GRAY2BGR),
-                                    0.3,
-                                    heatmap,
-                                    0.7,
-                                    0,
-                                )
+                                overlay = cv2.addWeighted(cv2.cvtColor(image_np_resized, cv2.COLOR_GRAY2BGR),0.3,heatmap,0.7,0,)
                             else:
-                                overlay = cv2.addWeighted(
-                                    (
-                                        image_np_resized
-                                        if image_np_resized.shape[2] == 3
-                                        else cv2.cvtColor(
-                                            image_np_resized, cv2.COLOR_GRAY2BGR
-                                        )
-                                    ),
-                                    0.3,
-                                    heatmap,
-                                    0.7,
-                                    0,
-                                )
+                                if image_np_resized.shape[2] == 3:
+                                    base_img = image_np_resized
+                                else:
+                                    base_img = cv2.cvtColor(image_np_resized, cv2.COLOR_GRAY2BGR)
+                                overlay = cv2.addWeighted(base_img, 0.3, heatmap, 0.7, 0)
 
                             # Save peek map overlay to disk
                             if dev_testing:
-                                cv2.imwrite(
-                                    os.path.join(class_dir, f"image_{idx}_{layer}.png"),
-                                    overlay,
-                                )
-                                print(
-                                    f"Saved original image and peek map for class {true_label}, sample {idx}, predicted {pred_label}"
-                                )
+                                cv2.imwrite(os.path.join(class_dir, f"image_{idx}_{layer}.png"),overlay,)
+                                print(f"Saved original image and peek map for class {true_label}, sample {idx}, predicted {pred_label}")
 
                             # Encode peek map overlay as base64
                             _, buffer = cv2.imencode(".png", overlay)
-                            peek_b64 = base64.b64encode(buffer.tobytes()).decode(
-                                "utf-8"
-                            )
-                            image_data["peek_maps"].append(
-                                {"layer": str(layer), "image": peek_b64}
-                            )
+                            peek_b64 = base64.b64encode(buffer.tobytes()).decode("utf-8")
+                            image_data["peek_maps"].append({"layer": str(layer), "image": peek_b64})
 
                     else:
                         if dev_testing:
-                            print(
-                                f"Saved original image for class {true_label}, sample {idx} (no convolutional layers)"
-                            )
+                            print(f"Saved original image for class {true_label}, sample {idx} (no convolutional layers)")
 
                 self.model.feature_save = False
                 self.model.clear_feature_maps()
@@ -619,10 +526,9 @@ class Train:
 
         for t in range(n_epochs):
             print(f"Epoch {t + 1}/{n_epochs}...")
+            
             avg_train_loss, train_avg_acc = self.train(n_epochs, batch_size)
-            print(
-                f"Train Loss: {avg_train_loss:.4f}, Train Accuracy: {train_avg_acc:.2f}%\n"
-            )
+            print(f"Train Loss: {avg_train_loss:.4f}, Train Accuracy: {train_avg_acc:.2f}%\n")
 
             if t != n_epochs - 1 or self.input == "pima":
                 (
@@ -648,26 +554,18 @@ class Train:
                     base_dir = "cnn_analysis_results"
                     if dev_testing:
                         os.makedirs(base_dir, exist_ok=True)
-                    RANDOM_SAMPLES_ENCODED = self.process_image_samples(
-                        random_samples, base_dir, dev_testing=dev_testing
-                    )
+                    RANDOM_SAMPLES_ENCODED = self.process_image_samples(random_samples, base_dir, dev_testing=dev_testing)
 
                     print("--------processing misclassified samples-----------")
-                    base_dir = os.path.join(
-                        "cnn_analysis_results", "lowest_accuracy_classes"
-                    )
+                    base_dir = os.path.join("cnn_analysis_results", "lowest_accuracy_classes")
                     if dev_testing:
                         os.makedirs(base_dir, exist_ok=True)
-                    MISCLASSIFIED_SAMPLES_ENCODED = self.process_image_samples(
-                        misclassified_samples, base_dir, dev_testing=dev_testing
-                    )
+                    MISCLASSIFIED_SAMPLES_ENCODED = self.process_image_samples(misclassified_samples, base_dir, dev_testing=dev_testing)
                 else:
                     print("Skipping image processing for pima dataset")
                     print("Skipping misclassified samples processing for pima dataset")
 
-            print(
-                f"Test Loss: {avg_test_loss:.4f}, Test Accuracy: {test_avg_acc:.2f}%\n"
-            )
+            print(f"Test Loss: {avg_test_loss:.4f}, Test Accuracy: {test_avg_acc:.2f}%\n")
 
             # Store losses
             train_losses.append(float(avg_train_loss))
@@ -675,7 +573,7 @@ class Train:
             test_losses.append(float(avg_test_loss))
             test_accs.append(float(test_avg_acc))
 
-        # l
+        # epochs completed
 
         print("---------------------------------------------")
         # calculate average accuracy and average loss
@@ -732,9 +630,7 @@ class Train:
         RANDOM_SAMPLES_ENCODED = {}
         MISCLASSIFIED_SAMPLES_ENCODED = {}
 
-        socketio.emit(
-            "training_started", {"total_epochs": n_epochs, "dataset": self.input}
-        )
+        socketio.emit("training_started", {"total_epochs": n_epochs, "dataset": self.input})
 
         for t in range(n_epochs):
             # Check for pause before starting epoch
@@ -784,14 +680,8 @@ class Train:
 
                     # Process samples if available
                     if self.input != "pima":
-                        RANDOM_SAMPLES_ENCODED = self.process_image_samples(
-                            random_samples, "cnn_analysis_results", dev_testing=False
-                        )
-                        MISCLASSIFIED_SAMPLES_ENCODED = self.process_image_samples(
-                            misclassified_samples,
-                            "cnn_analysis_results/lowest_accuracy_classes",
-                            dev_testing=False,
-                        )
+                        RANDOM_SAMPLES_ENCODED = self.process_image_samples(random_samples, "cnn_analysis_results", dev_testing=False)
+                        MISCLASSIFIED_SAMPLES_ENCODED = self.process_image_samples(misclassified_samples, "cnn_analysis_results/lowest_accuracy_classes", dev_testing=False)
                 else:  # Fallback for 5-value return
                     (
                         avg_test_loss,
@@ -801,9 +691,7 @@ class Train:
                         overall_metrics,
                     ) = test_result
 
-            print(
-                f"Test Loss: {avg_test_loss:.4f}, Test Accuracy: {test_avg_acc:.2f}%\n"
-            )
+            print(f"Test Loss: {avg_test_loss:.4f}, Test Accuracy: {test_avg_acc:.2f}%\n")
 
             train_losses.append(avg_train_loss)
             train_accs.append(train_avg_acc)
@@ -861,10 +749,7 @@ class Train:
         }
 
         # Emit training completion
-        socketio.emit(
-            "training_completed",
-            {"final_results": RESULTS, "message": "Training completed successfully!"},
-        )
+        socketio.emit("training_completed", {"final_results": RESULTS, "message": "Training completed successfully!"})
 
         return RESULTS
 
