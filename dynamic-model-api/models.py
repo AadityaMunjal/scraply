@@ -4,10 +4,8 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import datasets, transforms
 from torchvision.transforms import ToTensor
 from torch.utils.data import DataLoader, TensorDataset
-import torch.nn.functional as F
 from sklearn.model_selection import train_test_split  # --> pip install scikit-learn
 from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
-import math
 from collections import Counter, defaultdict
 import cv2  # --> pip install opencv-python
 import time
@@ -16,14 +14,7 @@ from params import DATALOADERS, LAYERS, ACTIVATIONS, LOSSES, OPTIMIZERS
 import os
 import numpy as np
 from scipy.special import entr
-import matplotlib
 import base64
-import json
-from io import BytesIO
-import time
-
-matplotlib.use("Agg")  # Set the backend to non-interactive Agg
-import matplotlib.pyplot as plt
 
 # pau code recommendations:
 # - use enums instead of 'conv1d', 'conv2d', etc
