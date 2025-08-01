@@ -679,8 +679,6 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                       idx={trainingHistory.length - idx}
                       trainingRes={trainingRes}
                       nextTrainingRes={trainingHistory[idx + 1]}
-                      openHistoryItemIdx={openHistoryItemIdx}
-                      setOpenHistoryItemIdx={setOpenHistoryItem}
                     />
                   ))
                 : !isLiveTraining && (

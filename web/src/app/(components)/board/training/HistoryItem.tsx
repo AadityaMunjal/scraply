@@ -1,20 +1,17 @@
 import { TrainingResult, TrainingResultFormat } from "~/types/index";
 import { ResponsiveLine } from "@nivo/line";
 import { downloadFile, getConfig } from "~/util/board.util";
+import { useTrainingStore } from "~/state/trainingStore";
 
 interface HistoryItemProps {
   idx: number;
   trainingRes: TrainingResult;
-  openHistoryItemIdx: number | null;
-  setOpenHistoryItemIdx: (idx: number | null) => void;
   nextTrainingRes?: TrainingResult;
 }
 
 const HistoryItem: React.FC<HistoryItemProps> = ({
   idx,
   trainingRes,
-  openHistoryItemIdx,
-  setOpenHistoryItemIdx,
   nextTrainingRes,
 }) => {
   const getDiffUI = (diff: number) => {
@@ -27,7 +24,7 @@ const HistoryItem: React.FC<HistoryItemProps> = ({
     }
   };
 
-  const isOpen = openHistoryItemIdx === idx;
+  const { openHistoryItemIdx, setOpenHistoryItem } = useTrainingStore();
 
   return (
     <div className="group my-4 overflow-hidden rounded-2xl border border-slate-700/50 bg-zinc-900 shadow-xl backdrop-blur-sm transition-all duration-300 hover:shadow-2xl">
@@ -35,7 +32,7 @@ const HistoryItem: React.FC<HistoryItemProps> = ({
       <div className="px-6 pb-2 pt-5">
         <button
           onClick={() =>
-            setOpenHistoryItemIdx(idx === openHistoryItemIdx ? null : idx)
+            setOpenHistoryItem(idx === openHistoryItemIdx ? null : idx)
           }
           className="w-full text-left"
         >
@@ -45,7 +42,7 @@ const HistoryItem: React.FC<HistoryItemProps> = ({
             </h3>
             <svg
               className={`h-5 w-5 text-slate-400 transition-transform duration-200 ${
-                isOpen ? "rotate-180" : ""
+                openHistoryItemIdx === idx ? "rotate-180" : ""
               }`}
               fill="none"
               stroke="currentColor"
@@ -218,7 +215,7 @@ const HistoryItem: React.FC<HistoryItemProps> = ({
       </div>
 
       {/* Collapsible Details */}
-      {isOpen && (
+      {openHistoryItemIdx === idx && (
         <div className="space-y-5 p-4">
           {/* Loss Graph Section */}
           <div>
