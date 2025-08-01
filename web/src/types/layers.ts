@@ -96,8 +96,8 @@ export type DropoutLayer = BaseLayer<"Dropout"> &
 export type LayersToolbarMap = [
   LinearLayer,
   ConvLayer,
-  RNNLayer,
-  GRULayer,
+  // RNNLayer,
+  // GRULayer,
   FlattenLayer,
   MaxPoolLayer,
   DropoutLayer,

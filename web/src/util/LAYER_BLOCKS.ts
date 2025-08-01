@@ -25,30 +25,30 @@ export const LAYER_BLOCKS: LayersToolbarMap = [
       padding: 1,
     },
   },
-  {
-    id: "rnn",
-    label: "RNN",
-    color: "#B7950B", // golden yellow
-    activationFunction: "ReLU" as ActivationFunction,
-    params: {
-      inputNeurons: 8,
-      outputNeurons: 8,
-      hiddenSize: 32,
-      dropout: 0.1,
-    },
-  },
-  {
-    id: "gru",
-    label: "GRU",
-    color: "#229954", // darker green
-    activationFunction: "ReLU" as ActivationFunction,
-    params: {
-      inputNeurons: 8,
-      outputNeurons: 8,
-      hiddenSize: 32,
-      dropout: 0.2,
-    },
-  },
+  // {
+  //   id: "rnn",
+  //   label: "RNN",
+  //   color: "#B7950B", // golden yellow
+  //   activationFunction: "ReLU" as ActivationFunction,
+  //   params: {
+  //     inputNeurons: 8,
+  //     outputNeurons: 8,
+  //     hiddenSize: 32,
+  //     dropout: 0.1,
+  //   },
+  // },
+  // {
+  //   id: "gru",
+  //   label: "GRU",
+  //   color: "#229954", // darker green
+  //   activationFunction: "ReLU" as ActivationFunction,
+  //   params: {
+  //     inputNeurons: 8,
+  //     outputNeurons: 8,
+  //     hiddenSize: 32,
+  //     dropout: 0.2,
+  //   },
+  // },
   {
     id: "flatten",
     label: "Flatten",
