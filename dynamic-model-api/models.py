@@ -155,17 +155,15 @@ class Train:
             y = ds["y"]
 
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
             X_train_tensor = torch.tensor(X_train, dtype=torch.float32)
             y_train_tensor = torch.tensor(y_train, dtype=torch.float32).reshape(-1, 1)
 
             # Reshape for binary classification
             X_test_tensor = torch.tensor(X_test, dtype=torch.float32)
             y_test_tensor = torch.tensor(y_test, dtype=torch.float32).reshape(-1, 1)
-
+            # creating dataset and dataloaders
             train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
             test_dataset = TensorDataset(X_test_tensor, y_test_tensor)
-
             self.train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
             self.test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
@@ -260,9 +258,7 @@ class Train:
             # class_predictions is a dictionary of lists. each list contains (idx, true_label, pred_label)
             # ex: class_predictions[class_label] = [(idx, true_label, pred_label), (idx, true_label, pred_label), (idx, true_label, pred_label)]
 
-            for idx, (true_label, pred_label) in enumerate(
-                zip(all_labels, all_predictions)
-            ):
+            for idx, (true_label, pred_label) in enumerate(zip(all_labels, all_predictions)):
                 class_total[true_label] += 1
                 class_predictions[true_label].append((idx, true_label, pred_label))
 
@@ -480,10 +476,10 @@ class Train:
                             fmap = np.moveaxis(fmap, 0, -1)
                             peek_map = self.compute_PEEK(fmap, h, w)
                             peek_map_norm = (peek_map - peek_map.min()) / (peek_map.max() - peek_map.min())
-                            peek_map_norm_resized = cv2.resize(peek_map_norm,(400, 400),interpolation=cv2.INTER_NEAREST,)
-                            heatmap = cv2.applyColorMap((peek_map_norm_resized * 255).astype(np.uint8),cv2.COLORMAP_JET,)
+                            peek_map_norm_resized = cv2.resize(peek_map_norm,(400, 400),interpolation=cv2.INTER_NEAREST)
+                            heatmap = cv2.applyColorMap((peek_map_norm_resized * 255).astype(np.uint8),cv2.COLORMAP_JET)
                             if c == 1:
-                                overlay = cv2.addWeighted(cv2.cvtColor(image_np_resized, cv2.COLOR_GRAY2BGR),0.3,heatmap,0.7,0,)
+                                overlay = cv2.addWeighted(cv2.cvtColor(image_np_resized, cv2.COLOR_GRAY2BGR),0.3,heatmap,0.7,0)
                             else:
                                 if image_np_resized.shape[2] == 3:
                                     base_img = image_np_resized
@@ -652,9 +648,7 @@ class Train:
 
             avg_train_loss, train_avg_acc = self.train(n_epochs, batch_size)
 
-            print(
-                f"Train Loss: {avg_train_loss:.4f}, Train Accuracy: {train_avg_acc:.2f}%\n"
-            )
+            print(f"Train Loss: {avg_train_loss:.4f}, Train Accuracy: {train_avg_acc:.2f}%\n")
 
             if t != n_epochs - 1 or self.input == "pima":
                 test_result = self.test(output_info=False)
