@@ -124,7 +124,8 @@ export const useTrainingStore = create<TrainingConfigState>()(
 
     addTrainingResult: (result: TrainingResult) => {
       set((state) => {
-        state.trainingHistory.push(result);
+        state.trainingHistory.unshift(result);
+        state.openHistoryItemIdx = state.trainingHistory.length;
       });
     },
 
