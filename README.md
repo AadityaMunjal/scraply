@@ -5,18 +5,20 @@
 - Previously awarded Best Developer Tool (HackPrinceton'24)
 - Watch our (preliminary) demo video: https://youtu.be/LoInd4q3ZO4
   
-### 1️⃣ Drag and drop neural network layers
+### 1️⃣ Drag and drop neural network layers. View your model's PyTorch configuration 
 <img width="1470" alt="image" src="https://github.com/user-attachments/assets/179d4ed4-3cbc-4199-aeab-05ecf90e6895" />
 
 ### 2️⃣ Set training parameters - updated live
 <img width="1470" alt="image" src="https://github.com/user-attachments/assets/c661f263-0344-4957-959a-0623e255b627" />
 
-### 3️⃣ View outputs - includes special visualization with image datasets!
+### 3️⃣ View outputs - includes ✨️special✨️ visualization with image datasets
 <img width="1899" height="925" alt="image" src="https://github.com/user-attachments/assets/c5faa610-af0f-4682-84c5-a991bc2f602c" />
 
-### Explainability:
+### 4️⃣ Download python notebook. See the code for everything you just did on Scraply!
+
+### What are PEEK Maps?:
 The heat maps shown when initializing a CNN are generated from a method called PEEK[^1]. It was developed by Mackenzie Meni and the NETS Lab at the Florida Institute of Technology. 
-PEEK visualizes neural network decision-making by computing entropy-based maps of hidden feature layers. It is able to create heat maps by highlighting the most information-rich regions in the input.
+PEEK visualizes neural network decision-making by computing entropy-based maps of convolutional layers. It is able to create heat maps by highlighting the most information-rich regions in the input.
 Check out the paper [here](https://doi.org/10.2514/6.2024-2766)!
 
 Some cool PEEK maps from the CIFAR10 image dataset:
@@ -37,7 +39,9 @@ The scraply server isn't deployed yet, therefore you need to run your own backen
 
 - 👾 explainability features
 - 👾 outputs tab with model insights
-
+- 👾 live training graph
+- 👾 stop/resume training 
+  
 ### Coming ~~Soon~~ Someday:
 
 - 👾 ability to run in browser (using tf.js)
