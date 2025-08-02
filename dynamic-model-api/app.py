@@ -147,14 +147,7 @@ def train_stream():
         )
 
         print("Model initialized successfully! Starting streaming training...")
-
-        # Start training in background thread to avoid Flask response conflicts
-        training_thread = threading.Thread(
-            target=run_training_background,
-            args=(t, n_epochs, batch_size, socketio, active_training),
-        )
-        training_thread.daemon = True
-        training_thread.start()
+        socketio.start_background_task(run_training_background, t, n_epochs, batch_size, socketio, active_training)
 
         return {
             "status": "training_started",
