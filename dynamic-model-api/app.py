@@ -1,9 +1,6 @@
 from flask import Flask, request, send_file
 from flask_socketio import SocketIO, emit
-from models import (
-    DynamicModel,
-    Train,
-)
+from models import (DynamicModel, Train)
 
 from flask_cors import CORS  # pip install flask-cors (i think)
 from generate import Generate
@@ -50,45 +47,6 @@ def generate():
         return send_file("generated_notebook.ipynb")
     except Exception as e:
         return {"status": "failed", "error": str(e)}
-
-
-@app.post("/train")  # this is basically train AND test
-def train():
-
-    data = request.get_json()
-    print("Received data:", data)
-
-    inp = data["input"]
-    layers = data["layers"]
-    loss = data["loss"]
-    optimizer = data["optimizer"]
-    n_epochs = data["epoch"]
-    batch_size = data["batch_size"]
-
-    RESULTS = {}
-
-    try:
-        model = DynamicModel(layers)
-
-        t = Train(
-            model=model,
-            input=inp,
-            loss=loss,
-            optimizer=optimizer,
-            batch_size=batch_size,
-        )
-
-        print("slay... model initialized successfully!")
-        RESULTS = t.train_test_log(n_epochs, batch_size)
-
-        # ENCODED_IMAGES and ENCODED_MISCLASSIFIED may be empty dictionaries if the input is not an image.
-        # the structure is also different if there is a convolutional layer due to peek map images
-
-    except Exception as e:
-        print("Error:", e)
-        RESULTS = {"error": str(e)}
-
-    return RESULTS
 
 
 @socketio.on("connect")

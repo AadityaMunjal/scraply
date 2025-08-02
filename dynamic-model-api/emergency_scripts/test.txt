@@ -1,8 +1,11 @@
+# this was the old test file for models.py with train_test_log function
+# now with streaming, the multiple manual consecutive requests interfere with each other.
+# not exactly sure why
 import requests
 
 
 # ---- for testing linear layers -----
-URL = "http://127.0.0.1:5000/train"
+URL = "http://127.0.0.1:5000/train-stream"
 
 data = {
     "input": "pima",
@@ -37,7 +40,7 @@ except:
 
 # # ------ for testing CNN stuff (MNIST) ------
 
-URL = "http://127.0.0.1:5000/train"
+URL = "http://127.0.0.1:5000/train-stream"
 
 mnist_data = {
     "input": "MNIST",

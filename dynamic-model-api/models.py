@@ -498,8 +498,8 @@ class Train:
 
         return result
 
-    def train_test_log(self, n_epochs, batch_size, dev_testing=False):
-
+    def train_test_log_stream(self, n_epochs, batch_size, socketio=None, active_training=None, dev_testing=False):
+        # intended for default to support streaming. however, socketio object and active_training must be passed in. they optional for dev_testing
         train_losses = []
         train_accs = []
         test_losses = []
@@ -511,134 +511,29 @@ class Train:
         RANDOM_SAMPLES_ENCODED = {}
         MISCLASSIFIED_SAMPLES_ENCODED = {}
 
-        for t in range(n_epochs):
-            print(f"Epoch {t + 1}/{n_epochs}...")
-            
-            avg_train_loss, train_avg_acc = self.train(n_epochs, batch_size)
-            print(f"Train Loss: {avg_train_loss:.4f}, Train Accuracy: {train_avg_acc:.2f}%\n")
-
-            if t != n_epochs - 1 or self.input == "pima":
-                (
-                    avg_test_loss,
-                    test_avg_acc,
-                    per_class_metrics,
-                    confusion_matrix_data,
-                    overall_metrics,
-                ) = self.test(output_info=False)
-            else:
-                (
-                    avg_test_loss,
-                    test_avg_acc,
-                    random_samples,
-                    misclassified_samples,
-                    per_class_metrics,
-                    confusion_matrix_data,
-                    overall_metrics,
-                ) = self.test(output_info=True)
-
-                if self.input != "pima":  # Only process images for non-pima datasets
-                    print("----------processing random samples-----------")
-                    base_dir = "cnn_analysis_results"
-                    if dev_testing:
-                        os.makedirs(base_dir, exist_ok=True)
-                    RANDOM_SAMPLES_ENCODED = self.process_image_samples(random_samples, base_dir, dev_testing=dev_testing)
-
-                    print("--------processing misclassified samples-----------")
-                    base_dir = os.path.join("cnn_analysis_results", "lowest_accuracy_classes")
-                    if dev_testing:
-                        os.makedirs(base_dir, exist_ok=True)
-                    MISCLASSIFIED_SAMPLES_ENCODED = self.process_image_samples(misclassified_samples, base_dir, dev_testing=dev_testing)
-                else:
-                    print("Skipping image processing for pima dataset")
-                    print("Skipping misclassified samples processing for pima dataset")
-
-            print(f"Test Loss: {avg_test_loss:.4f}, Test Accuracy: {test_avg_acc:.2f}%\n")
-
-            # Store losses
-            train_losses.append(float(avg_train_loss))
-            train_accs.append(float(train_avg_acc))
-            test_losses.append(float(avg_test_loss))
-            test_accs.append(float(test_avg_acc))
-
-        # epochs completed
-
-        print("---------------------------------------------")
-        # calculate average accuracy and average loss
-        avg_train_acc = sum(train_accs) / len(train_accs)
-        avg_test_acc = sum(test_accs) / len(test_accs)
-        avg_train_loss = sum(train_losses) / len(train_losses)
-        avg_test_loss = sum(test_losses) / len(test_losses)
-
-        print("Done!")
-        # torch.cuda.empty_cache()
-
-        # Change the losses arrays such that for each index it is {x: index, y: value}
-        train_losses = [{"x": i, "y": v} for i, v in enumerate(train_losses)]
-        test_losses = [{"x": i, "y": v} for i, v in enumerate(test_losses)]
-
-        ORIGINAL_OUTPUT = {
-            "train_losses": train_losses,
-            "test_losses": test_losses,
-            "avg_train_loss": avg_train_loss,
-            "avg_test_loss": avg_test_loss,
-            "avg_train_acc": avg_train_acc,
-            "avg_test_acc": avg_test_acc,
-        }
-
-        # Create separate dictionaries for metrics
-        PER_CLASS_METRICS = per_class_metrics
-        CONFUSION_MATRIX = confusion_matrix_data
-        OVERALL_METRICS = overall_metrics
-
-        RESULTS = {
-            "training": ORIGINAL_OUTPUT,
-            "outputs_class": PER_CLASS_METRICS,
-            "outputs_overall": OVERALL_METRICS,
-            "confusion_matrix": CONFUSION_MATRIX,
-            "random_samples": RANDOM_SAMPLES_ENCODED,
-            "top_misclassified": MISCLASSIFIED_SAMPLES_ENCODED,
-        }
-
-        # RANDOM_SAMPLES_ENCODED and MISCLASSIED_SAMPLES_ENCODED are empty if dataset is 'pima'
-
-        return RESULTS
-
-    def train_test_log_stream(
-        self, n_epochs, batch_size, socketio, active_training=None
-    ):
-        train_losses = []
-        train_accs = []
-        test_losses = []
-        test_accs = []
-        per_class_metrics = {}
-        confusion_matrix_data = []
-        overall_metrics = {}
-
-        RANDOM_SAMPLES_ENCODED = {}
-        MISCLASSIFIED_SAMPLES_ENCODED = {}
-
-        socketio.emit("training_started", {"total_epochs": n_epochs, "dataset": self.input})
+        if dev_testing:
+            print("training_started", {"total_epochs": n_epochs, "dataset": self.input})
+        else:
+            socketio.emit("training_started", {"total_epochs": n_epochs, "dataset": self.input})
 
         for t in range(n_epochs):
             # Check for pause before starting epoch
-            while active_training and active_training.get("is_paused", False):
-                time.sleep(0.1)  # Sleep briefly to avoid busy waiting
-                if not active_training.get("is_training", False):
-                    # Training was stopped while paused
+            if dev_testing == False:
+                while active_training and active_training.get("is_paused", False):
+                    time.sleep(0.1)  # Sleep briefly to avoid busy waiting
+                    if not active_training.get("is_training", False):
+                        # Training was stopped while paused
+                        socketio.emit("training_stopped", {"message": "Training stopped"})
+                        return
+                # Check if training was stopped
+                if not active_training or not active_training.get("is_training", False):
                     socketio.emit("training_stopped", {"message": "Training stopped"})
                     return
 
-            # Check if training was stopped
-            if not active_training or not active_training.get("is_training", False):
-                socketio.emit("training_stopped", {"message": "Training stopped"})
-                return
-
             print(f"Epoch {t + 1}/{n_epochs}...")
-
             socketio.emit("epoch_started", {"epoch": t + 1, "total_epochs": n_epochs})
-
+            # emit is method to send events and data to clients via websocket
             avg_train_loss, train_avg_acc = self.train(n_epochs, batch_size)
-
             print(f"Train Loss: {avg_train_loss:.4f}, Train Accuracy: {train_avg_acc:.2f}%\n")
 
             if t != n_epochs - 1 or self.input == "pima":
@@ -665,19 +560,21 @@ class Train:
 
                     # Process samples if available
                     if self.input != "pima":
-                        RANDOM_SAMPLES_ENCODED = self.process_image_samples(random_samples, "cnn_analysis_results", dev_testing=False)
-                        MISCLASSIFIED_SAMPLES_ENCODED = self.process_image_samples(misclassified_samples, "cnn_analysis_results/lowest_accuracy_classes", dev_testing=False)
-                else:  # Fallback for 5-value return
-                    (
-                        avg_test_loss,
-                        test_avg_acc,
-                        per_class_metrics,
-                        confusion_matrix_data,
-                        overall_metrics,
-                    ) = test_result
-
+                        print("----------processing random samples-----------")
+                        RANDOM_SAMPLES_ENCODED = self.process_image_samples(random_samples, "cnn_analysis_results", dev_testing=dev_testing)
+                        print("----------processing misclassified samples-----------")
+                        MISCLASSIFIED_SAMPLES_ENCODED = self.process_image_samples(misclassified_samples, "cnn_analysis_results/lowest_accuracy_classes", dev_testing=dev_testing)
+                    else:  # Fallback for 5-value return
+                        (
+                            avg_test_loss,
+                            test_avg_acc,
+                            per_class_metrics,
+                            confusion_matrix_data,
+                            overall_metrics,
+                        ) = test_result
+                        
             print(f"Test Loss: {avg_test_loss:.4f}, Test Accuracy: {test_avg_acc:.2f}%\n")
-
+                
             train_losses.append(avg_train_loss)
             train_accs.append(train_avg_acc)
             test_losses.append(avg_test_loss)
@@ -791,7 +688,7 @@ if __name__ == "__main__":
     )
 
     # Pass dev_testing to process_image_samples via train_test_log if needed
-    RESULTS = t.train_test_log(n_epochs, batch_size, dev_testing=dev_testing)
+    RESULTS = t.train_test_log_stream(n_epochs, batch_size, socketio=None, active_training=None, dev_testing=True)
 
     print("Original Results:", RESULTS["training"])
     print("Per-class Metrics:", RESULTS["outputs_class"])
@@ -844,7 +741,7 @@ if __name__ == "__main__":
     # )
 
     # Pass dev_testing to process_image_samples via train_test_log if needed
-    # RESULTS = t.train_test_log(n_epochs, batch_size, dev_testing=dev_testing)
+    # RESULTS = t.train_test_log_stream(n_epochs, batch_size, socketio=None, active_training=None, dev_testing=True)
 
     # print("Original Results:", RESULTS["training"])
     # print("Per-class Metrics:", RESULTS["outputs_class"])
@@ -905,7 +802,7 @@ if __name__ == "__main__":
     )
 
     # Pass dev_testing to process_image_samples via train_test_log if needed
-    RESULTS = t.train_test_log(n_epochs, batch_size, dev_testing=dev_testing)
+    RRESULTS = t.train_test_log_stream(n_epochs, batch_size, socketio=None, active_training=None, dev_testing=True)
 
     print("Original Results:", RESULTS["training"])
     print("Per-class Metrics:", RESULTS["outputs_class"])
