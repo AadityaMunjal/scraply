@@ -176,6 +176,7 @@ class Train:
         self.final_loss = -1
 
     def train(self, n_epochs, batch_size):
+        print(self.model)
         self.model.feature_save = False  # set the feature_save flag to false
         self.model.train()
         train_loss = 0
