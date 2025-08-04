@@ -20,6 +20,7 @@ export const TRAINING_DEFAULTS = {
 export const LOSS_FUNCTIONS = [
   { value: "BCE", label: "BCE" },
   { value: "CrossEntropy", label: "CrossEntropy" },
+  { value: "BCEWithLogitsLoss", label: "BCE with Logits Loss"}
 ] as const;
 
 export const OPTIMIZERS = [
