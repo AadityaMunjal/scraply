@@ -85,7 +85,7 @@ export const DEFAULT_DATASET_CONFIGS: Record<string, UILayer[]> = {
     {
       id: `linear-${Date.now()}-2`,
       ...getBlockMeta("Linear"),
-      activationFunction: "Softmax",
+      activationFunction: "No Activation",
       params: {
         inputNeurons: 128,
         outputNeurons: 10,
@@ -180,7 +180,7 @@ export const DEFAULT_DATASET_CONFIGS: Record<string, UILayer[]> = {
     {
       id: `linear-${Date.now()}-2`,
       ...getBlockMeta("Linear"),
-      activationFunction: "Softmax",
+      activationFunction: "No Activation",
       params: {
         inputNeurons: 256,
         outputNeurons: 10,
@@ -302,7 +302,7 @@ export const DEFAULT_DATASET_CONFIGS: Record<string, UILayer[]> = {
     {
       id: `linear-${Date.now()}-2`,
       ...getBlockMeta("Linear"),
-      activationFunction: "Softmax",
+      activationFunction: "No Activation",
       params: {
         inputNeurons: 512,
         outputNeurons: 10,
