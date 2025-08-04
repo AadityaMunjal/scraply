@@ -4,7 +4,8 @@ export type ActivationFunction =
   | "Tanh"
   | "Softmax"
   | "LeakyReLU"
-  | "PReLU";
+  | "PReLU"
+  | "No Activation";
 
 export interface LegacyUILayer {
   id: string;

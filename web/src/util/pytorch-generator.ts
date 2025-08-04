@@ -101,6 +101,11 @@ import torch.nn as nn`;
         layer.activationFunction === "ReLU"
       ) {
         activation = `\n        ${nextVarName} = torch.relu(${nextVarName})`;
+      } else if (
+        "activationFunction" in layer &&
+        layer.activationFunction === "No Activation"
+      ) {
+        activation = `\n        `;
       }
 
       switch (layer.label) {
