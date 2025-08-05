@@ -26,9 +26,7 @@ EXPOSE 5000
 CMD ["python", "app.py"]
 
 # ----- DOCKER INSTRUCTIONS: -----
-# OPEN docker desktop
-# in terminal, NAVIGATE TO scraply/dynamic-model-api
-# RUN FOLLOWING COMMANDS:
-# docker build -t dynamic-model-api .
-# docker run -p 5000:5000 dynamic-model-api
-# 'Werkzeug web server is not designed to run in production'
+# OPEN docker destop
+# NAVIGATE TO scraply/dynamic-model-api
+# COMMAND TO RUN in terminal:
+# docker-compose up --build
