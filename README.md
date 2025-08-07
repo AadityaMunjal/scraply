@@ -3,7 +3,7 @@
 ### A no-code, deep learning platform 🚀 -- The "Scratch" for Neural Networks
 
 - Previously awarded Best Developer Tool (HackPrinceton'24)
-- Watch our new demo video: [https://youtu.be/LoInd4q3ZO4](https://www.youtube.com/watch?v=QsKWQxAiWhE)
+- Watch our [new demo video](https://www.youtube.com/watch?v=QsKWQxAiWhE)
   
 ### 1️⃣ Drag and drop neural network layers. View your model's PyTorch configuration 
 
