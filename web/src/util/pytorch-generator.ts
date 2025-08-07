@@ -93,9 +93,9 @@ import torch.nn as nn`;
       let activation = "";
 
       if ("activationFunction" in layer && layer.activationFunction === "No Activation") {
-        activation = `\n        ${nextVarName} = nn.Identity(${nextVarName})`; // No activation
+        activation = `\n        ${nextVarName} = nn.Identity()(${nextVarName})`; // No activation
       } else if ("activationFunction" in layer && layer.activationFunction != "No Activation"){
-        activation = `\n        ${nextVarName} = nn.${layer.activationFunction}(${nextVarName})`;
+        activation = `\n        ${nextVarName} = nn.${layer.activationFunction}()(${nextVarName})`;
       }
 
       switch (layer.label) {
