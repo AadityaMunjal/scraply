@@ -3,16 +3,19 @@
 ### A no-code, deep learning platform 🚀 -- The "Scratch" for Neural Networks
 
 - Previously awarded Best Developer Tool (HackPrinceton'24)
-- Watch our (preliminary) demo video: https://youtu.be/LoInd4q3ZO4
+- Watch our new demo video: [https://youtu.be/LoInd4q3ZO4](https://www.youtube.com/watch?v=QsKWQxAiWhE)
   
 ### 1️⃣ Drag and drop neural network layers. View your model's PyTorch configuration 
+
 <img width="1470" alt="image" src="https://github.com/user-attachments/assets/179d4ed4-3cbc-4199-aeab-05ecf90e6895" />
 
 ### 2️⃣ Set training parameters - updated live
 After training, you can also download a python notebook. See the code for everything you just did on Scraply!
+
 <img width="1894" height="885" alt="image" src="https://github.com/user-attachments/assets/2d2a6e0a-4d96-4e26-acdf-f684970dfdd2" />
 
 ### 3️⃣ View outputs - includes ✨️special✨️ visualization with image datasets
+
 <img width="1899" height="925" alt="image" src="https://github.com/user-attachments/assets/c5faa610-af0f-4682-84c5-a991bc2f602c" />
 
 ### What are PEEK Maps?:
@@ -27,6 +30,8 @@ Some cool PEEK maps from the CIFAR10 image dataset:
 ### Running locally:
 
 The scraply server isn't deployed yet, therefore you need to run your own backend!
+
+We are working on cost-effective and possible funding/sponsor options to allow users to train their Scraply models for free :) 
 
 1. visit [scraply](https://scraply-prod.vercel.app) (server status shows offline)
 2. clone github repo `git clone https://github.com/the-AMA-team/scraply.git`
