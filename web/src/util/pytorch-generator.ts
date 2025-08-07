@@ -91,21 +91,11 @@ import torch.nn as nn`;
       const nextVarName = `x${index + 1}`;
 
       let activation = "";
-      if (
-        "activationFunction" in layer &&
-        layer.activationFunction !== "ReLU"
-      ) {
-        activation = `\n        ${nextVarName} = torch.${layer.activationFunction.toLowerCase()}(${nextVarName})`;
-      } else if (
-        "activationFunction" in layer &&
-        layer.activationFunction === "ReLU"
-      ) {
-        activation = `\n        ${nextVarName} = torch.relu(${nextVarName})`;
-      } else if (
-        "activationFunction" in layer &&
-        layer.activationFunction === "No Activation"
-      ) {
-        activation = `\n        `;
+
+      if ("activationFunction" in layer && layer.activationFunction === "No Activation") {
+        activation = `\n        ${nextVarName} = nn.Identity(${nextVarName})`; // No activation
+      } else if ("activationFunction" in layer && layer.activationFunction != "No Activation"){
+        activation = `\n        ${nextVarName} = nn.${layer.activationFunction}(${nextVarName})`;
       }
 
       switch (layer.label) {
