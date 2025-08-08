@@ -205,6 +205,7 @@ const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
               <option value="Softmax">Softmax</option>
               <option value="LeakyReLU">LeakyReLU</option>
               <option value="PReLU">PReLU</option>
+              <option value="No Activation">No Activation</option>
             </select>
           </div>
         )}
