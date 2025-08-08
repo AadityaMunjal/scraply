@@ -25,6 +25,9 @@ export type Labels =
   | "RNN"
   | "GRU"
   | "Flatten"
+  | "AvgPool"
+  | "AvgPool1D"
+  | "AvgPool2D"
   | "MaxPool"
   | "MaxPool1D"
   | "MaxPool2D"
@@ -94,11 +97,21 @@ export type DropoutLayer = BaseLayer<"Dropout"> &
     dropout: number;
   }>;
 
+// New: AvgPool layer definition (mirrors MaxPool)
+export type AvgPoolLayer = BaseLayer<"AvgPool"> &
+  LayerWithParams<{
+    dimension: 1 | 2;
+    kernelSize: number;
+    stride: number;
+    padding: number;
+  }>;
+
 export type LayersToolbarMap = [
   LinearLayer,
   ConvLayer,
   // RNNLayer,
   // GRULayer,
+  AvgPoolLayer,
   FlattenLayer,
   MaxPoolLayer,
   DropoutLayer,
@@ -111,5 +124,6 @@ export type UILayer =
   | RNNLayer
   | GRULayer
   | FlattenLayer
+  | AvgPoolLayer
   | MaxPoolLayer
   | DropoutLayer;
