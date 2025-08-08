@@ -7,7 +7,7 @@ import Toggle from "../Toggle";
 import TrainingTab from "./training/TrainingTab";
 import OutputsTab from "./outputs/OutputsTab";
 import { useBoardStore } from "~/state/boardStore";
-import { generateUniqueBlocks, generateAlexNetBlocks, generateResNetBlocks } from "~/util/defaultConfigs";
+import { generateUniqueBlocks, generateLeNetBlocks, generateResNetBlocks } from "~/util/defaultConfigs";
 
 const Board = () => {
   const [tab, setTab] = useState<AppTabs>(AppTabs.LAYERS);
@@ -42,8 +42,8 @@ const Board = () => {
   const handleDefaultConfigToggle = (checked: boolean) => {
     setUseDefaultConfig(checked);
     if (checked) {
-      const defaultBlocks = selectedArchitecture === "alexnet" 
-        ? generateAlexNetBlocks(selectedDataset)
+      const defaultBlocks = selectedArchitecture === "lenet" 
+        ? generateLeNetBlocks(selectedDataset)
         : selectedArchitecture === "resnet"
         ? generateResNetBlocks(selectedDataset)
         : generateUniqueBlocks(selectedDataset);
@@ -56,8 +56,8 @@ const Board = () => {
   const handleDatasetChange = (newDataset: string) => {
     setSelectedDataset(newDataset);
     if (useDefaultConfig) {
-      const defaultBlocks = selectedArchitecture === "alexnet" 
-        ? generateAlexNetBlocks(newDataset)
+      const defaultBlocks = selectedArchitecture === "lenet" 
+        ? generateLeNetBlocks(newDataset)
         : selectedArchitecture === "resnet"
         ? generateResNetBlocks(newDataset)
         : generateUniqueBlocks(newDataset);
@@ -123,17 +123,17 @@ const Board = () => {
                                   ? "bg-zinc-700 text-white"
                                   : "text-zinc-200"
                               }`}
-                                                             onClick={() => {
+                                 onClick={() => {
                                  setSelectedDataset(dataset.inputName);
                                  setDropdownOpen(false);
-                                 if (useDefaultConfig) {
-                                   const defaultBlocks = selectedArchitecture === "alexnet" 
-                                     ? generateAlexNetBlocks(dataset.inputName)
-                                     : selectedArchitecture === "resnet"
-                                     ? generateResNetBlocks(dataset.inputName)
-                                     : generateUniqueBlocks(dataset.inputName);
-                                   loadDefaultConfig(defaultBlocks);
-                                 }
+                                  if (useDefaultConfig) {
+                                    const defaultBlocks = selectedArchitecture === "lenet" 
+                                      ? generateLeNetBlocks(dataset.inputName)
+                                      : selectedArchitecture === "resnet"
+                                      ? generateResNetBlocks(dataset.inputName)
+                                      : generateUniqueBlocks(dataset.inputName);
+                                    loadDefaultConfig(defaultBlocks);
+                                  }
                                }}
                               type="button"
                             >
@@ -176,8 +176,8 @@ const Board = () => {
                   onChange={(e) => {
                     setSelectedArchitecture(e.target.value);
                     if (useDefaultConfig) {
-                      const defaultBlocks = e.target.value === "alexnet" 
-                        ? generateAlexNetBlocks(selectedDataset)
+                      const defaultBlocks = e.target.value === "lenet" 
+                        ? generateLeNetBlocks(selectedDataset)
                         : e.target.value === "resnet"
                         ? generateResNetBlocks(selectedDataset)
                         : generateUniqueBlocks(selectedDataset);
@@ -186,7 +186,7 @@ const Board = () => {
                   }}
                 >
                   <option value="default">Default</option>
-                  <option value="alexnet">AlexNet</option>
+                  <option value="lenet">LeNet</option>
                   <option value="resnet">ResNet</option>
                 </select>
               </div>
