@@ -7,7 +7,7 @@ import Toggle from "../Toggle";
 import TrainingTab from "./training/TrainingTab";
 import OutputsTab from "./outputs/OutputsTab";
 import { useBoardStore } from "~/state/boardStore";
-import { generateUniqueBlocks } from "~/util/defaultConfigs";
+import { generateUniqueBlocks, generateAlexNetBlocks, generateResNetBlocks } from "~/util/defaultConfigs";
 
 const Board = () => {
   const [tab, setTab] = useState<AppTabs>(AppTabs.LAYERS);
@@ -15,6 +15,7 @@ const Board = () => {
     DATASETS[0]!.inputName,
   );
   const [useDefaultConfig, setUseDefaultConfig] = useState<boolean>(false);
+  const [selectedArchitecture, setSelectedArchitecture] = useState<string>("default");
   const { loadDefaultConfig, clearCanvas } = useBoardStore();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -41,7 +42,11 @@ const Board = () => {
   const handleDefaultConfigToggle = (checked: boolean) => {
     setUseDefaultConfig(checked);
     if (checked) {
-      const defaultBlocks = generateUniqueBlocks(selectedDataset);
+      const defaultBlocks = selectedArchitecture === "alexnet" 
+        ? generateAlexNetBlocks(selectedDataset)
+        : selectedArchitecture === "resnet"
+        ? generateResNetBlocks(selectedDataset)
+        : generateUniqueBlocks(selectedDataset);
       loadDefaultConfig(defaultBlocks);
     } else {
       clearCanvas();
@@ -51,7 +56,11 @@ const Board = () => {
   const handleDatasetChange = (newDataset: string) => {
     setSelectedDataset(newDataset);
     if (useDefaultConfig) {
-      const defaultBlocks = generateUniqueBlocks(newDataset);
+      const defaultBlocks = selectedArchitecture === "alexnet" 
+        ? generateAlexNetBlocks(newDataset)
+        : selectedArchitecture === "resnet"
+        ? generateResNetBlocks(newDataset)
+        : generateUniqueBlocks(newDataset);
       loadDefaultConfig(defaultBlocks);
     }
   };
@@ -114,16 +123,18 @@ const Board = () => {
                                   ? "bg-zinc-700 text-white"
                                   : "text-zinc-200"
                               }`}
-                              onClick={() => {
-                                setSelectedDataset(dataset.inputName);
-                                setDropdownOpen(false);
-                                if (useDefaultConfig) {
-                                  const defaultBlocks = generateUniqueBlocks(
-                                    dataset.inputName,
-                                  );
-                                  loadDefaultConfig(defaultBlocks);
-                                }
-                              }}
+                                                             onClick={() => {
+                                 setSelectedDataset(dataset.inputName);
+                                 setDropdownOpen(false);
+                                 if (useDefaultConfig) {
+                                   const defaultBlocks = selectedArchitecture === "alexnet" 
+                                     ? generateAlexNetBlocks(dataset.inputName)
+                                     : selectedArchitecture === "resnet"
+                                     ? generateResNetBlocks(dataset.inputName)
+                                     : generateUniqueBlocks(dataset.inputName);
+                                   loadDefaultConfig(defaultBlocks);
+                                 }
+                               }}
                               type="button"
                             >
                               <span className="font-medium text-white">
@@ -156,6 +167,30 @@ const Board = () => {
                 Load default model
               </label>
             </div>
+            {useDefaultConfig && (
+              <div className="flex items-center">
+                <div className="mx-2 text-sm text-zinc-300">Architecture:</div>
+                <select
+                  className="rounded bg-zinc-800 p-2 text-sm text-white outline-none ring-1 ring-zinc-700"
+                  value={selectedArchitecture}
+                  onChange={(e) => {
+                    setSelectedArchitecture(e.target.value);
+                    if (useDefaultConfig) {
+                      const defaultBlocks = e.target.value === "alexnet" 
+                        ? generateAlexNetBlocks(selectedDataset)
+                        : e.target.value === "resnet"
+                        ? generateResNetBlocks(selectedDataset)
+                        : generateUniqueBlocks(selectedDataset);
+                      loadDefaultConfig(defaultBlocks);
+                    }
+                  }}
+                >
+                  <option value="default">Default</option>
+                  <option value="alexnet">AlexNet</option>
+                  <option value="resnet">ResNet</option>
+                </select>
+              </div>
+            )}
           </div>
           <Toggle
             color="blue"
