@@ -44,6 +44,11 @@ export const getConfig = (
       layerKind = block.params.dimension === 1 ? "MaxPool1D" : "MaxPool2D";
     }
 
+    // For AvgPool layers, change label based on dimension parameter
+    if (block.label === "AvgPool" && hasDimension(block)) {
+      layerKind = block.params.dimension === 1 ? "AvgPool1D" : "AvgPool2D";
+    }
+
     // Handle layers that have input/output neurons
     if (hasNeurons(block)) {
       const inputNeurons = block.params.inputNeurons;

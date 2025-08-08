@@ -49,6 +49,18 @@ export const LAYER_BLOCKS: LayersToolbarMap = [
   //     dropout: 0.2,
   //   },
   // },
+  // AvgPool comes before Flatten/MaxPool to match LayersToolbarMap tuple
+  {
+    id: "avgpool",
+    label: "AvgPool",
+    color: "#FF69B4", // pink
+    params: {
+      dimension: 2,
+      kernelSize: 3,
+      stride: 1,
+      padding: 1,
+    },
+  },
   {
     id: "flatten",
     label: "Flatten",
