@@ -153,7 +153,7 @@ const Board = () => {
                 htmlFor="useDefaultConfig"
                 className="text-sm text-zinc-300"
               >
-                Load default config
+                Load default model
               </label>
             </div>
           </div>
@@ -188,7 +188,7 @@ const Board = () => {
                 className="mr-2 h-4 w-4 rounded border-gray-300 bg-zinc-800 text-blue-600"
               />
               <label className="text-sm text-zinc-300">
-                Load default config
+                Load default model
               </label>
             </div>
           </div>
