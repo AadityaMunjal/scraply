@@ -80,6 +80,11 @@ class DynamicModel(nn.Module):
                     dim = layer_args[0]
                     k_size, stride, padding = layer_args[1:]
                     component = LAYERS[layer_type](dim, k_size, stride, padding)
+                    
+                elif layer_type in ["AvgPool1D", "AvgPool2D", "AvgPool3D"]:
+                    dim = layer_args[0]
+                    k_size, stride, padding = layer_args[1:]
+                    component = LAYERS[layer_type](dim, k_size, stride, padding)
 
                 if component is None:
                     print(f"Layer {layer_type} not recognized or not implemented.")
@@ -99,6 +104,8 @@ class DynamicModel(nn.Module):
         saver = ConditionalActivationSaver(self)
         saver = ConditionalActivationSaver(self)
         self._register_conv_hooks(saver.hook)
+        
+        
 
     def _register_conv_hooks(self, hook_fn):
         """Register forward hooks on all convolutional layers"""
@@ -123,6 +130,7 @@ class DynamicModel(nn.Module):
 
 class Train:
     def __init__(self, model, input, loss, optimizer, batch_size):
+        self.model = model
         self.input = input
         self.num_classes = 0
         ds = DATALOADERS[input]
