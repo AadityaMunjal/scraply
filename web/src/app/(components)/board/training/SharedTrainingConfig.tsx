@@ -16,6 +16,7 @@ interface SharedTrainingConfigProps {
   learningRate: number;
   epochs: number;
   batchSize: number;
+  runName: string;
 
   // Setters
   setLoss: (loss: LossFunction) => void;
@@ -23,6 +24,7 @@ interface SharedTrainingConfigProps {
   setLearningRate: (rate: number) => void;
   setEpochs: (epochs: number) => void;
   setBatchSize: (size: number) => void;
+  setRunName: (name: string) => void;
 
   // Optional reset functions
   onResetLoss?: () => void;
@@ -30,6 +32,7 @@ interface SharedTrainingConfigProps {
   onResetLearningRate?: () => void;
   onResetEpochs?: () => void;
   onResetBatchSize?: () => void;
+  onResetRunName?: () => void;
 }
 
 const SharedTrainingConfig: React.FC<SharedTrainingConfigProps> = ({
@@ -38,19 +41,32 @@ const SharedTrainingConfig: React.FC<SharedTrainingConfigProps> = ({
   learningRate,
   epochs,
   batchSize,
+  runName,
   setLoss,
   setOptimizer,
   setLearningRate,
   setEpochs,
   setBatchSize,
+  setRunName,
   onResetLoss,
   onResetOptimizer,
   onResetLearningRate,
   onResetEpochs,
   onResetBatchSize,
+  onResetRunName,
 }) => {
   return (
     <div className="space-y-4">
+      <TrainingConfigItem title="Run Name" onReset={onResetRunName}>
+        <input
+          type="text"
+          value={runName}
+          onChange={(e) => setRunName(e.target.value)}
+          placeholder="(Optional) Name training run"
+          className="w-full rounded-lg bg-zinc-700 px-3 py-2 text-zinc-100 placeholder-zinc-400 outline-none focus:bg-zinc-600"
+        />
+      </TrainingConfigItem>
+
       <div className="text-2xl text-zinc-700">Model</div>
 
       <TrainingConfigItem title="Loss Function" onReset={onResetLoss}>

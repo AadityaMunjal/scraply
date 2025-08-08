@@ -50,11 +50,13 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
     learningRate,
     epochs,
     batchSize,
+    runName,
     setLoss,
     setOptimizer,
     setLearningRate,
     setEpochs,
     setBatchSize,
+    setRunName,
     resetConfig,
 
     // Training state
@@ -156,12 +158,16 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
         train_losses: training.train_losses,
         test_losses: training.test_losses,
         trainingConfig: trainingConfigRef.current,
+        run_name: runName,
       });
 
       // Reset live training state
       setCurrentProgress(null);
       setIsLiveTraining(false);
       setIsTraining(false); // Reset the main training state
+
+      // Clear the run name for the next training
+      setRunName("");
 
       // Clear the stored config after using it
       trainingConfigRef.current = null;
@@ -189,6 +195,7 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
         learningRate,
         epochs,
         batchSize,
+        runName,
       );
 
       trainingConfigRef.current = config; // Store the config
@@ -306,11 +313,13 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
               learningRate={learningRate}
               epochs={epochs}
               batchSize={batchSize}
+              runName={runName}
               setLoss={setLoss}
               setOptimizer={setOptimizer}
               setLearningRate={setLearningRate}
               setEpochs={setEpochs}
               setBatchSize={setBatchSize}
+              setRunName={setRunName}
               onResetLoss={() => setLoss(DEFAULT_TRAINING_CONFIG.loss)}
               onResetOptimizer={() =>
                 setOptimizer(DEFAULT_TRAINING_CONFIG.optimizer)
@@ -322,6 +331,7 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
               onResetBatchSize={() =>
                 setBatchSize(DEFAULT_TRAINING_CONFIG.batchSize)
               }
+              onResetRunName={() => setRunName(DEFAULT_TRAINING_CONFIG.runName)}
             />
           </div>
 
