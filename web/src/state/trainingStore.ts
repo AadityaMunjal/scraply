@@ -27,6 +27,7 @@ interface TrainingConfigState {
   learningRate: number;
   epochs: number;
   batchSize: number;
+  runName: string;
 
   // Training state
   isTraining: boolean;
@@ -44,6 +45,7 @@ interface TrainingConfigState {
   setLearningRate: (rate: number) => void;
   setEpochs: (epochs: number) => void;
   setBatchSize: (size: number) => void;
+  setRunName: (name: string) => void;
 
   // Training actions
   setIsTraining: (training: boolean) => void;
@@ -112,6 +114,12 @@ export const useTrainingStore = create<TrainingConfigState>()(
         if (size > 0) {
           state.batchSize = size;
         }
+      });
+    },
+
+    setRunName: (name: string) => {
+      set((state) => {
+        state.runName = name;
       });
     },
 

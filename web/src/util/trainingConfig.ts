@@ -36,4 +36,5 @@ export const DEFAULT_TRAINING_CONFIG = {
   learningRate: TRAINING_DEFAULTS.learningRate.default,
   epochs: TRAINING_DEFAULTS.epochs.default,
   batchSize: TRAINING_DEFAULTS.batchSize.default,
+  runName: "",
 };

@@ -23,6 +23,7 @@ export interface Config {
   learning_rate: number;
   epoch: number;
   batch_size: number;
+  run_name?: string;
 }
 
 export interface TrainingResult {
@@ -33,6 +34,7 @@ export interface TrainingResult {
   train_losses: { x: number; y: number }[];
   test_losses: { x: number; y: number }[];
   trainingConfig: Config;
+  run_name?: string;
 }
 
 export const TrainingResultFormat = {

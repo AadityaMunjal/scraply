@@ -26,6 +26,7 @@ export const getConfig = (
   learningRate: number,
   epoch: number,
   batch_size: number,
+  runName?: string,
 ): Config => {
   const layers = [];
   for (let i = 0; i < blocks.length; i++) {
@@ -120,7 +121,7 @@ export const getConfig = (
     }
   }
 
-  const config = {
+  const config: Config = {
     input,
     layers,
     loss,
@@ -128,6 +129,7 @@ export const getConfig = (
     epoch,
     batch_size,
     learning_rate: learningRate,
+    ...(runName && { run_name: runName }),
   };
 
   return config;

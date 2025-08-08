@@ -38,9 +38,12 @@ const HistoryItem: React.FC<HistoryItemProps> = ({
           className="w-full text-left"
         >
           <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold text-slate-100">
-              Training Run {idx}
-            </h3>
+            <div>
+              <h3 className="text-xl font-bold text-slate-100">
+                {trainingRes.run_name || `Training Run ${idx}`}
+              </h3>
+              <p className="text-sm text-slate-400">Run #{idx}</p>
+            </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={(e) => {
