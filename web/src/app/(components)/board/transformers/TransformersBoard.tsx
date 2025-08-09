@@ -102,7 +102,7 @@ const TrainConfig: React.FC<{
   );
   const [epochs, setEpochs] = useState(DEFAULT_TRAINING_CONFIG.epochs);
   const [batchSize, setBatchSize] = useState(DEFAULT_TRAINING_CONFIG.batchSize);
-
+  const [runName, setRunName] = useState(DEFAULT_TRAINING_CONFIG.runName);
   const [results, setResults] = useState<{ train_loss: number[] } | null>(null);
   const [graphData, setGraphData] = useState<
     | {
@@ -195,6 +195,8 @@ const TrainConfig: React.FC<{
             setLearningRate={setLearningRate}
             setEpochs={setEpochs}
             setBatchSize={setBatchSize}
+            runName={runName}
+            setRunName={setRunName}
           />
           <div
             className={`m-2 ${startTransformerTrainingMutation.isPending && "mt-8"} flex justify-center transition-all duration-300`}
