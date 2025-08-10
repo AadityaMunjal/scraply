@@ -24,13 +24,13 @@ export type Labels =
   | "Conv2D"
   | "RNN"
   | "GRU"
-  | "Flatten"
-  | "AvgPool"
-  | "AvgPool1D"
-  | "AvgPool2D"
   | "MaxPool"
   | "MaxPool1D"
   | "MaxPool2D"
+  | "AvgPool"
+  | "AvgPool1D"
+  | "AvgPool2D"
+  | "Flatten"
   | "Dropout";
 
 export interface BaseLayer<L extends Labels> {
@@ -111,9 +111,9 @@ export type LayersToolbarMap = [
   ConvLayer,
   // RNNLayer,
   // GRULayer,
+  MaxPoolLayer,
   AvgPoolLayer,
   FlattenLayer,
-  MaxPoolLayer,
   DropoutLayer,
 ];
 
@@ -123,7 +123,7 @@ export type UILayer =
   | ConvLayer
   | RNNLayer
   | GRULayer
-  | FlattenLayer
-  | AvgPoolLayer
   | MaxPoolLayer
+  | AvgPoolLayer
+  | FlattenLayer
   | DropoutLayer;
