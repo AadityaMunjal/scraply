@@ -7,7 +7,11 @@ import Toggle from "../Toggle";
 import TrainingTab from "./training/TrainingTab";
 import OutputsTab from "./outputs/OutputsTab";
 import { useBoardStore } from "~/state/boardStore";
-import { generateUniqueBlocks, generateLeNetBlocks, generateResNetBlocks } from "~/util/defaultConfigs";
+import {
+  generateUniqueBlocks,
+  generateLeNetBlocks,
+  generateResNetBlocks,
+} from "~/util/defaultConfigs";
 
 const Board = () => {
   const [tab, setTab] = useState<AppTabs>(AppTabs.LAYERS);
@@ -15,7 +19,8 @@ const Board = () => {
     DATASETS[0]!.inputName,
   );
   const [useDefaultConfig, setUseDefaultConfig] = useState<boolean>(false);
-  const [selectedArchitecture, setSelectedArchitecture] = useState<string>("default");
+  const [selectedArchitecture, setSelectedArchitecture] =
+    useState<string>("default");
   const { loadDefaultConfig, clearCanvas } = useBoardStore();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -42,26 +47,15 @@ const Board = () => {
   const handleDefaultConfigToggle = (checked: boolean) => {
     setUseDefaultConfig(checked);
     if (checked) {
-      const defaultBlocks = selectedArchitecture === "lenet" 
-        ? generateLeNetBlocks(selectedDataset)
-        : selectedArchitecture === "resnet"
-        ? generateResNetBlocks(selectedDataset)
-        : generateUniqueBlocks(selectedDataset);
+      const defaultBlocks =
+        selectedArchitecture === "lenet"
+          ? generateLeNetBlocks(selectedDataset)
+          : selectedArchitecture === "resnet"
+            ? generateResNetBlocks(selectedDataset)
+            : generateUniqueBlocks(selectedDataset);
       loadDefaultConfig(defaultBlocks);
     } else {
       clearCanvas();
-    }
-  };
-
-  const handleDatasetChange = (newDataset: string) => {
-    setSelectedDataset(newDataset);
-    if (useDefaultConfig) {
-      const defaultBlocks = selectedArchitecture === "lenet" 
-        ? generateLeNetBlocks(newDataset)
-        : selectedArchitecture === "resnet"
-        ? generateResNetBlocks(newDataset)
-        : generateUniqueBlocks(newDataset);
-      loadDefaultConfig(defaultBlocks);
     }
   };
 
@@ -123,18 +117,23 @@ const Board = () => {
                                   ? "bg-zinc-700 text-white"
                                   : "text-zinc-200"
                               }`}
-                                 onClick={() => {
-                                 setSelectedDataset(dataset.inputName);
-                                 setDropdownOpen(false);
-                                  if (useDefaultConfig) {
-                                    const defaultBlocks = selectedArchitecture === "lenet" 
+                              onClick={() => {
+                                setSelectedDataset(dataset.inputName);
+                                setDropdownOpen(false);
+                                if (useDefaultConfig) {
+                                  const defaultBlocks =
+                                    selectedArchitecture === "lenet"
                                       ? generateLeNetBlocks(dataset.inputName)
                                       : selectedArchitecture === "resnet"
-                                      ? generateResNetBlocks(dataset.inputName)
-                                      : generateUniqueBlocks(dataset.inputName);
-                                    loadDefaultConfig(defaultBlocks);
-                                  }
-                               }}
+                                        ? generateResNetBlocks(
+                                            dataset.inputName,
+                                          )
+                                        : generateUniqueBlocks(
+                                            dataset.inputName,
+                                          );
+                                  loadDefaultConfig(defaultBlocks);
+                                }
+                              }}
                               type="button"
                             >
                               <span className="font-medium text-white">
@@ -176,11 +175,12 @@ const Board = () => {
                   onChange={(e) => {
                     setSelectedArchitecture(e.target.value);
                     if (useDefaultConfig) {
-                      const defaultBlocks = e.target.value === "lenet" 
-                        ? generateLeNetBlocks(selectedDataset)
-                        : e.target.value === "resnet"
-                        ? generateResNetBlocks(selectedDataset)
-                        : generateUniqueBlocks(selectedDataset);
+                      const defaultBlocks =
+                        e.target.value === "lenet"
+                          ? generateLeNetBlocks(selectedDataset)
+                          : e.target.value === "resnet"
+                            ? generateResNetBlocks(selectedDataset)
+                            : generateUniqueBlocks(selectedDataset);
                       loadDefaultConfig(defaultBlocks);
                     }
                   }}
