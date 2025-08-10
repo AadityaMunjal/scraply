@@ -4,7 +4,7 @@ export const LAYER_BLOCKS: LayersToolbarMap = [
   {
     id: "linear",
     label: "Linear",
-    color: "#CD6155", // darker coral
+    color: "#B22222", // darker coral
     activationFunction: "ReLU" as ActivationFunction,
     params: {
       inputNeurons: 8,
@@ -14,7 +14,7 @@ export const LAYER_BLOCKS: LayersToolbarMap = [
   {
     id: "conv",
     label: "Conv",
-    color: "#DC7633", // darker orange
+    color: "#E65100", // darker orange
     activationFunction: "ReLU" as ActivationFunction,
     params: {
       dimension: 2,
@@ -51,9 +51,20 @@ export const LAYER_BLOCKS: LayersToolbarMap = [
   // },
   // AvgPool comes before Flatten/MaxPool to match LayersToolbarMap tuple
   {
+    id: "maxpool",
+    label: "MaxPool",
+    color: "#B8860B", // darker blue
+    params: {
+      dimension: 2,
+      kernelSize: 3,
+      stride: 1,
+      padding: 1,
+    },
+  },
+  {
     id: "avgpool",
     label: "AvgPool",
-    color: "#FF69B4", // pink
+    color: "#1B5E20", // pink
     params: {
       dimension: 2,
       kernelSize: 3,
@@ -64,26 +75,15 @@ export const LAYER_BLOCKS: LayersToolbarMap = [
   {
     id: "flatten",
     label: "Flatten",
-    color: "#138D75", // darker teal
+    color: "#0D47A1", // darker teal
     inputNeurons: 8,
     startDimension: 1,
     endDimension: -1,
   },
   {
-    id: "maxpool",
-    label: "MaxPool",
-    color: "#2874A6", // darker blue
-    params: {
-      dimension: 2,
-      kernelSize: 3,
-      stride: 1,
-      padding: 1,
-    },
-  },
-  {
     id: "dropout",
     label: "Dropout",
-    color: "#7D3C98", // darker purple
+    color: "#6A1B9A", // darker purple
     params: {
       dropout: 0.25,
     },
