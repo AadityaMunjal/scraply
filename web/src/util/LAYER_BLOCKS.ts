@@ -4,7 +4,7 @@ export const LAYER_BLOCKS: LayersToolbarMap = [
   {
     id: "linear",
     label: "Linear",
-    color: "#B22222", // darker coral
+    color: "#B82C2C", // darker coral
     activationFunction: "ReLU" as ActivationFunction,
     params: {
       inputNeurons: 8,
