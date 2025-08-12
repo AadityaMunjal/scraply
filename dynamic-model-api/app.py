@@ -20,10 +20,10 @@ import threading
 
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:3000", "https://scraply-prod.vercel.app"])
+CORS(app, origins=["http://localhost:3000", "https://scraply-prod.vercel.app", "http://34.237.181.35:5000"])
 socketio = SocketIO(
     app,
-    cors_allowed_origins=["http://localhost:3000", "https://scraply-prod.vercel.app"],
+    cors_allowed_origins=["http://localhost:3000", "https://scraply-prod.vercel.app", "http://34.237.181.35:5000"],
 )
 
 
