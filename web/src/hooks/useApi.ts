@@ -3,7 +3,7 @@ import { Config, TransformerConfig } from "~/types/index";
 
 // API functions
 const downloadFile = async (config: Config): Promise<Blob> => {
-  const response = await fetch("http://34.237.181.35:5000/generate", {
+  const response = await fetch("http://127.0.0.1:5000/generate", {
     method: "POST",
     body: JSON.stringify(config),
     headers: {
@@ -21,7 +21,7 @@ const downloadFile = async (config: Config): Promise<Blob> => {
 };
 
 const startTraining = async (config: Config) => {
-  const response = await fetch("http://34.237.181.35:5000/train", {
+  const response = await fetch("http://127.0.0.1:5000/train", {
     method: "POST",
     body: JSON.stringify(config),
     headers: {
@@ -39,7 +39,7 @@ const startTraining = async (config: Config) => {
 };
 
 const startTransformerTraining = async (config: TransformerConfig) => {
-  const response = await fetch("http://34.237.181.35:5000/transformertrain", {
+  const response = await fetch("http://127.0.0.1:5000/transformertrain", {
     method: "POST",
     body: JSON.stringify(config),
     headers: {
@@ -60,7 +60,7 @@ const transformerTest = async (params: {
   temperature: number;
   prompt: string;
 }) => {
-  const response = await fetch("http://34.237.181.35:5000/transformertest", {
+  const response = await fetch("http://127.0.0.1:5000/transformertest", {
     method: "POST",
     body: JSON.stringify(params),
     headers: {
@@ -78,7 +78,7 @@ const transformerTest = async (params: {
 };
 
 const checkServerHealth = async () => {
-  const response = await fetch("http://34.237.181.35:5000/health", {
+  const response = await fetch("http://127.0.0.1:5000/health", {
     method: "GET",
   });
 

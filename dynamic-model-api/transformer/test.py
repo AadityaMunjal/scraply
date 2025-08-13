@@ -2,7 +2,7 @@ import requests
 
 # # ------ for testing transformer inference ------
 # currently uses pretrained model
-URL = "http://34.237.181.35:5000/transformertest"
+URL = "http://127.0.0.1:5000/transformertest"
 
 data = {
     "temperature": 0.5,
@@ -23,7 +23,7 @@ except:
 
 
 # # ------ for testing transformer training ------
-URL = "http://34.237.181.35:5000/transformertrain"
+URL = "http://127.0.0.1:5000/transformertrain"
 
 data = {
     "input": "alice",  # preprocess
