@@ -1,7 +1,0 @@
-Deployment completed: Tue, Aug 12, 2025  3:50:48 AM
-Stack Name: flask-ml-api-stack
-Instance ID: i-09fccd3e114ada7bf
-Public IP: 34.237.181.35
-Public DNS: ec2-34-237-181-35.compute-1.amazonaws.com
-Flask App URL: http://34.237.181.35:5000
-SSH Command: ssh -i ~/.ssh/flask-ml-api-key.pem ubuntu@34.237.181.35
