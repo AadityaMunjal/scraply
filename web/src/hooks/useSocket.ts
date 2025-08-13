@@ -50,7 +50,7 @@ export const useSocket = (): UseSocketReturn => {
   useEffect(() => {
     // Create socket connection
     const newSocket = io("http://localhost:5000", {
-      transports: ["websocket"],
+      transports: ["websocket", "polling"],
       autoConnect: true,
     });
 
