@@ -1,6 +1,7 @@
 flask
 Flask-Cors
 flask-socketio
+eventlet
 torch
 torchvision
 opencv-python

@@ -1,6 +1,6 @@
 from flask import Flask, request, send_file
 from flask_socketio import SocketIO, emit
-from models import (DynamicModel, Train)
+from models import DynamicModel, Train
 
 from flask_cors import CORS  # pip install flask-cors (i think)
 from generate import Generate
@@ -24,7 +24,10 @@ CORS(app, origins=["http://localhost:3000", "https://scraply-prod.vercel.app"])
 socketio = SocketIO(
     app,
     cors_allowed_origins=["http://localhost:3000", "https://scraply-prod.vercel.app"],
+    async_mode="eventlet",
 )
+
+print(f"SocketIO async_mode: {socketio.async_mode}")
 
 
 @app.route("/")
@@ -59,7 +62,9 @@ def handle_connect():
 def handle_disconnect():
     print("Client disconnected")
 
+
 active_training = {"is_training": False, "current_progress": None, "is_paused": False}
+
 
 @socketio.on("check_training_status")
 def handle_check_training_status():
@@ -71,6 +76,7 @@ def handle_check_training_status():
             "is_paused": active_training["is_paused"],
         },
     )
+
 
 @socketio.on("pause_training")
 def handle_pause_training():
@@ -91,6 +97,7 @@ def handle_resume_training():
     else:
         emit("training_error", {"error": "No paused training to resume"})
 
+
 @socketio.on("stop_training")
 def handle_stop_training():
     if active_training["is_training"]:
@@ -106,7 +113,9 @@ def handle_stop_training():
 def run_training_background(t, n_epochs, batch_size, socketio, active_training):
     """Run training in background thread to avoid Flask response conflicts"""
     try:
-        results = t.train_test_log_stream(n_epochs, batch_size, socketio, active_training)
+        results = t.train_test_log_stream(
+            n_epochs, batch_size, socketio, active_training
+        )
         # Mark training as complete
         active_training["is_training"] = False
         active_training["current_progress"] = None
@@ -147,7 +156,9 @@ def train_stream():
         )
 
         print("Model initialized successfully! Starting streaming training...")
-        socketio.start_background_task(run_training_background, t, n_epochs, batch_size, socketio, active_training)
+        socketio.start_background_task(
+            run_training_background, t, n_epochs, batch_size, socketio, active_training
+        )
 
         return {
             "status": "training_started",
@@ -165,4 +176,4 @@ def train_stream():
 
 
 if __name__ == "__main__":
-    socketio.run(app, debug=True, host="0.0.0.0", port=5000, allow_unsafe_werkzeug=True)
+    socketio.run(app, debug=True, use_reloader=False, host="0.0.0.0", port=5000)
