@@ -80,7 +80,7 @@ class DynamicModel(nn.Module):
                     dim = layer_args[0]
                     k_size, stride, padding = layer_args[1:]
                     component = LAYERS[layer_type](dim, k_size, stride, padding)
-                    
+
                 elif layer_type in ["AvgPool1D", "AvgPool2D", "AvgPool3D"]:
                     dim = layer_args[0]
                     k_size, stride, padding = layer_args[1:]
@@ -104,8 +104,6 @@ class DynamicModel(nn.Module):
         saver = ConditionalActivationSaver(self)
         saver = ConditionalActivationSaver(self)
         self._register_conv_hooks(saver.hook)
-        
-        
 
     def _register_conv_hooks(self, hook_fn):
         """Register forward hooks on all convolutional layers"""
@@ -153,7 +151,9 @@ class Train:
             X = ds["X"]
             y = ds["y"]
 
-            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+            X_train, X_test, y_train, y_test = train_test_split(
+                X, y, test_size=0.2, random_state=42
+            )
             X_train_tensor = torch.tensor(X_train, dtype=torch.float32)
             y_train_tensor = torch.tensor(y_train, dtype=torch.float32).reshape(-1, 1)
 
@@ -163,11 +163,14 @@ class Train:
             # creating dataset and dataloaders
             train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
             test_dataset = TensorDataset(X_test_tensor, y_test_tensor)
-            self.train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-            self.test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+            self.train_loader = DataLoader(
+                train_dataset, batch_size=batch_size, shuffle=True
+            )
+            self.test_loader = DataLoader(
+                test_dataset, batch_size=batch_size, shuffle=False
+            )
 
         else:
-
             train_set = ds["train"]
             test_set = ds["test"]
             self.num_classes = (
@@ -176,11 +179,17 @@ class Train:
                 else len(torch.unique(torch.tensor([label for _, label in train_set])))
             )
 
-            self.train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
-            self.test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False)
+            self.train_loader = DataLoader(
+                train_set, batch_size=batch_size, shuffle=True
+            )
+            self.test_loader = DataLoader(
+                test_set, batch_size=batch_size, shuffle=False
+            )
 
         self.loss_fn = LOSSES[loss]
-        self.optimizer = OPTIMIZERS[optimizer["kind"]](self.model.parameters(), optimizer["lr"])
+        self.optimizer = OPTIMIZERS[optimizer["kind"]](
+            self.model.parameters(), optimizer["lr"]
+        )
         self.final_loss = -1
 
     def train(self, n_epochs, batch_size):
@@ -224,14 +233,15 @@ class Train:
 
         with torch.no_grad():
             for idx, (X, y) in enumerate(self.test_loader):
-
                 X, y = X.to(self.device), y.to(self.device)
                 pred = self.model(X)
                 test_loss += self.loss_fn(pred, y).item()
 
                 if self.input == "pima":
                     threshold = 0.5
-                    predicted = (pred > threshold).type(torch.float)  # binary classification
+                    predicted = (pred > threshold).type(
+                        torch.float
+                    )  # binary classification
                     correct += (predicted == y).sum().item()
 
                 else:
@@ -244,12 +254,15 @@ class Train:
                 all_indices.extend([idx * y.size(0) + i for i in range(y.size(0))])
 
         # calculate metrics for all datasets
-        per_class_metrics = self.calculate_per_class_metrics(all_labels, all_predictions)
-        confusion_matrix_data = self.calculate_confusion_matrix(all_labels, all_predictions)
+        per_class_metrics = self.calculate_per_class_metrics(
+            all_labels, all_predictions
+        )
+        confusion_matrix_data = self.calculate_confusion_matrix(
+            all_labels, all_predictions
+        )
         overall_metrics = self.calculate_overall_metrics(all_labels, all_predictions)
 
         if output_info and self.input != "pima":
-
             # calculate per-class accuracy
             class_correct = defaultdict(int)
             class_total = defaultdict(int)
@@ -257,7 +270,9 @@ class Train:
             # class_predictions is a dictionary of lists. each list contains (idx, true_label, pred_label)
             # ex: class_predictions[class_label] = [(idx, true_label, pred_label), (idx, true_label, pred_label), (idx, true_label, pred_label)]
 
-            for idx, (true_label, pred_label) in enumerate(zip(all_labels, all_predictions)):
+            for idx, (true_label, pred_label) in enumerate(
+                zip(all_labels, all_predictions)
+            ):
                 class_total[true_label] += 1
                 class_predictions[true_label].append((idx, true_label, pred_label))
 
@@ -266,15 +281,23 @@ class Train:
 
             # get 3 lowest class accuracies
             accuracies = per_class_metrics["accuracy"]
-            lowest_classes = sorted(range(len(accuracies)), key=lambda i: accuracies[i])[:3]
-            lowest_accuracy_classes_info = {c: class_predictions[c] for c in lowest_classes}
+            lowest_classes = sorted(
+                range(len(accuracies)), key=lambda i: accuracies[i]
+            )[:3]
+            lowest_accuracy_classes_info = {
+                c: class_predictions[c] for c in lowest_classes
+            }
             print(f"\n3 lowest accuracy classes: {lowest_classes}")
 
             print("\nGetting random predictions per class...")
-            random_samples = self.get_random_predictions_per_class(class_predictions, num_samples=3)
+            random_samples = self.get_random_predictions_per_class(
+                class_predictions, num_samples=3
+            )
 
             print("Getting misclassified samples for lowest accuracy classes...")
-            misclassified_samples = self.get_misclassified_samples(lowest_accuracy_classes_info, num_samples=3)
+            misclassified_samples = self.get_misclassified_samples(
+                lowest_accuracy_classes_info, num_samples=3
+            )
 
         # returning test loss here :)
         avg_test_loss = test_loss / len(self.test_loader)
@@ -318,10 +341,16 @@ class Train:
         for class_label in range(self.num_classes):
             if class_label in class_predictions:
                 # get only misclassified samples
-                misclassified = [sample for sample in class_predictions[class_label] if sample[1] != sample[2]]
+                misclassified = [
+                    sample
+                    for sample in class_predictions[class_label]
+                    if sample[1] != sample[2]
+                ]
 
                 if len(misclassified) >= num_samples:
-                    misclassified_samples[class_label] = random.sample(misclassified, num_samples)
+                    misclassified_samples[class_label] = random.sample(
+                        misclassified, num_samples
+                    )
                 else:
                     misclassified_samples[class_label] = misclassified
 
@@ -337,7 +366,9 @@ class Train:
         labels = np.array(all_labels)
         predictions = np.array(all_predictions)
 
-        precision, recall, f1, support = precision_recall_fscore_support(labels, predictions, average=None, zero_division="warn")
+        precision, recall, f1, support = precision_recall_fscore_support(
+            labels, predictions, average=None, zero_division="warn"
+        )
 
         # Calculate per-class accuracy
         accuracy = []
@@ -350,8 +381,13 @@ class Train:
             accuracy.append(float(acc))
 
         # convert to lists
-        precision = [float(x) for x in (precision.tolist() if hasattr(precision, "tolist") else precision)]
-        recall = [float(x) for x in (recall.tolist() if hasattr(recall, "tolist") else recall)]
+        precision = [
+            float(x)
+            for x in (precision.tolist() if hasattr(precision, "tolist") else precision)
+        ]
+        recall = [
+            float(x) for x in (recall.tolist() if hasattr(recall, "tolist") else recall)
+        ]
         f1 = [float(x) for x in (f1.tolist() if hasattr(f1, "tolist") else f1)]
 
         per_class_metrics = {
@@ -385,7 +421,9 @@ class Train:
         labels = np.array(all_labels)
         predictions = np.array(all_predictions)
 
-        precision, recall, f1, _ = precision_recall_fscore_support(labels, predictions, average="weighted", zero_division="warn")
+        precision, recall, f1, _ = precision_recall_fscore_support(
+            labels, predictions, average="weighted", zero_division="warn"
+        )
         overall_accuracy = np.sum(predictions == labels) / len(labels)
 
         overall_metrics = {
@@ -444,17 +482,33 @@ class Train:
                     if image_np.shape[0] == 1:
                         # Grayscale: (1, H, W) -> (H, W)
                         image_np = image_np[0]
-                        image_np = ((image_np - image_np.min()) * (255.0 / (image_np.max() - image_np.min()))).astype(np.uint8)
-                        image_np_resized = cv2.resize(image_np, (400, 400), interpolation=cv2.INTER_NEAREST)
+                        image_np = (
+                            (image_np - image_np.min())
+                            * (255.0 / (image_np.max() - image_np.min()))
+                        ).astype(np.uint8)
+                        image_np_resized = cv2.resize(
+                            image_np, (400, 400), interpolation=cv2.INTER_NEAREST
+                        )
                         if dev_testing:
-                            cv2.imwrite(os.path.join(class_dir, f"image_{idx}_original.png"), image_np_resized,)
+                            cv2.imwrite(
+                                os.path.join(class_dir, f"image_{idx}_original.png"),
+                                image_np_resized,
+                            )
                     else:
                         # RGB: (3, H, W) -> (H, W, 3)
                         image_np = np.transpose(image_np, (1, 2, 0))
-                        image_np = ((image_np - image_np.min())* (255.0 / (image_np.max() - image_np.min()))).astype(np.uint8)
-                        image_np_resized = cv2.resize(image_np, (400, 400), interpolation=cv2.INTER_NEAREST)
+                        image_np = (
+                            (image_np - image_np.min())
+                            * (255.0 / (image_np.max() - image_np.min()))
+                        ).astype(np.uint8)
+                        image_np_resized = cv2.resize(
+                            image_np, (400, 400), interpolation=cv2.INTER_NEAREST
+                        )
                         if dev_testing:
-                            cv2.imwrite(os.path.join(class_dir, f"image_{idx}_original.png"),cv2.cvtColor(image_np_resized, cv2.COLOR_RGB2BGR),)
+                            cv2.imwrite(
+                                os.path.join(class_dir, f"image_{idx}_original.png"),
+                                cv2.cvtColor(image_np_resized, cv2.COLOR_RGB2BGR),
+                            )
 
                     # Encode original image as base64
                     img_b64 = self.image_to_base64_png(image_np_resized)
@@ -474,31 +528,61 @@ class Train:
                             fmap = fmap[0]
                             fmap = np.moveaxis(fmap, 0, -1)
                             peek_map = self.compute_PEEK(fmap, h, w)
-                            peek_map_norm = (peek_map - peek_map.min()) / (peek_map.max() - peek_map.min())
-                            peek_map_norm_resized = cv2.resize(peek_map_norm,(400, 400),interpolation=cv2.INTER_NEAREST)
-                            heatmap = cv2.applyColorMap((peek_map_norm_resized * 255).astype(np.uint8),cv2.COLORMAP_JET)
+                            peek_map_norm = (peek_map - peek_map.min()) / (
+                                peek_map.max() - peek_map.min()
+                            )
+                            peek_map_norm_resized = cv2.resize(
+                                peek_map_norm,
+                                (400, 400),
+                                interpolation=cv2.INTER_NEAREST,
+                            )
+                            heatmap = cv2.applyColorMap(
+                                (peek_map_norm_resized * 255).astype(np.uint8),
+                                cv2.COLORMAP_JET,
+                            )
                             if c == 1:
-                                overlay = cv2.addWeighted(cv2.cvtColor(image_np_resized, cv2.COLOR_GRAY2BGR),0.3,heatmap,0.7,0)
+                                overlay = cv2.addWeighted(
+                                    cv2.cvtColor(image_np_resized, cv2.COLOR_GRAY2BGR),
+                                    0.3,
+                                    heatmap,
+                                    0.7,
+                                    0,
+                                )
                             else:
                                 if image_np_resized.shape[2] == 3:
                                     base_img = image_np_resized
                                 else:
-                                    base_img = cv2.cvtColor(image_np_resized, cv2.COLOR_GRAY2BGR)
-                                overlay = cv2.addWeighted(base_img, 0.3, heatmap, 0.7, 0)
+                                    base_img = cv2.cvtColor(
+                                        image_np_resized, cv2.COLOR_GRAY2BGR
+                                    )
+                                overlay = cv2.addWeighted(
+                                    base_img, 0.3, heatmap, 0.7, 0
+                                )
 
                             # Save peek map overlay to disk
                             if dev_testing:
-                                cv2.imwrite(os.path.join(class_dir, f"image_{idx}_{layer}.png"),overlay,)
-                                print(f"Saved original image and peek map for class {true_label}, sample {idx}, predicted {pred_label}")
+                                cv2.imwrite(
+                                    os.path.join(class_dir, f"image_{idx}_{layer}.png"),
+                                    overlay,
+                                )
+                                print(
+                                    f"Saved original image and peek map for class {true_label}, sample {idx}, predicted {pred_label}"
+                                )
 
                             # Encode peek map overlay as base64
                             _, buffer = cv2.imencode(".png", overlay)
-                            peek_b64 = base64.b64encode(buffer.tobytes()).decode("utf-8")
-                            image_data["peek_maps"].append({"layer": str(layer), "image": peek_b64})
+                            peek_b64 = base64.b64encode(buffer.tobytes()).decode(
+                                "utf-8"
+                            )
+                            image_data["peek_maps"].append(
+                                {"layer": str(layer), "image": peek_b64}
+                            )
 
                     else:
                         if dev_testing:
-                            print(f"Saved original image for class {true_label}, sample {idx} (no convolutional layers)")
+                            print(
+                                f"Saved original image for class {true_label}, sample {idx} (no convolutional layers)"
+                            )
 
                 self.model.feature_save = False
                 self.model.clear_feature_maps()
@@ -506,7 +590,14 @@ class Train:
 
         return result
 
-    def train_test_log_stream(self, n_epochs, batch_size, socketio=None, active_training=None, dev_testing=False):
+    def train_test_log_stream(
+        self,
+        n_epochs,
+        batch_size,
+        socketio=None,
+        active_training=None,
+        dev_testing=False,
+    ):
         # intended for default to support streaming. however, socketio object and active_training must be passed in. they optional for dev_testing
         train_losses = []
         train_accs = []
@@ -522,7 +613,9 @@ class Train:
         if dev_testing:
             print("training_started", {"total_epochs": n_epochs, "dataset": self.input})
         else:
-            socketio.emit("training_started", {"total_epochs": n_epochs, "dataset": self.input})
+            socketio.emit(
+                "training_started", {"total_epochs": n_epochs, "dataset": self.input}
+            )
 
         for t in range(n_epochs):
             # Check for pause before starting epoch
@@ -531,7 +624,9 @@ class Train:
                     time.sleep(0.1)  # Sleep briefly to avoid busy waiting
                     if not active_training.get("is_training", False):
                         # Training was stopped while paused
-                        socketio.emit("training_stopped", {"message": "Training stopped"})
+                        socketio.emit(
+                            "training_stopped", {"message": "Training stopped"}
+                        )
                         return
                 # Check if training was stopped
                 if not active_training or not active_training.get("is_training", False):
@@ -542,7 +637,9 @@ class Train:
             socketio.emit("epoch_started", {"epoch": t + 1, "total_epochs": n_epochs})
             # emit is method to send events and data to clients via websocket
             avg_train_loss, train_avg_acc = self.train(n_epochs, batch_size)
-            print(f"Train Loss: {avg_train_loss:.4f}, Train Accuracy: {train_avg_acc:.2f}%\n")
+            print(
+                f"Train Loss: {avg_train_loss:.4f}, Train Accuracy: {train_avg_acc:.2f}%\n"
+            )
 
             if t != n_epochs - 1 or self.input == "pima":
                 test_result = self.test(output_info=False)
@@ -569,9 +666,17 @@ class Train:
                     # Process samples if available
                     if self.input != "pima":
                         print("----------processing random samples-----------")
-                        RANDOM_SAMPLES_ENCODED = self.process_image_samples(random_samples, "cnn_analysis_results", dev_testing=dev_testing)
+                        RANDOM_SAMPLES_ENCODED = self.process_image_samples(
+                            random_samples,
+                            "cnn_analysis_results",
+                            dev_testing=dev_testing,
+                        )
                         print("----------processing misclassified samples-----------")
-                        MISCLASSIFIED_SAMPLES_ENCODED = self.process_image_samples(misclassified_samples, "cnn_analysis_results/lowest_accuracy_classes", dev_testing=dev_testing)
+                        MISCLASSIFIED_SAMPLES_ENCODED = self.process_image_samples(
+                            misclassified_samples,
+                            "cnn_analysis_results/lowest_accuracy_classes",
+                            dev_testing=dev_testing,
+                        )
                     else:  # Fallback for 5-value return
                         (
                             avg_test_loss,
@@ -580,9 +685,11 @@ class Train:
                             confusion_matrix_data,
                             overall_metrics,
                         ) = test_result
-                        
-            print(f"Test Loss: {avg_test_loss:.4f}, Test Accuracy: {test_avg_acc:.2f}%\n")
-                
+
+            print(
+                f"Test Loss: {avg_test_loss:.4f}, Test Accuracy: {test_avg_acc:.2f}%\n"
+            )
+
             train_losses.append(avg_train_loss)
             train_accs.append(train_avg_acc)
             test_losses.append(avg_test_loss)
@@ -639,7 +746,350 @@ class Train:
         }
 
         # Emit training completion
-        socketio.emit("training_completed", {"final_results": RESULTS, "message": "Training completed successfully!"})
+        socketio.emit(
+            "training_completed",
+            {"final_results": RESULTS, "message": "Training completed successfully!"},
+        )
+
+        return RESULTS
+
+    async def train_test_log_stream_async(
+        self,
+        n_epochs,
+        batch_size,
+        socketio=None,
+        active_training=None,
+        dev_testing=False,
+    ):
+        """Async version of train_test_log_stream for use with ASGI servers"""
+        # intended for default to support streaming. however, socketio object and active_training must be passed in. they optional for dev_testing
+        train_losses = []
+        train_accs = []
+        test_losses = []
+        test_accs = []
+        per_class_metrics = {}
+        confusion_matrix_data = []
+        overall_metrics = {}
+
+        RANDOM_SAMPLES_ENCODED = {}
+        MISCLASSIFIED_SAMPLES_ENCODED = {}
+
+        if dev_testing:
+            print("training_started", {"total_epochs": n_epochs, "dataset": self.input})
+        else:
+            await socketio.emit(
+                "training_started", {"total_epochs": n_epochs, "dataset": self.input}
+            )
+
+        for t in range(n_epochs):
+            # Check for pause before starting epoch
+            if dev_testing == False:
+                while active_training and active_training.get("is_paused", False):
+                    import asyncio
+
+                    await asyncio.sleep(0.1)  # Sleep briefly to avoid busy waiting
+                    if not active_training.get("is_training", False):
+                        # Training was stopped while paused
+                        await socketio.emit(
+                            "training_stopped", {"message": "Training stopped"}
+                        )
+                        return
+                # Check if training was stopped
+                if not active_training or not active_training.get("is_training", False):
+                    await socketio.emit(
+                        "training_stopped", {"message": "Training stopped"}
+                    )
+                    return
+
+            print(f"Epoch {t + 1}/{n_epochs}...")
+            await socketio.emit(
+                "epoch_started", {"epoch": t + 1, "total_epochs": n_epochs}
+            )
+            # emit is method to send events and data to clients via websocket
+            avg_train_loss, train_avg_acc = self.train(n_epochs, batch_size)
+            print(
+                f"Train Loss: {avg_train_loss:.4f}, Train Accuracy: {train_avg_acc:.2f}%\n"
+            )
+
+            if t != n_epochs - 1 or self.input == "pima":
+                test_result = self.test(output_info=False)
+                (
+                    avg_test_loss,
+                    test_avg_acc,
+                    per_class_metrics,
+                    confusion_matrix_data,
+                    overall_metrics,
+                ) = test_result
+            else:
+                test_result = self.test(output_info=True)
+                if len(test_result) == 7:  # Non-pima dataset with output_info=True
+                    (
+                        avg_test_loss,
+                        test_avg_acc,
+                        random_samples,
+                        misclassified_samples,
+                        per_class_metrics,
+                        confusion_matrix_data,
+                        overall_metrics,
+                    ) = test_result
+
+                    # Process samples if available
+                    if self.input != "pima":
+                        print("----------processing random samples-----------")
+                        RANDOM_SAMPLES_ENCODED = self.process_image_samples(
+                            random_samples,
+                            "cnn_analysis_results",
+                            dev_testing=dev_testing,
+                        )
+                        print("----------processing misclassified samples-----------")
+                        MISCLASSIFIED_SAMPLES_ENCODED = self.process_image_samples(
+                            misclassified_samples,
+                            "cnn_analysis_results/lowest_accuracy_classes",
+                            dev_testing=dev_testing,
+                        )
+                    else:  # Fallback for 5-value return
+                        (
+                            avg_test_loss,
+                            test_avg_acc,
+                            per_class_metrics,
+                            confusion_matrix_data,
+                            overall_metrics,
+                        ) = test_result
+
+            print(
+                f"Test Loss: {avg_test_loss:.4f}, Test Accuracy: {test_avg_acc:.2f}%\n"
+            )
+
+            train_losses.append(avg_train_loss)
+            train_accs.append(train_avg_acc)
+            test_losses.append(avg_test_loss)
+            test_accs.append(test_avg_acc)
+
+            # Prepare progress data
+            progress_data = {
+                "epoch": t + 1,
+                "total_epochs": n_epochs,
+                "progress": ((t + 1) / n_epochs) * 100,
+                "train_loss": avg_train_loss,
+                "train_accuracy": train_avg_acc,
+                "test_loss": avg_test_loss,
+                "test_accuracy": test_avg_acc,
+                "train_losses": [{"x": i, "y": v} for i, v in enumerate(train_losses)],
+                "test_losses": [{"x": i, "y": v} for i, v in enumerate(test_losses)],
+            }
+
+            # Update active training state
+            if active_training is not None:
+                active_training["current_progress"] = progress_data
+
+            # Emit epoch progress
+            await socketio.emit("epoch_completed", progress_data)
+
+        # Calculate final averages
+        avg_train_acc = sum(train_accs) / len(train_accs)
+        avg_test_acc = sum(test_accs) / len(test_accs)
+        avg_train_loss = sum(train_losses) / len(train_losses)
+        avg_test_loss = sum(test_losses) / len(test_losses)
+
+        print("Done!")
+
+        # Format losses for final result
+        train_losses = [{"x": i, "y": v} for i, v in enumerate(train_losses)]
+        test_losses = [{"x": i, "y": v} for i, v in enumerate(test_losses)]
+
+        ORIGINAL_OUTPUT = {
+            "train_losses": train_losses,
+            "test_losses": test_losses,
+            "avg_train_loss": avg_train_loss,
+            "avg_test_loss": avg_test_loss,
+            "avg_train_acc": avg_train_acc,
+            "avg_test_acc": avg_test_acc,
+        }
+
+        RESULTS = {
+            "training": ORIGINAL_OUTPUT,
+            "outputs_class": per_class_metrics,
+            "outputs_overall": overall_metrics,
+            "confusion_matrix": confusion_matrix_data,
+            "random_samples": RANDOM_SAMPLES_ENCODED,
+            "top_misclassified": MISCLASSIFIED_SAMPLES_ENCODED,
+        }
+
+        # Emit training completion
+        await socketio.emit(
+            "training_completed",
+            {"final_results": RESULTS, "message": "Training completed successfully!"},
+        )
+
+        return RESULTS
+
+    async def train_test_log_stream_async(
+        self,
+        n_epochs,
+        batch_size,
+        socketio=None,
+        active_training=None,
+        dev_testing=False,
+    ):
+        """Async version of train_test_log_stream for use with ASGI servers"""
+        # intended for default to support streaming. however, socketio object and active_training must be passed in. they optional for dev_testing
+        train_losses = []
+        train_accs = []
+        test_losses = []
+        test_accs = []
+        per_class_metrics = {}
+        confusion_matrix_data = []
+        overall_metrics = {}
+
+        RANDOM_SAMPLES_ENCODED = {}
+        MISCLASSIFIED_SAMPLES_ENCODED = {}
+
+        if dev_testing:
+            print("training_started", {"total_epochs": n_epochs, "dataset": self.input})
+        else:
+            await socketio.emit(
+                "training_started", {"total_epochs": n_epochs, "dataset": self.input}
+            )
+
+        for t in range(n_epochs):
+            # Check for pause before starting epoch
+            if dev_testing == False:
+                while active_training and active_training.get("is_paused", False):
+                    import asyncio
+
+                    await asyncio.sleep(0.1)  # Sleep briefly to avoid busy waiting
+                    if not active_training.get("is_training", False):
+                        # Training was stopped while paused
+                        await socketio.emit(
+                            "training_stopped", {"message": "Training stopped"}
+                        )
+                        return
+                # Check if training was stopped
+                if not active_training or not active_training.get("is_training", False):
+                    await socketio.emit(
+                        "training_stopped", {"message": "Training stopped"}
+                    )
+                    return
+
+            print(f"Epoch {t + 1}/{n_epochs}...")
+            await socketio.emit(
+                "epoch_started", {"epoch": t + 1, "total_epochs": n_epochs}
+            )
+            # emit is method to send events and data to clients via websocket
+            avg_train_loss, train_avg_acc = self.train(n_epochs, batch_size)
+            print(
+                f"Train Loss: {avg_train_loss:.4f}, Train Accuracy: {train_avg_acc:.2f}%\n"
+            )
+
+            if t != n_epochs - 1 or self.input == "pima":
+                test_result = self.test(output_info=False)
+                (
+                    avg_test_loss,
+                    test_avg_acc,
+                    per_class_metrics,
+                    confusion_matrix_data,
+                    overall_metrics,
+                ) = test_result
+            else:
+                test_result = self.test(output_info=True)
+                if len(test_result) == 7:  # Non-pima dataset with output_info=True
+                    (
+                        avg_test_loss,
+                        test_avg_acc,
+                        random_samples,
+                        misclassified_samples,
+                        per_class_metrics,
+                        confusion_matrix_data,
+                        overall_metrics,
+                    ) = test_result
+
+                    # Process samples if available
+                    if self.input != "pima":
+                        print("----------processing random samples-----------")
+                        RANDOM_SAMPLES_ENCODED = self.process_image_samples(
+                            random_samples,
+                            "cnn_analysis_results",
+                            dev_testing=dev_testing,
+                        )
+                        print("----------processing misclassified samples-----------")
+                        MISCLASSIFIED_SAMPLES_ENCODED = self.process_image_samples(
+                            misclassified_samples,
+                            "cnn_analysis_results/lowest_accuracy_classes",
+                            dev_testing=dev_testing,
+                        )
+                    else:  # Fallback for 5-value return
+                        (
+                            avg_test_loss,
+                            test_avg_acc,
+                            per_class_metrics,
+                            confusion_matrix_data,
+                            overall_metrics,
+                        ) = test_result
+
+            print(
+                f"Test Loss: {avg_test_loss:.4f}, Test Accuracy: {test_avg_acc:.2f}%\n"
+            )
+
+            train_losses.append(avg_train_loss)
+            train_accs.append(train_avg_acc)
+            test_losses.append(avg_test_loss)
+            test_accs.append(test_avg_acc)
+
+            # Prepare progress data
+            progress_data = {
+                "epoch": t + 1,
+                "total_epochs": n_epochs,
+                "progress": ((t + 1) / n_epochs) * 100,
+                "train_loss": avg_train_loss,
+                "train_accuracy": train_avg_acc,
+                "test_loss": avg_test_loss,
+                "test_accuracy": test_avg_acc,
+                "train_losses": [{"x": i, "y": v} for i, v in enumerate(train_losses)],
+                "test_losses": [{"x": i, "y": v} for i, v in enumerate(test_losses)],
+            }
+
+            # Update active training state
+            if active_training is not None:
+                active_training["current_progress"] = progress_data
+
+            # Emit epoch progress
+            await socketio.emit("epoch_completed", progress_data)
+
+        # Calculate final averages
+        avg_train_acc = sum(train_accs) / len(train_accs)
+        avg_test_acc = sum(test_accs) / len(test_accs)
+        avg_train_loss = sum(train_losses) / len(train_losses)
+        avg_test_loss = sum(test_losses) / len(test_losses)
+
+        print("Done!")
+
+        # Format losses for final result
+        train_losses = [{"x": i, "y": v} for i, v in enumerate(train_losses)]
+        test_losses = [{"x": i, "y": v} for i, v in enumerate(test_losses)]
+
+        ORIGINAL_OUTPUT = {
+            "train_losses": train_losses,
+            "test_losses": test_losses,
+            "avg_train_loss": avg_train_loss,
+            "avg_test_loss": avg_test_loss,
+            "avg_train_acc": avg_train_acc,
+            "avg_test_acc": avg_test_acc,
+        }
+
+        RESULTS = {
+            "training": ORIGINAL_OUTPUT,
+            "outputs_class": per_class_metrics,
+            "outputs_overall": overall_metrics,
+            "confusion_matrix": confusion_matrix_data,
+            "random_samples": RANDOM_SAMPLES_ENCODED,
+            "top_misclassified": MISCLASSIFIED_SAMPLES_ENCODED,
+        }
+
+        # Emit training completion
+        await socketio.emit(
+            "training_completed",
+            {"final_results": RESULTS, "message": "Training completed successfully!"},
+        )
 
         return RESULTS
 
@@ -696,7 +1146,9 @@ if __name__ == "__main__":
     )
 
     # Pass dev_testing to process_image_samples via train_test_log if needed
-    RESULTS = t.train_test_log_stream(n_epochs, batch_size, socketio=None, active_training=None, dev_testing=True)
+    RESULTS = t.train_test_log_stream(
+        n_epochs, batch_size, socketio=None, active_training=None, dev_testing=True
+    )
 
     print("Original Results:", RESULTS["training"])
     print("Per-class Metrics:", RESULTS["outputs_class"])
@@ -810,7 +1262,9 @@ if __name__ == "__main__":
     )
 
     # Pass dev_testing to process_image_samples via train_test_log if needed
-    RRESULTS = t.train_test_log_stream(n_epochs, batch_size, socketio=None, active_training=None, dev_testing=True)
+    RRESULTS = t.train_test_log_stream(
+        n_epochs, batch_size, socketio=None, active_training=None, dev_testing=True
+    )
 
     print("Original Results:", RESULTS["training"])
     print("Per-class Metrics:", RESULTS["outputs_class"])

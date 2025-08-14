@@ -1,6 +1,9 @@
 flask
 Flask-Cors
 flask-socketio
+uvicorn
+fastapi
+python-socketio
 torch
 torchvision
 opencv-python
