@@ -1,8 +1,8 @@
-from flask import Flask, request, send_file
-from flask_socketio import SocketIO, emit
-from models import (DynamicModel, Train)
-
-from flask_cors import CORS  # pip install flask-cors (i think)
+from fastapi import FastAPI, Request
+from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
+import socketio
+from models import DynamicModel, Train
 from generate import Generate
 
 # dumb imports that i gyatt to add
@@ -14,99 +14,125 @@ from torchvision.transforms import ToTensor
 from torch.utils.data import DataLoader, TensorDataset
 import torch.nn.functional as F
 from sklearn.model_selection import train_test_split  # --> pip install scikit-learn
-import math
-from collections import Counter
-import threading
 
+app = FastAPI()
 
-app = Flask(__name__)
-CORS(app, origins=["http://localhost:3000", "https://scraply-prod.vercel.app"])
-socketio = SocketIO(
-    app,
-    cors_allowed_origins=["http://localhost:3000", "https://scraply-prod.vercel.app"],
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "https://scraply-prod.vercel.app"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
+# SocketIO setup
+sio = socketio.AsyncServer(
+    cors_allowed_origins=["http://localhost:3000", "https://scraply-prod.vercel.app"],
+    async_mode="asgi",
+)
+socket_app = socketio.ASGIApp(sio, app)
 
-@app.route("/")
-def hello_world():
+# Global state
+active_training = {"is_training": False, "current_progress": None, "is_paused": False}
+
+
+@app.get("/")
+async def hello_world():
     return {"data": "hello"}
 
 
-@app.route("/health", methods=["GET"])
-def health_check():
+@app.get("/health")
+async def health_check():
     return {"status": "online", "message": "Server is running"}
 
 
-@app.route("/generate", methods=["POST"])
-def generate():
-    data = request.get_json()
+@app.post("/generate")
+async def generate(request: Request):
+    data = await request.json()
 
     try:
         gen = Generate(data)
         gen.generate_notebook()
-        return send_file("generated_notebook.ipynb")
+        return FileResponse("generated_notebook.ipynb")
     except Exception as e:
         return {"status": "failed", "error": str(e)}
 
 
-@socketio.on("connect")
-def handle_connect():
+@sio.event
+async def connect(sid, environ):
     print("Client connected")
-    emit("connected", {"message": "Connected to training server"})
+    await sio.emit("connected", {"message": "Connected to training server"}, room=sid)
 
 
-@socketio.on("disconnect")
-def handle_disconnect():
+@sio.event
+async def disconnect(sid):
     print("Client disconnected")
 
-active_training = {"is_training": False, "current_progress": None, "is_paused": False}
 
-@socketio.on("check_training_status")
-def handle_check_training_status():
-    emit(
+@sio.event
+async def check_training_status(sid):
+    await sio.emit(
         "training_status",
         {
             "is_training": active_training["is_training"],
             "current_progress": active_training["current_progress"],
             "is_paused": active_training["is_paused"],
         },
+        room=sid,
     )
 
-@socketio.on("pause_training")
-def handle_pause_training():
+
+@sio.event
+async def pause_training(sid):
     if active_training["is_training"]:
         active_training["is_paused"] = True
         print("Training paused")
-        emit("training_paused", {"message": "Training has been paused"})
+        await sio.emit(
+            "training_paused", {"message": "Training has been paused"}, room=sid
+        )
     else:
-        emit("training_error", {"error": "No active training to pause"})
+        await sio.emit(
+            "training_error", {"error": "No active training to pause"}, room=sid
+        )
 
 
-@socketio.on("resume_training")
-def handle_resume_training():
+@sio.event
+async def resume_training(sid):
     if active_training["is_training"] and active_training["is_paused"]:
         active_training["is_paused"] = False
         print("Training resumed")
-        emit("training_resumed", {"message": "Training has been resumed"})
+        await sio.emit(
+            "training_resumed", {"message": "Training has been resumed"}, room=sid
+        )
     else:
-        emit("training_error", {"error": "No paused training to resume"})
+        await sio.emit(
+            "training_error", {"error": "No paused training to resume"}, room=sid
+        )
 
-@socketio.on("stop_training")
-def handle_stop_training():
+
+@sio.event
+async def stop_training(sid):
     if active_training["is_training"]:
         active_training["is_training"] = False
         active_training["is_paused"] = False
         active_training["current_progress"] = None
         print("Training stopped")
-        emit("training_stopped", {"message": "Training has been stopped"})
+        await sio.emit(
+            "training_stopped", {"message": "Training has been stopped"}, room=sid
+        )
     else:
-        emit("training_error", {"error": "No active training to stop"})
+        await sio.emit(
+            "training_error", {"error": "No active training to stop"}, room=sid
+        )
 
 
-def run_training_background(t, n_epochs, batch_size, socketio, active_training):
-    """Run training in background thread to avoid Flask response conflicts"""
+async def run_training_background(t, n_epochs, batch_size, active_training):
+    """Run training in background task"""
     try:
-        results = t.train_test_log_stream(n_epochs, batch_size, socketio, active_training)
+        results = await t.train_test_log_stream_async(
+            n_epochs, batch_size, sio, active_training
+        )
         # Mark training as complete
         active_training["is_training"] = False
         active_training["current_progress"] = None
@@ -116,13 +142,13 @@ def run_training_background(t, n_epochs, batch_size, socketio, active_training):
         active_training["is_training"] = False
         active_training["current_progress"] = None
         active_training["is_paused"] = False
-        socketio.emit("training_error", {"error": str(e)})
+        await sio.emit("training_error", {"error": str(e)})
 
 
 @app.post("/train-stream")
-def train_stream():
+async def train_stream(request: Request):
     """Streaming training endpoint that emits progress via WebSocket"""
-    data = request.get_json()
+    data = await request.json()
     print("Received streaming training request:", data)
 
     inp = data["input"]
@@ -147,7 +173,12 @@ def train_stream():
         )
 
         print("Model initialized successfully! Starting streaming training...")
-        socketio.start_background_task(run_training_background, t, n_epochs, batch_size, socketio, active_training)
+        # Start background task
+        import asyncio
+
+        asyncio.create_task(
+            run_training_background(t, n_epochs, batch_size, active_training)
+        )
 
         return {
             "status": "training_started",
@@ -160,9 +191,9 @@ def train_stream():
         active_training["is_training"] = False
         active_training["current_progress"] = None
         active_training["is_paused"] = False
-        socketio.emit("training_error", {"error": str(e)})
+        await sio.emit("training_error", {"error": str(e)})
         return {"error": str(e)}, 500
 
 
-if __name__ == "__main__":
-    socketio.run(app, debug=True, host="0.0.0.0", port=5000, allow_unsafe_werkzeug=True)
+# Export the ASGI app for uvicorn
+asgi_app = socket_app
