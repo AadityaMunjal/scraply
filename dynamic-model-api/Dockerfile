@@ -19,11 +19,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of your app
 COPY . .
 
-# Expose the port Flask runs on
+# Expose the port the app runs on
 EXPOSE 5000
 
-# Run your app
-CMD ["python", "app.py"]
+# Run your app with uvicorn
+CMD ["uvicorn", "app:asgi_app", "--host", "0.0.0.0", "--port", "5000"]
 
 # ----- DOCKER INSTRUCTIONS: -----
 # OPEN docker destop
