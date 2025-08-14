@@ -19,8 +19,8 @@ DATALOADERS = {
     },
     "shakespeare": {"file": "datasets/shakespeare.txt"},
     "pima": {
-        "X": pd.read_csv("datasets/pima-indians-diabetes.csv").iloc[:, :-1].values,
-        "y": pd.read_csv("datasets/pima-indians-diabetes.csv").iloc[:, -1].values,
+        "X": pd.read_csv("https://raw.githubusercontent.com/jbrownlee/Datasets/master/pima-indians-diabetes.data.csv").iloc[:, :-1].values,
+        "y": pd.read_csv("https://raw.githubusercontent.com/jbrownlee/Datasets/master/pima-indians-diabetes.data.csv").iloc[:, -1].values,
     },
     "MNIST": {
         "train": datasets.MNIST(
