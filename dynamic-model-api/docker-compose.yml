@@ -8,4 +8,4 @@ services:
     volumes:
       - .:/app  # optional: only if you want live reload on code changes
     environment:
-      - FLASK_ENV=development  # optional: for debug mode if needed
+      - PYTHONPATH=/app  # ensure Python can find the app module
