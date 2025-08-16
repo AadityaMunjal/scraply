@@ -8,6 +8,7 @@ const downloadFile = async (config: Config): Promise<Blob> => {
     body: JSON.stringify(config),
     headers: {
       "Content-Type": "application/json",
+      "ngrok-skip-browser-warning": "true",
     },
   });
 
@@ -26,6 +27,7 @@ const startTraining = async (config: Config) => {
     body: JSON.stringify(config),
     headers: {
       "Content-Type": "application/json",
+      "ngrok-skip-browser-warning": "true",
     },
   });
 
@@ -39,13 +41,17 @@ const startTraining = async (config: Config) => {
 };
 
 const startTransformerTraining = async (config: TransformerConfig) => {
-  const response = await fetch("https://5985635811ab.ngrok-free.app/transformertrain", {
-    method: "POST",
-    body: JSON.stringify(config),
-    headers: {
-      "Content-Type": "application/json",
+  const response = await fetch(
+    "https://5985635811ab.ngrok-free.app/transformertrain",
+    {
+      method: "POST",
+      body: JSON.stringify(config),
+      headers: {
+        "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true",
+      },
     },
-  });
+  );
 
   if (!response.ok) {
     throw new Error(
@@ -60,13 +66,17 @@ const transformerTest = async (params: {
   temperature: number;
   prompt: string;
 }) => {
-  const response = await fetch("https://5985635811ab.ngrok-free.app/transformertest", {
-    method: "POST",
-    body: JSON.stringify(params),
-    headers: {
-      "Content-Type": "application/json",
+  const response = await fetch(
+    "https://5985635811ab.ngrok-free.app/transformertest",
+    {
+      method: "POST",
+      body: JSON.stringify(params),
+      headers: {
+        "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true",
+      },
     },
-  });
+  );
 
   if (!response.ok) {
     throw new Error(
@@ -80,6 +90,10 @@ const transformerTest = async (params: {
 const checkServerHealth = async () => {
   const response = await fetch("https://5985635811ab.ngrok-free.app/health", {
     method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "ngrok-skip-browser-warning": "true",
+    },
   });
 
   if (!response.ok) {
