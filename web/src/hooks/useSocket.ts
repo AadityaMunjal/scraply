@@ -49,7 +49,7 @@ export const useSocket = (): UseSocketReturn => {
 
   useEffect(() => {
     // Create socket connection
-    const newSocket = io("http://localhost:5000", {
+    const newSocket = io("http://34.225.79.246:5000", {
       transports: ["websocket"],
       autoConnect: true,
     });
@@ -141,7 +141,7 @@ export const useSocket = (): UseSocketReturn => {
 
   const startTraining = async (config: any) => {
     try {
-      const response = await fetch("http://127.0.0.1:5000/train-stream", {
+      const response = await fetch("http://34.225.79.246:5000/train-stream", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

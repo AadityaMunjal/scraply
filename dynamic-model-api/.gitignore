@@ -4,3 +4,4 @@
 /cnn_analysis_results
 /random_cnn_tests
 generated_notebook.ipynb
+*.pem
