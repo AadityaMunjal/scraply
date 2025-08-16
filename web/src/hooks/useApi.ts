@@ -3,7 +3,7 @@ import { Config, TransformerConfig } from "~/types/index";
 
 // API functions
 const downloadFile = async (config: Config): Promise<Blob> => {
-  const response = await fetch("http://34.225.79.246:5000/generate", {
+  const response = await fetch("https://5985635811ab.ngrok-free.app/generate", {
     method: "POST",
     body: JSON.stringify(config),
     headers: {
@@ -21,7 +21,7 @@ const downloadFile = async (config: Config): Promise<Blob> => {
 };
 
 const startTraining = async (config: Config) => {
-  const response = await fetch("http://34.225.79.246:5000/train", {
+  const response = await fetch("https://5985635811ab.ngrok-free.app/train", {
     method: "POST",
     body: JSON.stringify(config),
     headers: {
@@ -39,7 +39,7 @@ const startTraining = async (config: Config) => {
 };
 
 const startTransformerTraining = async (config: TransformerConfig) => {
-  const response = await fetch("http://34.225.79.246:5000/transformertrain", {
+  const response = await fetch("https://5985635811ab.ngrok-free.app/transformertrain", {
     method: "POST",
     body: JSON.stringify(config),
     headers: {
@@ -60,7 +60,7 @@ const transformerTest = async (params: {
   temperature: number;
   prompt: string;
 }) => {
-  const response = await fetch("http://34.225.79.246:5000/transformertest", {
+  const response = await fetch("https://5985635811ab.ngrok-free.app/transformertest", {
     method: "POST",
     body: JSON.stringify(params),
     headers: {
@@ -78,7 +78,7 @@ const transformerTest = async (params: {
 };
 
 const checkServerHealth = async () => {
-  const response = await fetch("http://34.225.79.246:5000/health", {
+  const response = await fetch("https://5985635811ab.ngrok-free.app/health", {
     method: "GET",
   });
 

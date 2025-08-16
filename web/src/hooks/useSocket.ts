@@ -49,7 +49,7 @@ export const useSocket = (): UseSocketReturn => {
 
   useEffect(() => {
     // Create socket connection
-    const newSocket = io("http://34.225.79.246:5000", {
+    const newSocket = io("https://5985635811ab.ngrok-free.app", {
       transports: ["websocket"],
       autoConnect: true,
     });
@@ -141,7 +141,7 @@ export const useSocket = (): UseSocketReturn => {
 
   const startTraining = async (config: any) => {
     try {
-      const response = await fetch("http://34.225.79.246:5000/train-stream", {
+      const response = await fetch("https://5985635811ab.ngrok-free.app/train-stream", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
