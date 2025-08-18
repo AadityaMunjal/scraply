@@ -18,9 +18,8 @@ const Board = () => {
   const [selectedDataset, setSelectedDataset] = useState<string>(
     DATASETS[0]!.inputName,
   );
-  const [useDefaultConfig, setUseDefaultConfig] = useState<boolean>(false);
   const [selectedArchitecture, setSelectedArchitecture] =
-    useState<string>("default");
+    useState<string>("custom");
   const { loadDefaultConfig, clearCanvas } = useBoardStore();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -44,9 +43,11 @@ const Board = () => {
     };
   }, [dropdownOpen]);
 
-  const handleDefaultConfigToggle = (checked: boolean) => {
-    setUseDefaultConfig(checked);
-    if (checked) {
+  useEffect(() => {
+    // When architecture changes, load or clear config
+    if (selectedArchitecture === "custom") {
+      clearCanvas();
+    } else {
       const defaultBlocks =
         selectedArchitecture === "lenet"
           ? generateLeNetBlocks(selectedDataset)
@@ -54,10 +55,9 @@ const Board = () => {
             ? generateResNetBlocks(selectedDataset)
             : generateUniqueBlocks(selectedDataset);
       loadDefaultConfig(defaultBlocks);
-    } else {
-      clearCanvas();
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedArchitecture, selectedDataset]);
 
   const Tabs: Record<AppTabs, React.ReactNode> = {
     [AppTabs.LAYERS]: <LayersTab />,
@@ -120,7 +120,9 @@ const Board = () => {
                               onClick={() => {
                                 setSelectedDataset(dataset.inputName);
                                 setDropdownOpen(false);
-                                if (useDefaultConfig) {
+                                if (selectedArchitecture === "custom") {
+                                  clearCanvas();
+                                } else {
                                   const defaultBlocks =
                                     selectedArchitecture === "lenet"
                                       ? generateLeNetBlocks(dataset.inputName)
@@ -152,45 +154,18 @@ const Board = () => {
               </div>
             </div>
             <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="useDefaultConfig"
-                checked={useDefaultConfig}
-                onChange={(e) => handleDefaultConfigToggle(e.target.checked)}
-                className="mr-2 h-4 w-4 rounded border-gray-300 bg-zinc-800 text-blue-600 focus:ring-blue-500"
-              />
-              <label
-                htmlFor="useDefaultConfig"
-                className="text-sm text-zinc-300"
+              <div className="mx-2 text-sm text-zinc-300">Architecture:</div>
+              <select
+                className="rounded bg-zinc-800 p-2 text-sm text-white outline-none ring-1 ring-zinc-700"
+                value={selectedArchitecture}
+                onChange={(e) => setSelectedArchitecture(e.target.value)}
               >
-                Load default model
-              </label>
+                <option value="custom">Custom</option>
+                <option value="default">Default</option>
+                <option value="lenet">LeNet</option>
+                <option value="resnet">ResNet</option>
+              </select>
             </div>
-            {useDefaultConfig && (
-              <div className="flex items-center">
-                <div className="mx-2 text-sm text-zinc-300">Architecture:</div>
-                <select
-                  className="rounded bg-zinc-800 p-2 text-sm text-white outline-none ring-1 ring-zinc-700"
-                  value={selectedArchitecture}
-                  onChange={(e) => {
-                    setSelectedArchitecture(e.target.value);
-                    if (useDefaultConfig) {
-                      const defaultBlocks =
-                        e.target.value === "lenet"
-                          ? generateLeNetBlocks(selectedDataset)
-                          : e.target.value === "resnet"
-                            ? generateResNetBlocks(selectedDataset)
-                            : generateUniqueBlocks(selectedDataset);
-                      loadDefaultConfig(defaultBlocks);
-                    }
-                  }}
-                >
-                  <option value="default">Default</option>
-                  <option value="lenet">LeNet</option>
-                  <option value="resnet">ResNet</option>
-                </select>
-              </div>
-            )}
           </div>
           <Toggle
             color="blue"
