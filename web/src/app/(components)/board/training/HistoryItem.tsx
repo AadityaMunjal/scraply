@@ -28,9 +28,9 @@ const HistoryItem: React.FC<HistoryItemProps> = ({
   const { mutate: downloadFile } = useDownloadFile();
 
   return (
-    <div className="group my-4 overflow-hidden rounded-2xl border border-slate-700/50 bg-zinc-900 shadow-xl backdrop-blur-sm transition-all duration-300 hover:shadow-2xl">
+    <div className="group my-3 overflow-hidden rounded-xl border border-slate-700/50 bg-zinc-900 shadow-lg backdrop-blur-sm transition-all duration-300 hover:shadow-xl">
       {/* Header */}
-      <div className="px-6 pb-2 pt-5">
+      <div className="px-5 pb-2 pt-4">
         <button
           onClick={() =>
             setOpenHistoryItem(idx === openHistoryItemIdx ? null : idx)
@@ -39,7 +39,7 @@ const HistoryItem: React.FC<HistoryItemProps> = ({
         >
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-xl font-bold text-slate-100">
+              <h3 className="text-lg font-bold text-slate-100">
                 {trainingRes.run_name || `Training Run ${idx}`}
               </h3>
               <p className="text-sm text-slate-400">Run #{idx}</p>
@@ -50,7 +50,7 @@ const HistoryItem: React.FC<HistoryItemProps> = ({
                   e.stopPropagation();
                   downloadFile(trainingRes.trainingConfig);
                 }}
-                className="flex items-center gap-2 rounded-lg bg-zinc-700 px-3 py-2 text-zinc-200 transition-colors duration-200 hover:bg-zinc-600"
+                className="flex items-center gap-2 rounded-lg bg-zinc-700 px-3 py-1.5 text-sm text-zinc-200 transition-colors duration-200 hover:bg-zinc-600"
                 title="Download Python Notebook"
                 aria-label="Download Python Notebook"
               >

@@ -56,24 +56,24 @@ const SharedTrainingConfig: React.FC<SharedTrainingConfigProps> = ({
   onResetRunName,
 }) => {
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <TrainingConfigItem title="Run Name" onReset={onResetRunName}>
         <input
           type="text"
           value={runName}
           onChange={(e) => setRunName(e.target.value)}
           placeholder="(Optional) Name training run"
-          className="w-full rounded-lg bg-zinc-700 px-3 py-2 text-zinc-100 placeholder-zinc-400 outline-none focus:bg-zinc-600"
+          className="w-full rounded-lg bg-zinc-700 px-3 py-1.5 text-base text-zinc-100 placeholder-zinc-400 outline-none focus:bg-zinc-600"
         />
       </TrainingConfigItem>
 
-      <div className="text-2xl text-zinc-700">Model</div>
+      <div className="text-xl text-zinc-700">Model</div>
 
       <TrainingConfigItem title="Loss Function" onReset={onResetLoss}>
         <select
           value={loss}
           onChange={(e) => setLoss(e.target.value as LossFunction)}
-          className="rounded-lg bg-zinc-700 px-3 py-2 outline-none"
+          className="rounded-lg bg-zinc-700 px-3 py-1.5 text-base outline-none"
         >
           {LOSS_FUNCTIONS.map((fn) => (
             <option key={fn.value} value={fn.value}>
@@ -87,7 +87,7 @@ const SharedTrainingConfig: React.FC<SharedTrainingConfigProps> = ({
         <select
           value={optimizer}
           onChange={(e) => setOptimizer(e.target.value as OptimizerType)}
-          className="rounded-lg bg-zinc-700 px-3 py-2 outline-none"
+          className="rounded-lg bg-zinc-700 px-3 py-1.5 text-base outline-none"
         >
           {OPTIMIZERS.map((opt) => (
             <option key={opt.value} value={opt.value}>
@@ -97,7 +97,7 @@ const SharedTrainingConfig: React.FC<SharedTrainingConfigProps> = ({
         </select>
       </TrainingConfigItem>
 
-      <div className="mt-4 text-2xl text-zinc-700">Training</div>
+      <div className="mt-3 text-xl text-zinc-700">Training</div>
 
       <TrainingConfigItem title="Learning Rate" onReset={onResetLearningRate}>
         <div className="flex items-center">
@@ -118,7 +118,7 @@ const SharedTrainingConfig: React.FC<SharedTrainingConfigProps> = ({
             min={TRAINING_DEFAULTS.learningRate.min}
             max={TRAINING_DEFAULTS.learningRate.max}
             step={TRAINING_DEFAULTS.learningRate.step}
-            className="mx-1 w-20 rounded-lg bg-zinc-700 px-2 py-1 text-center outline-none"
+            className="mx-2 w-20 rounded-lg bg-zinc-700 px-2 py-1 text-center text-base outline-none"
             name="learningRate"
           />
         </div>
@@ -141,7 +141,7 @@ const SharedTrainingConfig: React.FC<SharedTrainingConfigProps> = ({
             onChange={(e) => setEpochs(parseInt(e.target.value))}
             min={TRAINING_DEFAULTS.epochs.min}
             max={TRAINING_DEFAULTS.epochs.max}
-            className="mx-1 w-20 rounded-lg bg-zinc-700 px-2 py-1 text-center outline-none"
+            className="mx-2 w-20 rounded-lg bg-zinc-700 px-2 py-1 text-center text-base outline-none"
             name="epochs"
           />
         </div>
@@ -164,7 +164,7 @@ const SharedTrainingConfig: React.FC<SharedTrainingConfigProps> = ({
             onChange={(e) => setBatchSize(parseInt(e.target.value))}
             min={TRAINING_DEFAULTS.batchSize.min}
             max={TRAINING_DEFAULTS.batchSize.max}
-            className="mx-1 w-20 rounded-lg bg-zinc-700 px-2 py-1 text-center outline-none"
+            className="mx-2 w-20 rounded-lg bg-zinc-700 px-2 py-1 text-center text-base outline-none"
             name="batchSize"
           />
         </div>

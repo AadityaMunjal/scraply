@@ -233,8 +233,8 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
     isTraining || startTrainingMutation.isPending || isLiveTraining;
 
   return (
-    <div className="h-full p-4">
-      <div className="mx-auto mb-6 max-w-7xl">
+    <div className="h-full p-3">
+      <div className="mx-auto mb-5 max-w-7xl">
         <div className="flex items-center justify-end">
           <div className="flex items-center space-x-3">
             {!isLiveTraining && (
@@ -299,11 +299,11 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
         </div>
       </div>
 
-      <div className="mx-auto grid h-full max-w-7xl grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="mx-auto grid h-full max-w-7xl grid-cols-1 gap-5 lg:grid-cols-2">
         {/* Training Configuration Section */}
-        <div className="space-y-4">
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 shadow-sm">
-            <h2 className="mb-4 text-lg font-semibold text-zinc-100">
+        <div className="space-y-3">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-3 shadow-sm">
+            <h2 className="mb-3 text-lg font-semibold text-zinc-100">
               Training Configuration
             </h2>
 
@@ -358,9 +358,9 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
         </div>
 
         {/* Training History Section */}
-        <div className="space-y-4">
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 shadow-sm">
-            <div className="mb-4 flex items-center justify-between">
+        <div className="space-y-3">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-3 shadow-sm">
+            <div className="mb-3 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-zinc-100">
                 Training History
               </h2>
@@ -369,7 +369,7 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                   onClick={clearHistory}
                   className="group flex items-center space-x-1 rounded-md bg-zinc-800 px-2 py-1 text-xs font-medium text-zinc-300 transition-colors hover:bg-zinc-700"
                 >
-                  <HiTrash className="h-3 w-3" />
+                  <HiTrash className="h-4 w-4" />
                   <span>Clear All</span>
                 </button>
               )}
