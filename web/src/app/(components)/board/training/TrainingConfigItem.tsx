@@ -13,12 +13,12 @@ const TrainingConfigItem: React.FC<TrainingConfigItemProps> = ({
 }) => {
   return (
     <div className="flex items-center justify-between">
-      <div className="my-1 flex w-full justify-between rounded-xl bg-zinc-800 p-4 text-base">
-        <div className="flex items-center">{title}</div>
+      <div className="my-1 flex w-full justify-between rounded-xl bg-zinc-800 p-3 text-base">
+        <div className="flex items-center text-base">{title}</div>
         <div>{children}</div>
       </div>
-      <button className="ml-2" onClick={onReset}>
-        <ResetIcon className="text-zinc-600" />
+      <button className="ml-2 p-1.5" onClick={onReset}>
+        <ResetIcon className="h-5 w-5 text-zinc-600" />
       </button>
     </div>
   );
