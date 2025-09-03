@@ -1,16 +1,17 @@
 import { useMutation } from "@tanstack/react-query";
 import { Config, TransformerConfig } from "~/types/index";
+import { API_CONFIG } from "~/util/config";
 
 // API functions
 const downloadFile = async (config: Config): Promise<Blob> => {
-  const response = await fetch("https://5985635811ab.ngrok-free.app/generate", {
-    method: "POST",
-    body: JSON.stringify(config),
-    headers: {
-      "Content-Type": "application/json",
-      "ngrok-skip-browser-warning": "true",
+  const response = await fetch(
+    API_CONFIG.getApiUrl(API_CONFIG.endpoints.generate),
+    {
+      method: "POST",
+      body: JSON.stringify(config),
+      headers: API_CONFIG.getHeaders(),
     },
-  });
+  );
 
   if (!response.ok) {
     throw new Error(
@@ -22,14 +23,14 @@ const downloadFile = async (config: Config): Promise<Blob> => {
 };
 
 const startTraining = async (config: Config) => {
-  const response = await fetch("https://5985635811ab.ngrok-free.app/train", {
-    method: "POST",
-    body: JSON.stringify(config),
-    headers: {
-      "Content-Type": "application/json",
-      "ngrok-skip-browser-warning": "true",
+  const response = await fetch(
+    API_CONFIG.getApiUrl(API_CONFIG.endpoints.train),
+    {
+      method: "POST",
+      body: JSON.stringify(config),
+      headers: API_CONFIG.getHeaders(),
     },
-  });
+  );
 
   if (!response.ok) {
     throw new Error(
@@ -42,14 +43,11 @@ const startTraining = async (config: Config) => {
 
 const startTransformerTraining = async (config: TransformerConfig) => {
   const response = await fetch(
-    "https://5985635811ab.ngrok-free.app/transformertrain",
+    API_CONFIG.getApiUrl(API_CONFIG.endpoints.transformerTrain),
     {
       method: "POST",
       body: JSON.stringify(config),
-      headers: {
-        "Content-Type": "application/json",
-        "ngrok-skip-browser-warning": "true",
-      },
+      headers: API_CONFIG.getHeaders(),
     },
   );
 
@@ -67,14 +65,11 @@ const transformerTest = async (params: {
   prompt: string;
 }) => {
   const response = await fetch(
-    "https://5985635811ab.ngrok-free.app/transformertest",
+    API_CONFIG.getApiUrl(API_CONFIG.endpoints.transformerTest),
     {
       method: "POST",
       body: JSON.stringify(params),
-      headers: {
-        "Content-Type": "application/json",
-        "ngrok-skip-browser-warning": "true",
-      },
+      headers: API_CONFIG.getHeaders(),
     },
   );
 
@@ -88,13 +83,13 @@ const transformerTest = async (params: {
 };
 
 const checkServerHealth = async () => {
-  const response = await fetch("https://5985635811ab.ngrok-free.app/health", {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      "ngrok-skip-browser-warning": "true",
+  const response = await fetch(
+    API_CONFIG.getApiUrl(API_CONFIG.endpoints.health),
+    {
+      method: "GET",
+      headers: API_CONFIG.getHeaders(),
     },
-  });
+  );
 
   if (!response.ok) {
     throw new Error(

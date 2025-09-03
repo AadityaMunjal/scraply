@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import io, { Socket } from "socket.io-client";
+import { API_CONFIG, SOCKET_CONFIG } from "~/util/config";
 
 interface TrainingProgress {
   epoch: number;
@@ -49,10 +50,7 @@ export const useSocket = (): UseSocketReturn => {
 
   useEffect(() => {
     // Create socket connection
-    const newSocket = io("https://5985635811ab.ngrok-free.app", {
-      transports: ["websocket"],
-      autoConnect: true,
-    });
+    const newSocket = io(SOCKET_CONFIG.URL, SOCKET_CONFIG.options);
 
     socketRef.current = newSocket;
     setSocket(newSocket);
@@ -141,13 +139,14 @@ export const useSocket = (): UseSocketReturn => {
 
   const startTraining = async (config: any) => {
     try {
-      const response = await fetch("https://5985635811ab.ngrok-free.app/train-stream", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        API_CONFIG.getApiUrl(API_CONFIG.endpoints.trainStream),
+        {
+          method: "POST",
+          headers: API_CONFIG.getHeaders(),
+          body: JSON.stringify(config),
         },
-        body: JSON.stringify(config),
-      });
+      );
 
       if (!response.ok) {
         throw new Error(`Training request failed: ${response.status}`);
