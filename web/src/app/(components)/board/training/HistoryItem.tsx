@@ -1,7 +1,7 @@
 import { TrainingResult } from "~/types/index";
 import { ResponsiveLine } from "@nivo/line";
 import { useTrainingStore } from "~/state/trainingStore";
-import { useDownloadFile } from "~/hooks/useApi";
+import { useGenerateNotebook } from "~/hooks/useElectronApi";
 
 interface HistoryItemProps {
   idx: number;
@@ -25,7 +25,7 @@ const HistoryItem: React.FC<HistoryItemProps> = ({
   };
 
   const { openHistoryItemIdx, setOpenHistoryItem } = useTrainingStore();
-  const { mutate: downloadFile } = useDownloadFile();
+  const { mutate: generateNotebook } = useGenerateNotebook();
 
   return (
     <div className="group my-3 overflow-hidden rounded-xl border border-slate-700/50 bg-zinc-900 shadow-lg backdrop-blur-sm transition-all duration-300 hover:shadow-xl">
@@ -48,7 +48,7 @@ const HistoryItem: React.FC<HistoryItemProps> = ({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  downloadFile(trainingRes.trainingConfig);
+                  generateNotebook(trainingRes.trainingConfig);
                 }}
                 className="flex items-center gap-2 rounded-lg bg-zinc-700 px-3 py-1.5 text-sm text-zinc-200 transition-colors duration-200 hover:bg-zinc-600"
                 title="Download Python Notebook"

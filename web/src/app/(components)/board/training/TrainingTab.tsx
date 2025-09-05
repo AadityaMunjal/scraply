@@ -4,8 +4,8 @@ import { HiTrash } from "react-icons/hi2";
 import { FaPlay, FaPause, FaStop } from "react-icons/fa";
 import { ResponsiveLine } from "@nivo/line";
 import { getConfig } from "~/util/board.util";
-import { useStartTraining } from "~/hooks/useApi";
-import { useSocket } from "~/hooks/useSocket";
+import { useStartTraining } from "~/hooks/useElectronApi";
+import { useElectronSocket } from "~/hooks/useElectronSocket";
 import { useBoardStore } from "~/state/boardStore";
 import { useTrainingStore } from "~/state/trainingStore";
 import { DEFAULT_TRAINING_CONFIG } from "~/util/trainingConfig";
@@ -41,7 +41,7 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
     stopTraining,
     resetTraining,
     checkTrainingStatus,
-  } = useSocket();
+  } = useElectronSocket();
 
   const {
     // Configuration

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { useServerHealth } from "./useApi";
-import { useSocket } from "./useSocket";
+import { useServerHealth } from "./useElectronApi";
+import { useElectronSocket } from "./useElectronSocket";
 
 export type ServerStatus = "online" | "offline" | "connecting" | "checking";
 
@@ -9,7 +9,7 @@ export const useServerStatus = () => {
     "online" | "offline" | "checking"
   >("checking");
   const serverHealthMutation = useServerHealth();
-  const { isConnected: isSocketConnected } = useSocket();
+  const { isConnected: isSocketConnected } = useElectronSocket();
 
   const checkHealth = async () => {
     setServerHealthStatus("checking");

@@ -4,6 +4,13 @@
  */
 
 /** @type {import("next").NextConfig} */
-const config = {};
+const config = {
+  // Enable static export for Electron
+  output: 'export',
+  trailingSlash: true,
+  images: {
+    unoptimized: true,
+  },
+};
 
-export default config;
+module.exports = config;
