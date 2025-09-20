@@ -22,6 +22,9 @@ function createWindow() {
     icon: path.join(__dirname, 'public/favicon.png')
   });
 
+  // Maximize the window
+  mainWindow.maximize();
+
   // Load the app
   if (isDev) {
     mainWindow.loadURL('http://localhost:3000');

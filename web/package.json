@@ -71,17 +71,21 @@
       "preload.cjs",
       "out/**/*",
       "node_modules/**/*",
-      "package.json"
+      "package.json",
+      "public/favicon.png"
     ],
     "mac": {
       "category": "public.app-category.developer-tools",
-      "target": "dmg"
+      "target": "dmg",
+      "icon": "public/favicon.png"
     },
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "public/favicon.png"
     },
     "linux": {
-      "target": "AppImage"
+      "target": "AppImage",
+      "icon": "public/favicon.png"
     }
   }
 }
