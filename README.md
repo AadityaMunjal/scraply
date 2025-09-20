@@ -35,7 +35,7 @@ The scraply server isn't deployed yet, therefore you need to run your own backen
 2. clone github repo `git clone https://github.com/the-AMA-team/scraply.git`
 3. go to the api directory `cd scraply/dynamic-model-api/`
 4. download python packages `pip install -r requirements.txt`
-5. run server `python3 -m flask run`
+5. run server `uvicorn app:socket_app --host 0.0.0.0 --port 5000 --reload`
 
 ### Updates in Summer'25 Release:
 
