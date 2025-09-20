@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import io, { Socket } from "socket.io-client";
-import { API_CONFIG, SOCKET_CONFIG } from "~/util/config";
+import { ElectronAPI } from "~/types/electron";
 
 interface TrainingProgress {
   epoch: number;
@@ -19,8 +18,7 @@ interface TrainingCompleted {
   message: string;
 }
 
-interface UseSocketReturn {
-  socket: Socket | null;
+interface UseElectronReturn {
   isConnected: boolean;
   trainingProgress: TrainingProgress | null;
   isTrainingActive: boolean;
@@ -35,8 +33,7 @@ interface UseSocketReturn {
   checkTrainingStatus: () => void;
 }
 
-export const useSocket = (): UseSocketReturn => {
-  const [socket, setSocket] = useState<Socket | null>(null);
+export const useSocket = (): UseElectronReturn => {
   const [isConnected, setIsConnected] = useState(false);
   const [trainingProgress, setTrainingProgress] =
     useState<TrainingProgress | null>(null);
@@ -46,137 +43,108 @@ export const useSocket = (): UseSocketReturn => {
     useState<TrainingCompleted | null>(null);
   const [trainingError, setTrainingError] = useState<string | null>(null);
 
-  const socketRef = useRef<Socket | null>(null);
-
   useEffect(() => {
-    // Create socket connection
-    const newSocket = io(SOCKET_CONFIG.URL, SOCKET_CONFIG.options);
-
-    socketRef.current = newSocket;
-    setSocket(newSocket);
-
-    // Connection events
-    newSocket.on("connect", () => {
-      console.log("Connected to training server");
+    // Check if we're in Electron environment
+    if (typeof window !== "undefined" && window.electronAPI) {
       setIsConnected(true);
 
-      // Check if there's an ongoing training session
-      newSocket.emit("check_training_status");
-    });
-
-    newSocket.on("disconnect", () => {
-      console.log("Disconnected from training server");
-      setIsConnected(false);
-      setIsTrainingActive(false);
-    });
-
-    // Training events
-    newSocket.on("training_started", (data) => {
-      console.log("Training started:", data);
-      setIsTrainingActive(true);
-      setTrainingCompleted(null);
-      setTrainingError(null);
-      setTrainingProgress(null);
-    });
-
-    newSocket.on("epoch_started", (data: any) => {
-      console.log("Epoch started:", data);
-    });
-
-    newSocket.on("epoch_completed", (data: TrainingProgress) => {
-      console.log("Epoch completed:", data);
-      setTrainingProgress(data);
-    });
-
-    newSocket.on("training_completed", (data: TrainingCompleted) => {
-      console.log("Training completed:", data);
-      setTrainingCompleted(data);
-      setIsTrainingActive(false);
-    });
-
-    newSocket.on("training_error", (data: any) => {
-      console.error("Training error:", data);
-      setTrainingError(data.error);
-      setIsTrainingActive(false);
-    });
-
-    // Handle training status check response
-    newSocket.on("training_status", (data: any) => {
-      console.log("Training status:", data);
-      if (data.is_training) {
-        setIsTrainingActive(true);
-        setIsTrainingPaused(data.is_paused || false);
-        if (data.current_progress) {
-          setTrainingProgress(data.current_progress);
+      // Set up event listeners for training progress
+      window.electronAPI.onTrainingProgress((data: TrainingProgress) => {
+        console.log("Training progress:", data);
+        setTrainingProgress(data);
+        if (!isTrainingActive) {
+          setIsTrainingActive(true);
+          setTrainingCompleted(null);
+          setTrainingError(null);
         }
-      } else {
+      });
+
+      window.electronAPI.onTrainingPaused(() => {
+        console.log("Training paused");
+        setIsTrainingPaused(true);
+      });
+
+      window.electronAPI.onTrainingResumed(() => {
+        console.log("Training resumed");
+        setIsTrainingPaused(false);
+      });
+
+      window.electronAPI.onTrainingStopped(() => {
+        console.log("Training stopped");
         setIsTrainingActive(false);
         setIsTrainingPaused(false);
-      }
-    });
-
-    // Handle training pause/resume events
-    newSocket.on("training_paused", (data: any) => {
-      console.log("Training paused:", data);
-      setIsTrainingPaused(true);
-    });
-
-    newSocket.on("training_resumed", (data: any) => {
-      console.log("Training resumed:", data);
-      setIsTrainingPaused(false);
-    });
-
-    newSocket.on("training_stopped", (data: any) => {
-      console.log("Training stopped:", data);
-      setIsTrainingActive(false);
-      setIsTrainingPaused(false);
-    });
+      });
+    }
 
     return () => {
-      newSocket.close();
+      // Cleanup event listeners when component unmounts
+      if (typeof window !== "undefined" && window.electronAPI) {
+        window.electronAPI.removeAllListeners("training-progress");
+        window.electronAPI.removeAllListeners("training-paused");
+        window.electronAPI.removeAllListeners("training-resumed");
+        window.electronAPI.removeAllListeners("training-stopped");
+      }
     };
-  }, []);
+  }, [isTrainingActive]);
 
   const startTraining = async (config: any) => {
     try {
-      const response = await fetch(
-        API_CONFIG.getApiUrl(API_CONFIG.endpoints.trainStream),
-        {
-          method: "POST",
-          headers: API_CONFIG.getHeaders(),
-          body: JSON.stringify(config),
-        },
-      );
+      if (typeof window !== "undefined" && window.electronAPI) {
+        setIsTrainingActive(true);
+        setTrainingCompleted(null);
+        setTrainingError(null);
+        setTrainingProgress(null);
 
-      if (!response.ok) {
-        throw new Error(`Training request failed: ${response.status}`);
+        const result = await window.electronAPI.startTraining(config);
+        console.log("Training started:", result);
+
+        // If training completed successfully
+        if (result.results) {
+          setTrainingCompleted({
+            final_results: result.results,
+            message: "Training completed successfully",
+          });
+          setIsTrainingActive(false);
+        }
+      } else {
+        throw new Error("Electron API not available");
       }
-
-      const result = await response.json();
-      console.log("Training started:", result);
     } catch (error) {
       console.error("Failed to start training:", error);
       setTrainingError(
         error instanceof Error ? error.message : "Failed to start training",
       );
+      setIsTrainingActive(false);
     }
   };
 
-  const pauseTraining = () => {
-    if (socketRef.current?.connected) {
-      socketRef.current.emit("pause_training");
+  const pauseTraining = async () => {
+    try {
+      if (typeof window !== "undefined" && window.electronAPI) {
+        await window.electronAPI.pauseTraining();
+      }
+    } catch (error) {
+      console.error("Failed to pause training:", error);
     }
   };
 
-  const resumeTraining = () => {
-    if (socketRef.current?.connected) {
-      socketRef.current.emit("resume_training");
+  const resumeTraining = async () => {
+    try {
+      if (typeof window !== "undefined" && window.electronAPI) {
+        await window.electronAPI.resumeTraining();
+      }
+    } catch (error) {
+      console.error("Failed to resume training:", error);
     }
   };
 
-  const stopTraining = () => {
-    if (socketRef.current?.connected) {
-      socketRef.current.emit("stop_training");
+  const stopTraining = async () => {
+    try {
+      if (typeof window !== "undefined" && window.electronAPI) {
+        await window.electronAPI.stopTraining();
+      }
+    } catch (error) {
+      console.error("Failed to stop training:", error);
     }
   };
 
@@ -189,13 +157,15 @@ export const useSocket = (): UseSocketReturn => {
   };
 
   const checkTrainingStatus = () => {
-    if (socketRef.current?.connected) {
-      socketRef.current.emit("check_training_status");
-    }
+    // In Electron, we maintain local state so no need to check server
+    console.log("Training status:", {
+      isTrainingActive,
+      isTrainingPaused,
+      trainingProgress,
+    });
   };
 
   return {
-    socket,
     isConnected,
     trainingProgress,
     isTrainingActive,

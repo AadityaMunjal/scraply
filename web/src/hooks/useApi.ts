@@ -1,103 +1,56 @@
 import { useMutation } from "@tanstack/react-query";
 import { Config, TransformerConfig } from "~/types/index";
-import { API_CONFIG } from "~/util/config";
 
-// API functions
+// Electron API functions
 const downloadFile = async (config: Config): Promise<Blob> => {
-  const response = await fetch(
-    API_CONFIG.getApiUrl(API_CONFIG.endpoints.generate),
-    {
-      method: "POST",
-      body: JSON.stringify(config),
-      headers: API_CONFIG.getHeaders(),
-    },
-  );
+  if (typeof window !== "undefined" && window.electronAPI) {
+    const result = await window.electronAPI.generateNotebook(config);
 
-  if (!response.ok) {
-    throw new Error(
-      `Download failed: ${response.status} ${response.statusText}`,
-    );
+    // Convert the result to a blob for download
+    const jsonString = JSON.stringify(result, null, 2);
+    return new Blob([jsonString], { type: "application/json" });
+  } else {
+    throw new Error("Electron API not available");
   }
-
-  return response.blob();
 };
 
 const startTraining = async (config: Config) => {
-  const response = await fetch(
-    API_CONFIG.getApiUrl(API_CONFIG.endpoints.train),
-    {
-      method: "POST",
-      body: JSON.stringify(config),
-      headers: API_CONFIG.getHeaders(),
-    },
-  );
-
-  if (!response.ok) {
-    throw new Error(
-      `Training failed: ${response.status} ${response.statusText}`,
-    );
+  if (typeof window !== "undefined" && window.electronAPI) {
+    return await window.electronAPI.startTraining(config);
+  } else {
+    throw new Error("Electron API not available");
   }
-
-  return response.json();
 };
 
 const startTransformerTraining = async (config: TransformerConfig) => {
-  const response = await fetch(
-    API_CONFIG.getApiUrl(API_CONFIG.endpoints.transformerTrain),
-    {
-      method: "POST",
-      body: JSON.stringify(config),
-      headers: API_CONFIG.getHeaders(),
-    },
-  );
-
-  if (!response.ok) {
-    throw new Error(
-      `Transformer training failed: ${response.status} ${response.statusText}`,
-    );
+  if (typeof window !== "undefined" && window.electronAPI) {
+    return await window.electronAPI.startTraining(config);
+  } else {
+    throw new Error("Electron API not available");
   }
-
-  return response.json();
 };
 
 const transformerTest = async (params: {
   temperature: number;
   prompt: string;
 }) => {
-  const response = await fetch(
-    API_CONFIG.getApiUrl(API_CONFIG.endpoints.transformerTest),
-    {
-      method: "POST",
-      body: JSON.stringify(params),
-      headers: API_CONFIG.getHeaders(),
-    },
-  );
-
-  if (!response.ok) {
-    throw new Error(
-      `Transformer test failed: ${response.status} ${response.statusText}`,
-    );
+  if (typeof window !== "undefined" && window.electronAPI) {
+    // For transformer testing, we'd need to add this to the Electron API
+    // For now, return a placeholder
+    return {
+      message: "Transformer testing not yet implemented in Electron mode",
+    };
+  } else {
+    throw new Error("Electron API not available");
   }
-
-  return response.json();
 };
 
 const checkServerHealth = async () => {
-  const response = await fetch(
-    API_CONFIG.getApiUrl(API_CONFIG.endpoints.health),
-    {
-      method: "GET",
-      headers: API_CONFIG.getHeaders(),
-    },
-  );
-
-  if (!response.ok) {
-    throw new Error(
-      `Health check failed: ${response.status} ${response.statusText}`,
-    );
+  if (typeof window !== "undefined" && window.electronAPI) {
+    return await window.electronAPI.checkPythonHealth();
+  } else {
+    throw new Error("Electron API not available");
   }
-
-  return response.json();
 };
 
 // hooks
