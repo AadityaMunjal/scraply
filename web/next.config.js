@@ -6,6 +6,7 @@
 /** @type {import("next").NextConfig} */
 const config = {
   output: 'export',
+  assetPrefix: '/',
   trailingSlash: true,
   images: {
     unoptimized: true
