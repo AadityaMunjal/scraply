@@ -1,7 +1,7 @@
 const { app, BrowserWindow, ipcMain, protocol } = require('electron');
 const path = require('path');
 const { readFile } = require('fs/promises');
-const isDev = process.env.NODE_ENV === 'development';
+const isDev = !app.isPackaged;
 const { PythonShell } = require('python-shell');
 
 let mainWindow;
@@ -70,9 +70,15 @@ app.on('activate', () => {
 });
 
 // Python execution handlers
+function getPythonScriptsPath() {
+  if (isDev) {
+    return path.join(__dirname, 'electron', 'python-scripts');
+  }
+  return path.join(process.resourcesPath, 'app.asar.unpacked', 'electron', 'python-scripts');
+}
 ipcMain.handle('start-training', async (event, config) => {
   try {
-    const scriptPath = path.join(__dirname, 'electron', 'python-scripts');
+    const scriptPath = getPythonScriptsPath();
     const options = {
       mode: 'json',
       pythonPath: 'python3',
@@ -120,7 +126,7 @@ ipcMain.handle('start-training', async (event, config) => {
 
 ipcMain.handle('generate-notebook', async (event, config) => {
   try {
-    const scriptPath = path.join(__dirname, 'electron', 'python-scripts');
+    const scriptPath = getPythonScriptsPath();
     const options = {
       mode: 'json',
       pythonPath: 'python3',
@@ -147,7 +153,7 @@ ipcMain.handle('generate-notebook', async (event, config) => {
 
 ipcMain.handle('check-python-health', async () => {
   try {
-    const scriptPath = path.join(__dirname, 'electron', 'python-scripts');
+    const scriptPath = getPythonScriptsPath();
     const options = {
       mode: 'json',
       pythonPath: 'python3',
