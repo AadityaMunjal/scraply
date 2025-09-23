@@ -1,9 +1,10 @@
 import { useMutation } from "@tanstack/react-query";
 import { Config, TransformerConfig } from "~/types/index";
+import { API_CONFIG } from "~/util/config";
 
 // API functions
 const downloadFile = async (config: Config): Promise<Blob> => {
-  const response = await fetch("https://5985635811ab.ngrok-free.app/generate", {
+  const response = await fetch(API_CONFIG.getApiUrl("/generate"), {
     method: "POST",
     body: JSON.stringify(config),
     headers: {
@@ -22,7 +23,7 @@ const downloadFile = async (config: Config): Promise<Blob> => {
 };
 
 const startTraining = async (config: Config) => {
-  const response = await fetch("https://5985635811ab.ngrok-free.app/train", {
+  const response = await fetch(API_CONFIG.getApiUrl("/train"), {
     method: "POST",
     body: JSON.stringify(config),
     headers: {
@@ -42,7 +43,7 @@ const startTraining = async (config: Config) => {
 
 const startTransformerTraining = async (config: TransformerConfig) => {
   const response = await fetch(
-    "https://5985635811ab.ngrok-free.app/transformertrain",
+    API_CONFIG.getApiUrl("/transformertrain"),
     {
       method: "POST",
       body: JSON.stringify(config),
@@ -67,7 +68,7 @@ const transformerTest = async (params: {
   prompt: string;
 }) => {
   const response = await fetch(
-    "https://5985635811ab.ngrok-free.app/transformertest",
+    API_CONFIG.getApiUrl("/transformertest"),
     {
       method: "POST",
       body: JSON.stringify(params),
@@ -88,7 +89,7 @@ const transformerTest = async (params: {
 };
 
 const checkServerHealth = async () => {
-  const response = await fetch("https://5985635811ab.ngrok-free.app/health", {
+  const response = await fetch(API_CONFIG.getApiUrl("/health"), {
     method: "GET",
     headers: {
       "Content-Type": "application/json",

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import io, { Socket } from "socket.io-client";
+import { API_CONFIG, SOCKET_CONFIG } from "~/util/config";
 
 interface TrainingProgress {
   epoch: number;
@@ -49,7 +50,7 @@ export const useSocket = (): UseSocketReturn => {
 
   useEffect(() => {
     // Create socket connection
-    const newSocket = io("https://5985635811ab.ngrok-free.app", {
+    const newSocket = io(SOCKET_CONFIG.URL, {
       transports: ["websocket"],
       autoConnect: true,
     });
@@ -141,10 +142,12 @@ export const useSocket = (): UseSocketReturn => {
 
   const startTraining = async (config: any) => {
     try {
-      const response = await fetch("https://5985635811ab.ngrok-free.app/train-stream", {
+      const response = await fetch(API_CONFIG.getApiUrl("/train-stream"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          // Required when using ngrok endpoints to suppress browser interstitial
+          "ngrok-skip-browser-warning": "true",
         },
         body: JSON.stringify(config),
       });
