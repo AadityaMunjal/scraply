@@ -1,6 +1,6 @@
 # Scraply
 
-### A no-code, deep learning platform 🚀 -- The "Scratch" for Neural Networks
+### A no-code, deep learning platform -- The "Scratch" for Neural Networks
 
 - Previously awarded Best Developer Tool (HackPrinceton'24)
 - Watch our [new demo video](https://www.youtube.com/watch?v=QsKWQxAiWhE)
