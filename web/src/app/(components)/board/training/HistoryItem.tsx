@@ -2,6 +2,7 @@ import { TrainingResult } from "~/types/index";
 import { ResponsiveLine } from "@nivo/line";
 import { useTrainingStore } from "~/state/trainingStore";
 import { useDownloadFile } from "~/hooks/useApi";
+import ModelMiniMap from "./ModelMiniMap";
 
 interface HistoryItemProps {
   idx: number;
@@ -387,9 +388,7 @@ const HistoryItem: React.FC<HistoryItemProps> = ({
               Model Configuration
             </h3>
             <div className="rounded-lg bg-zinc-900/50 p-4 ring-1 ring-zinc-700/30">
-              <pre className="overflow-x-auto font-mono text-xs text-zinc-400">
-                {JSON.stringify(trainingRes.trainingConfig, null, 2)}
-              </pre>
+              <ModelMiniMap trainingConfig={trainingRes.trainingConfig} />
             </div>
           </div>
         </div>

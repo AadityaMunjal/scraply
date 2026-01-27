@@ -30,3 +30,6 @@ CMD ["uvicorn", "app:asgi_app", "--host", "0.0.0.0", "--port", "5000"]
 # NAVIGATE TO scraply/dynamic-model-api
 # COMMAND TO RUN in terminal:
 # docker-compose up --build
+
+# COMMAND TO RUN in terminal: (if you do not want to use docker)
+# uvicorn app:socket_app --host 0.0.0.0 --port 5000 --reload
