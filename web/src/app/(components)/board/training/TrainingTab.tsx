@@ -33,6 +33,7 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
     trainingProgress,
     isTrainingActive,
     isTrainingPaused: socketTrainingPaused,
+    isTrainingPausing,
     trainingCompleted,
     trainingError,
     startTraining: startSocketTraining,
@@ -90,9 +91,10 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
     setIsTrainingPaused(socketTrainingPaused);
   }, [socketTrainingPaused, setIsTrainingPaused]);
 
-  // Handle training stop events
+  // Handle training stop events - this is now redundant but kept for safety
+  // The main sync happens in the useEffect above
   useEffect(() => {
-    if (!isTrainingActive && isLiveTraining) {
+    if (!isTrainingActive && isLiveTraining && isConnected) {
       // Training was stopped from backend
       setIsLiveTraining(false);
       setIsTraining(false);
@@ -102,6 +104,7 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
   }, [
     isTrainingActive,
     isLiveTraining,
+    isConnected,
     setIsLiveTraining,
     setIsTraining,
     setIsTrainingPaused,
@@ -119,22 +122,18 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
     }
   }, [isConnected, checkTrainingStatus]);
 
-  // Only update live training state when socket actually changes state
-  // Don't override stored state on initial mount
+  // Sync live training state with socket training state
   useEffect(() => {
-    // If socket reports training is active, definitely set it
+    // If socket reports training is active, definitely set it to true
     if (isTrainingActive) {
       setIsLiveTraining(true);
     }
-    // Only set to false if we were previously live training and socket explicitly says not active
-    else if (isLiveTraining && !isTrainingActive && isConnected) {
-      // Wait a moment to ensure this isn't just a reconnection
-      const timer = setTimeout(() => {
-        setIsLiveTraining(false);
-      }, 1000);
-      return () => clearTimeout(timer);
+    // If socket says training is not active and we're connected, set to false
+    // Don't wait - this ensures buttons appear/disappear correctly
+    else if (!isTrainingActive && isConnected) {
+      setIsLiveTraining(false);
     }
-  }, [isTrainingActive, isLiveTraining, isConnected, setIsLiveTraining]);
+  }, [isTrainingActive, isConnected, setIsLiveTraining]);
 
   // Handle training errors
   useEffect(() => {
@@ -184,6 +183,7 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
 
   const handleTrain = async () => {
     setIsTraining(true);
+    setIsLiveTraining(true); // Set live training state immediately
     resetTraining(); // Reset any previous socket training state
 
     try {
@@ -208,6 +208,7 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
       console.error("Training failed:", error);
       posthog.captureException(error);
       setIsTraining(false);
+      setIsLiveTraining(false); // Ensure live training is reset on error
     }
   };
 
@@ -264,14 +265,24 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
             {/* Pause/Resume Button - Only show during training */}
             {isLiveTraining && (
               <button
+                disabled={isTrainingPausing && !liveTrainingPaused}
                 className={`flex items-center space-x-2 rounded-lg px-4 py-2 text-sm font-medium shadow-sm transition-all duration-200 hover:shadow-md active:scale-95 ${
+                  isTrainingPausing && !liveTrainingPaused
+                    ? "cursor-not-allowed bg-zinc-800 text-zinc-500 shadow-none"
+                    : ""
+                } ${
                   liveTrainingPaused
                     ? "bg-green-600 text-white hover:bg-green-700"
                     : "bg-amber-500 text-white hover:bg-amber-600"
                 }`}
                 onClick={handlePauseResume}
               >
-                {liveTrainingPaused ? (
+                {isTrainingPausing && !liveTrainingPaused ? (
+                  <>
+                    <SpinnerIcon className="h-4 w-4 animate-spin" />
+                    <span>Pausing...</span>
+                  </>
+                ) : liveTrainingPaused ? (
                   <>
                     <FaPlay className="h-4 w-4" />
                     <span>Resume</span>
@@ -400,9 +411,11 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                         </div>
                         <div>
                           <span className="text-sm font-semibold text-blue-100">
-                            {liveTrainingPaused
-                              ? "Training Paused"
-                              : "Training in Progress"}
+                            {isTrainingPausing && !liveTrainingPaused
+                              ? "Pausing..."
+                              : liveTrainingPaused
+                                ? "Training Paused"
+                                : "Training in Progress"}
                           </span>
                           {currentProgress && (
                             <div className="mt-0.5 text-xs font-medium text-blue-300/80">

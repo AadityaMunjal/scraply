@@ -9,6 +9,7 @@ from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
 from collections import Counter, defaultdict
 import cv2  # --> pip install opencv-python
 import time
+import asyncio
 import random
 from params import DATALOADERS, LAYERS, ACTIVATIONS, LOSSES, OPTIMIZERS
 import os
@@ -192,14 +193,36 @@ class Train:
         )
         self.final_loss = -1
 
-    def train(self, n_epochs, batch_size):
+    def train(self, n_epochs, batch_size, active_training=None):
         self.model.feature_save = False  # set the feature_save flag to false
         self.model.train()
         train_loss = 0
         correct = 0
         total = 0
+        processed_batches = 0
 
         for batch, (X, y) in enumerate(self.train_loader):
+            # Allow pause/stop mid-epoch (important for slower datasets like MNIST/CIFAR)
+            if active_training is not None:
+                # Stop requested
+                if not active_training.get("is_training", True):
+                    break
+                # Pause requested
+                while active_training.get("is_paused", False):
+                    # Mark pause as confirmed once we actually enter the wait loop
+                    if not active_training.get("pause_confirmed", False):
+                        active_training["pause_confirmed"] = True
+                    time.sleep(0.1)
+                    if not active_training.get("is_training", True):
+                        break
+                # Clear confirmation once we're out of the pause loop
+                if active_training.get("pause_confirmed", False) and not active_training.get(
+                    "is_paused", False
+                ):
+                    active_training["pause_confirmed"] = False
+                if not active_training.get("is_training", True):
+                    break
+
             X, y = X.to(self.device), y.to(self.device)
             # Compute prediction error
             pred = self.model(X)
@@ -209,6 +232,7 @@ class Train:
             self.optimizer.step()
             self.optimizer.zero_grad()
             train_loss += loss.item()
+            processed_batches += 1
 
             if self.input == "pima":
                 threshold = 0.5
@@ -220,22 +244,44 @@ class Train:
             total += y.size(0)
 
         # avg over all batches
-        avg_train_loss = train_loss / len(self.train_loader)
+        if processed_batches == 0 or total == 0:
+            return 0.0, 0.0
+
+        avg_train_loss = train_loss / processed_batches
         avg_acc = 100 * correct / total
         return avg_train_loss, avg_acc
 
-    def test(self, output_info=False):
+    def test(self, output_info=False, active_training=None):
         self.model.feature_save = False
         self.model.eval()  # set model to eval mode
 
         all_predictions, all_labels, all_indices = [], [], []
         test_loss, correct, total = 0, 0, 0
+        processed_batches = 0
 
         with torch.no_grad():
             for idx, (X, y) in enumerate(self.test_loader):
+                # Allow pause/stop mid-eval as well (so "Stop" works immediately)
+                if active_training is not None:
+                    if not active_training.get("is_training", True):
+                        break
+                    while active_training.get("is_paused", False):
+                        if not active_training.get("pause_confirmed", False):
+                            active_training["pause_confirmed"] = True
+                        time.sleep(0.1)
+                        if not active_training.get("is_training", True):
+                            break
+                    if active_training.get("pause_confirmed", False) and not active_training.get(
+                        "is_paused", False
+                    ):
+                        active_training["pause_confirmed"] = False
+                    if not active_training.get("is_training", True):
+                        break
+
                 X, y = X.to(self.device), y.to(self.device)
                 pred = self.model(X)
                 test_loss += self.loss_fn(pred, y).item()
+                processed_batches += 1
 
                 if self.input == "pima":
                     threshold = 0.5
@@ -300,8 +346,12 @@ class Train:
             )
 
         # returning test loss here :)
-        avg_test_loss = test_loss / len(self.test_loader)
-        avg_acc = 100 * correct / total
+        if processed_batches == 0 or total == 0:
+            avg_test_loss = 0.0
+            avg_acc = 0.0
+        else:
+            avg_test_loss = test_loss / processed_batches
+            avg_acc = 100 * correct / total
 
         if output_info and self.input != "pima":
             return (
@@ -618,24 +668,66 @@ class Train:
                 "training_started", {"total_epochs": n_epochs, "dataset": self.input}
             )
 
+        async def _pause_state_notifier():
+            """Emit pause/resume only when loop is actually paused/resumed."""
+            # Initialize to current state to avoid emitting 'resumed' at start
+            last = bool(active_training.get("pause_confirmed", False)) if active_training else False
+            while active_training and active_training.get("is_training", False):
+                now = bool(active_training.get("pause_confirmed", False))
+                if now != last:
+                    if now:
+                        print("⏸️  Training paused (confirmed)")
+                        await socketio.emit(
+                            "training_paused",
+                            {"message": "Training is paused"},
+                        )
+                    else:
+                        print("▶️  Training Resumed (confirmed)")
+                        await socketio.emit(
+                            "training_resumed",
+                            {"message": "Training is running"},
+                        )
+                    last = now
+                await asyncio.sleep(0.1)
+
+        pause_notifier_task = None
+        if not dev_testing and socketio is not None and active_training is not None:
+            pause_notifier_task = asyncio.create_task(_pause_state_notifier())
+
         for t in range(n_epochs):
             # Check for pause before starting epoch
             if dev_testing == False:
+                pause_printed = False
                 while active_training and active_training.get("is_paused", False):
-                    import asyncio
+                    
+                    if not pause_printed:
+                        print("⏸️  Training is paused - waiting for resume...")
+                        # Confirm pause when we hit this wait loop (epoch boundary pause)
+                        if active_training is not None:
+                            active_training["pause_confirmed"] = True
+                        pause_printed = True
 
                     await asyncio.sleep(0.1)  # Sleep briefly to avoid busy waiting
                     if not active_training.get("is_training", False):
                         # Training was stopped while paused
+                        print("🛑 Training was stopped while paused")
                         await socketio.emit(
                             "training_stopped", {"message": "Training stopped"}
                         )
+                        if pause_notifier_task:
+                            pause_notifier_task.cancel()
                         return
+                # If we exited pause loop, clear confirmation
+                if active_training is not None and active_training.get("pause_confirmed", False):
+                    active_training["pause_confirmed"] = False
                 # Check if training was stopped
                 if not active_training or not active_training.get("is_training", False):
+                    print("🛑 Training stopped before epoch completion")
                     await socketio.emit(
                         "training_stopped", {"message": "Training stopped"}
                     )
+                    if pause_notifier_task:
+                        pause_notifier_task.cancel()
                     return
 
             print(f"Epoch {t + 1}/{n_epochs}...")
@@ -643,13 +735,25 @@ class Train:
                 "epoch_started", {"epoch": t + 1, "total_epochs": n_epochs}
             )
             # emit is method to send events and data to clients via websocket
-            avg_train_loss, train_avg_acc = self.train(n_epochs, batch_size)
+            avg_train_loss, train_avg_acc = await asyncio.to_thread(
+                self.train, n_epochs, batch_size, active_training
+            )
+
+            # If stop was requested during training, exit ASAP
+            if active_training and not active_training.get("is_training", False):
+                await socketio.emit("training_stopped", {"message": "Training stopped"})
+                if pause_notifier_task:
+                    pause_notifier_task.cancel()
+                return
+
             print(
                 f"Train Loss: {avg_train_loss:.4f}, Train Accuracy: {train_avg_acc:.2f}%\n"
             )
 
             if t != n_epochs - 1 or self.input == "pima":
-                test_result = self.test(output_info=False)
+                test_result = await asyncio.to_thread(
+                    self.test, False, active_training
+                )
                 (
                     avg_test_loss,
                     test_avg_acc,
@@ -658,7 +762,9 @@ class Train:
                     overall_metrics,
                 ) = test_result
             else:
-                test_result = self.test(output_info=True)
+                test_result = await asyncio.to_thread(
+                    self.test, True, active_training
+                )
                 if len(test_result) == 7:  # Non-pima dataset with output_info=True
                     (
                         avg_test_loss,
@@ -692,6 +798,13 @@ class Train:
                             confusion_matrix_data,
                             overall_metrics,
                         ) = test_result
+
+            # If stop was requested during eval, exit ASAP
+            if active_training and not active_training.get("is_training", False):
+                await socketio.emit("training_stopped", {"message": "Training stopped"})
+                if pause_notifier_task:
+                    pause_notifier_task.cancel()
+                return
 
             print(
                 f"Test Loss: {avg_test_loss:.4f}, Test Accuracy: {test_avg_acc:.2f}%\n"
@@ -729,6 +842,9 @@ class Train:
         avg_test_loss = sum(test_losses) / len(test_losses)
 
         print("Done!")
+
+        if pause_notifier_task:
+            pause_notifier_task.cancel()
 
         # Format losses for final result
         train_losses = [{"x": i, "y": v} for i, v in enumerate(train_losses)]

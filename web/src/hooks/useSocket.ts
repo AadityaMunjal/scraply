@@ -25,6 +25,7 @@ interface UseSocketReturn {
   trainingProgress: TrainingProgress | null;
   isTrainingActive: boolean;
   isTrainingPaused: boolean;
+  isTrainingPausing: boolean;
   trainingCompleted: TrainingCompleted | null;
   trainingError: string | null;
   startTraining: (config: any) => void;
@@ -42,11 +43,14 @@ export const useSocket = (): UseSocketReturn => {
     useState<TrainingProgress | null>(null);
   const [isTrainingActive, setIsTrainingActive] = useState(false);
   const [isTrainingPaused, setIsTrainingPaused] = useState(false);
+  const [isTrainingPausing, setIsTrainingPausing] = useState(false);
   const [trainingCompleted, setTrainingCompleted] =
     useState<TrainingCompleted | null>(null);
   const [trainingError, setTrainingError] = useState<string | null>(null);
 
   const socketRef = useRef<Socket | null>(null);
+  const processedCompletedResultsRef = useRef<string | null>(null);
+  const isTrainingActiveRef = useRef<boolean>(false);
 
   useEffect(() => {
     // Create socket connection
@@ -57,6 +61,8 @@ export const useSocket = (): UseSocketReturn => {
 
     socketRef.current = newSocket;
     setSocket(newSocket);
+
+    let isTabClosing = false; // Track if tab is actually closing vs just hidden
 
     // Connection events
     newSocket.on("connect", () => {
@@ -73,13 +79,75 @@ export const useSocket = (): UseSocketReturn => {
       setIsTrainingActive(false);
     });
 
+    // Use Page Visibility API to detect tab switching vs closing
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        // Tab became hidden - could be switching tabs or closing
+        // Send a signal to backend that we're hidden (but don't stop training)
+        if (newSocket.connected) {
+          newSocket.emit("tab_hidden");
+        }
+      } else if (document.visibilityState === "visible") {
+        // Tab became visible again - definitely just switched tabs
+        isTabClosing = false;
+        if (newSocket.connected) {
+          newSocket.emit("tab_visible");
+          // Recheck training status when tab becomes visible
+          newSocket.emit("check_training_status");
+        }
+      }
+    };
+
+    // Detect when tab is actually closing (not just hidden)
+    const handleBeforeUnload = () => {
+      isTabClosing = true;
+      if (newSocket.connected && isTrainingActiveRef.current) {
+        // Try to emit stop_training before page closes
+        // Use sendBeacon as fallback for more reliable delivery
+        try {
+          newSocket.emit("stop_training");
+        } catch (e) {
+          // If socket fails, try using Beacon API as fallback
+          const data = JSON.stringify({ action: "stop_training" });
+          navigator.sendBeacon(
+            SOCKET_CONFIG.URL.replace("ws://", "http://").replace("wss://", "https://") + "/stop-on-close",
+            data
+          );
+        }
+      }
+    };
+
+    // Use pagehide event (more reliable than beforeunload for detecting closure)
+    const handlePageHide = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        // Page is being cached (e.g., back/forward navigation) - don't stop training
+        return;
+      }
+      // Page is being unloaded - likely closing
+      if (isTrainingActiveRef.current && newSocket.connected) {
+        try {
+          newSocket.emit("stop_training");
+        } catch (e) {
+          console.log("Could not send stop_training on pagehide");
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("pagehide", handlePageHide);
+
     // Training events
     newSocket.on("training_started", (data) => {
       console.log("Training started:", data);
+      isTrainingActiveRef.current = true;
       setIsTrainingActive(true);
+      setIsTrainingPausing(false);
+      setIsTrainingPaused(false);
       setTrainingCompleted(null);
       setTrainingError(null);
       setTrainingProgress(null);
+      processedCompletedResultsRef.current = null; // Clear ref for new training
     });
 
     newSocket.on("epoch_started", (data: any) => {
@@ -93,12 +161,21 @@ export const useSocket = (): UseSocketReturn => {
 
     newSocket.on("training_completed", (data: TrainingCompleted) => {
       console.log("Training completed:", data);
+      // Update ref to prevent reprocessing from status checks
+      const resultsHash = JSON.stringify(data.final_results?.training);
+      processedCompletedResultsRef.current = resultsHash;
+      isTrainingActiveRef.current = false;
+      setIsTrainingPausing(false);
+      setIsTrainingPaused(false);
       setTrainingCompleted(data);
       setIsTrainingActive(false);
     });
 
     newSocket.on("training_error", (data: any) => {
       console.error("Training error:", data);
+      isTrainingActiveRef.current = false;
+      setIsTrainingPausing(false);
+      setIsTrainingPaused(false);
       setTrainingError(data.error);
       setIsTrainingActive(false);
     });
@@ -107,35 +184,68 @@ export const useSocket = (): UseSocketReturn => {
     newSocket.on("training_status", (data: any) => {
       console.log("Training status:", data);
       if (data.is_training) {
+        isTrainingActiveRef.current = true;
         setIsTrainingActive(true);
-        setIsTrainingPaused(data.is_paused || false);
+        setIsTrainingPaused(data.pause_confirmed || data.is_paused || false);
+        setIsTrainingPausing(Boolean(data.is_paused) && !Boolean(data.pause_confirmed));
         if (data.current_progress) {
           setTrainingProgress(data.current_progress);
         }
       } else {
+        isTrainingActiveRef.current = false;
         setIsTrainingActive(false);
         setIsTrainingPaused(false);
+        setIsTrainingPausing(false);
+        // If training is not active but we have completed results, process them
+        // This handles the case where training completed while client was disconnected
+        if (data.completed_results) {
+          // Create a simple hash to avoid reprocessing the same results
+          const resultsHash = JSON.stringify(data.completed_results.final_results?.training);
+          if (processedCompletedResultsRef.current !== resultsHash) {
+            console.log("Found completed training results from status check");
+            processedCompletedResultsRef.current = resultsHash;
+            setTrainingCompleted(data.completed_results);
+            setIsTrainingActive(false);
+          }
+        }
       }
     });
 
     // Handle training pause/resume events
+    newSocket.on("training_pausing", (data: any) => {
+      console.log("Training pausing:", data);
+      setIsTrainingPausing(true);
+    });
+
     newSocket.on("training_paused", (data: any) => {
       console.log("Training paused:", data);
+      setIsTrainingPausing(false);
       setIsTrainingPaused(true);
+    });
+
+    newSocket.on("training_resuming", (data: any) => {
+      console.log("Training resuming:", data);
+      setIsTrainingPausing(false);
     });
 
     newSocket.on("training_resumed", (data: any) => {
       console.log("Training resumed:", data);
+      setIsTrainingPausing(false);
       setIsTrainingPaused(false);
     });
 
     newSocket.on("training_stopped", (data: any) => {
       console.log("Training stopped:", data);
+      isTrainingActiveRef.current = false;
+      setIsTrainingPausing(false);
       setIsTrainingActive(false);
       setIsTrainingPaused(false);
     });
 
     return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("pagehide", handlePageHide);
       newSocket.close();
     };
   }, []);
@@ -190,6 +300,8 @@ export const useSocket = (): UseSocketReturn => {
     setTrainingError(null);
     setIsTrainingActive(false);
     setIsTrainingPaused(false);
+    setIsTrainingPausing(false);
+    processedCompletedResultsRef.current = null;
   };
 
   const checkTrainingStatus = () => {
@@ -204,6 +316,7 @@ export const useSocket = (): UseSocketReturn => {
     trainingProgress,
     isTrainingActive,
     isTrainingPaused,
+    isTrainingPausing,
     trainingCompleted,
     trainingError,
     startTraining,
