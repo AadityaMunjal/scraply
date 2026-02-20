@@ -14,7 +14,7 @@ After training, you can also download a python notebook. See the code for everyt
 
 <img width="1894" height="885" alt="image" src="https://github.com/user-attachments/assets/2d2a6e0a-4d96-4e26-acdf-f684970dfdd2" />
 
-### 3) View outputs - includes ✨️special✨️ visualization with image datasets
+### 3) View outputs - includes special visualization with image datasets
 
 <img width="1899" height="925" alt="image" src="https://github.com/user-attachments/assets/c5faa610-af0f-4682-84c5-a991bc2f602c" />
 
